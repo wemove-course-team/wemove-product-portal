@@ -147,7 +147,7 @@
     </div>
 
     <!-- Approve Modal -->
-    <el-dialog v-model="approveModalVisible" title="审核通过经销商申请" width="480px">
+    <el-dialog v-model="approveModalVisible" title="审核通过经销商申请" width="480px" append-to-body>
       <div v-if="selectedApp">
         <p style="margin-bottom: 16px;">
           企业主体：<strong>{{ selectedApp.companyName }}</strong> ({{ selectedApp.contactName }})
@@ -170,7 +170,7 @@
     </el-dialog>
 
     <!-- Ship Modal -->
-    <el-dialog v-model="shipModalVisible" title="录入物流运单并出库发货" width="450px">
+    <el-dialog v-model="shipModalVisible" title="录入物流运单并出库发货" width="450px" append-to-body>
       <el-form label-position="top">
         <el-form-item label="承运物流公司">
           <el-select v-model="shipCompany" style="width: 100%;">

@@ -4,6 +4,7 @@
     title="用户登录 / 角色快速切换演示"
     width="500px"
     align-center
+    append-to-body
     class="login-dialog"
     destroy-on-close
   >
