@@ -4,6 +4,7 @@
     title="购物车 / 采购清单"
     direction="rtl"
     size="400px"
+    append-to-body
     class="cart-drawer"
   >
     <div class="cart-drawer-content">

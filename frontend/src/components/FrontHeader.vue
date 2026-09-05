@@ -108,7 +108,7 @@
     </div>
 
     <!-- Mobile Drawer Nav -->
-    <el-drawer v-model="mobileMenuOpen" title="网站导航" direction="ltr" size="280px">
+    <el-drawer v-model="mobileMenuOpen" title="网站导航" direction="ltr" size="280px" append-to-body>
       <div class="mobile-nav-links">
         <router-link to="/" class="m-link" @click="mobileMenuOpen = false">首页</router-link>
         <router-link to="/workshop" class="m-link" @click="mobileMenuOpen = false">玩具品类</router-link>

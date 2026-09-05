@@ -142,7 +142,7 @@
     </div>
 
     <!-- Product Comparison Dialog -->
-    <el-dialog v-model="compareDialogVisible" title="产品规格横向参数对比" width="800px">
+    <el-dialog v-model="compareDialogVisible" title="产品规格横向参数对比" width="800px" append-to-body>
       <el-table :data="compareTableData" border style="width: 100%">
         <el-table-column prop="field" label="参数项目" width="130" fixed />
         <el-table-column
