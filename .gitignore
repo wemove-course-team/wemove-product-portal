@@ -42,3 +42,14 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Local secrets, runtime data and reports
+.env.*
+!.env.example
+!.env.*.example
+uploads/
+storage/private/
+coverage/
+playwright-report/
+test-results/
+*.log

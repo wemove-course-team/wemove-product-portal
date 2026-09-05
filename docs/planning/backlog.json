@@ -1,0 +1,1029 @@
+{
+  "version": "0.2",
+  "date": "2026-09-05",
+  "courseDuration": "2–3 days",
+  "estimateMeaning": "计划有效工时，不是实际贡献；另每人预留2小时共同工作；远景启动时重新估算",
+  "tasks": [
+    {
+      "code": "B00",
+      "title": "30分钟启动会与两小时范围接口冻结",
+      "owner": "chenyi-c",
+      "phase": "M0",
+      "area": "operation",
+      "priority": "P0",
+      "estimatedHours": 1,
+      "dependsOn": [],
+      "paths": [
+        "docs/planning/scope-baseline.md",
+        "docs/planning/api-contract.md",
+        "docs/delivery/schedule.md",
+        "docs/planning/deployment.md"
+      ],
+      "acceptance": [
+        "记录实际T0、截止时刻、班次组号与七人实名映射",
+        "确认R01–R07、中文课程内容及偏题导航处理",
+        "确认NestJS推荐和字段契约；仅2天时取消P1",
+        "记录真实决定，不伪造讨论记录",
+        "确认Linux服务器地址/发行版/架构、SSH访问方式、域名与可用端口；密钥不写Issue"
+      ],
+      "validation": "七人逐项核对范围与接口表，在本Issue留下确认；文档链接可打开。",
+      "requirements": "R01–R07",
+      "kind": "task",
+      "issueNumber": 4,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/4",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "B01",
+      "title": "建立最小NestJS后端与公共API约定",
+      "owner": "cy0207kaw",
+      "phase": "M0",
+      "area": "platform",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B00"
+      ],
+      "paths": [
+        "backend/package.json",
+        "backend/package-lock.json",
+        "backend/src/main.ts",
+        "backend/src/app.module.ts",
+        "backend/src/common/",
+        "backend/.env.example",
+        "backend/Dockerfile",
+        "backend/.dockerignore"
+      ],
+      "acceptance": [
+        "一个应用启动并连接MySQL；GET /api/v1/health可用",
+        "统一DTO校验、错误、requestId和同源开发代理约定",
+        "锁定依赖、关闭synchronize、列实际启动/构建命令",
+        "提供领域模块接入示例；不搭Redis/微服务",
+        "提供Linux后端多阶段镜像及同版本迁移入口，非root运行；GET /ready验证数据库就绪，错误503不含秘密"
+      ],
+      "validation": "运行新建backend构建和health烟测；无效请求400，错误不含数据库凭证；注明实际命令。",
+      "requirements": "R03 R07",
+      "kind": "task",
+      "issueNumber": 5,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/5",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "B02",
+      "title": "统一前端请求层路由和状态反馈",
+      "owner": "lizhikeer",
+      "phase": "M0",
+      "area": "ui",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B00"
+      ],
+      "paths": [
+        "frontend/src/services/http.js",
+        "frontend/src/router/index.js",
+        "frontend/src/stores/user.js",
+        "frontend/vite.config.js"
+      ],
+      "acceptance": [
+        "集中HTTP客户端、Cookie/CSRF与错误映射，页面无散落请求",
+        "提供明确404/403/loading/empty/error状态；保持旧路由兼容",
+        "真实模式失败不能回退Mock；会话不再信任本地role",
+        "前端契约样例与cy0207kaw一致"
+      ],
+      "validation": "npm run build；使用正常/400/401/403/网络失败样例检查状态，真实授权由后端验证。",
+      "requirements": "R03 R06",
+      "kind": "task",
+      "issueNumber": 6,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/6"
+    },
+    {
+      "code": "B03",
+      "title": "建立课程新库迁移与合成seed",
+      "owner": "Snowed-night",
+      "phase": "M0",
+      "area": "product",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "B00"
+      ],
+      "paths": [
+        "backend/migrations/",
+        "backend/sql/README.md",
+        "docs/planning/database.md",
+        "compose.yaml",
+        "docs/delivery/backup-restore.md"
+      ],
+      "acceptance": [
+        "为新空库建立身份/产品基础结构；领域表由各负责人补迁移",
+        "唯一键、关联索引、时间和ID约定一致",
+        "旧DROP脚本保留但不在共享库执行；seed独立且无生产默认密码",
+        "迁移入口重复执行不会重复应用，写备份/向前修复说明",
+        "MySQL使用持久卷，迁移由同版本migrate容器执行；独立库/卷实测恢复，不把旧DROP脚本挂进自动初始化目录"
+      ],
+      "validation": "在可丢弃MySQL库执行全迁移和第二次迁移；检查唯一/FK拒绝非法数据，记录表与行数。",
+      "requirements": "R02 R07",
+      "kind": "task",
+      "issueNumber": 7,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/7",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "B04",
+      "title": "启用基础CI并统一既有协作规范",
+      "owner": "chenyi-c",
+      "phase": "M0",
+      "area": "platform",
+      "priority": "P0",
+      "estimatedHours": 1,
+      "dependsOn": [
+        "B00"
+      ],
+      "paths": [
+        ".github/workflows/frontend-build.yml",
+        ".github/CODEOWNERS",
+        "CONTRIBUTING.md",
+        "compose.yaml",
+        "compose.prod.yaml"
+      ],
+      "acceptance": [
+        "验证规划PR已有build和CODEOWNERS有效",
+        "与开放PR #1协调，只保留一个贡献规范入口，不覆盖历史",
+        "main成功运行后再启用真实必需检查；保持非作者审批",
+        "后端出现后再加真实后端构建/检查，不添加空绿灯",
+        "Dockerfile/Compose实现后在Linux CI增加镜像构建与Compose解析；尚无文件时不添加占位绿灯"
+      ],
+      "validation": "检查Actions实际结果和分支保护API；如权限/计费阻碍则记录，不能声称已启用。",
+      "requirements": "R07",
+      "kind": "task",
+      "issueNumber": 8,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/8",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "B05",
+      "title": "实现真实注册会话找回及后台授权",
+      "owner": "cy0207kaw",
+      "phase": "M0",
+      "area": "account",
+      "priority": "P0",
+      "estimatedHours": 5,
+      "dependsOn": [
+        "B01",
+        "B03"
+      ],
+      "paths": [
+        "backend/src/modules/identity/",
+        "backend/test/identity.e2e-spec.ts",
+        "backend/migrations/"
+      ],
+      "acceptance": [
+        "用户名/邮箱注册登录、密码哈希、退出和会话轮换",
+        "CSRF、限流、统一找回响应；单次30分钟token验证并撤销旧会话",
+        "USER/ADMIN/SUPER_ADMIN守卫与即时停用；禁止最后超管停用",
+        "本地SMTP收到找回链接并走通；实际外部投递未测需标明",
+        "Linux Nginx代理下验证Secure Cookie、转发协议/受控代理与CSRF；开发收件箱不开放公网"
+      ],
+      "validation": "T03/T04/T05：正确/错误密码、重复账户、过期/重复token、越权、停用与CSRF负例；先提交会话PR，再提交找回PR。",
+      "requirements": "R03",
+      "kind": "task",
+      "issueNumber": 9,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/9",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "B06",
+      "title": "清点必要媒体并提供可用素材目录",
+      "owner": "22099yang",
+      "phase": "M0",
+      "area": "support",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "B00",
+        "B01",
+        "B03",
+        "B05"
+      ],
+      "paths": [
+        "docs/delivery/asset-register.csv",
+        "backend/src/modules/media/",
+        "backend/migrations/",
+        "frontend/public/images/",
+        "docs/planning/deployment.md"
+      ],
+      "acceptance": [
+        "只核对课程实际使用素材，登记路径/来源/授权状态/用途",
+        "提供已导入媒体白名单及后台选择目录，不删除原图",
+        "不把未核实价格、材质或证书写为品牌事实",
+        "失效下载入口修复或明确关闭，私有资质不置于public",
+        "上传目录使用API持久卷，容器重建后文件可用，不直接公开卷根目录"
+      ],
+      "validation": "逐个检查必需资源可访问，统计原大小；GET admin/media受鉴权；原文件保留。",
+      "requirements": "R02 R04 R06",
+      "kind": "task",
+      "issueNumber": 10,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/10",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "B07",
+      "title": "冻结公共组件与视觉tokens",
+      "owner": "lizhikeer",
+      "phase": "M0",
+      "area": "ui",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "B00"
+      ],
+      "paths": [
+        "frontend/src/styles/theme.css",
+        "frontend/src/styles/layout.css",
+        "frontend/src/components/",
+        "docs/delivery/ui-baseline.md"
+      ],
+      "acceptance": [
+        "沿用现有UI库，统一按钮/表单/卡片/状态/层级/断点",
+        "明确Header/Footer和主要页面结构，支持手机布局",
+        "保留弹窗append-to-body修复，定义键盘焦点/关闭行为",
+        "向六名成员给出可复制页面与字段错误模式"
+      ],
+      "validation": "npm run build；360/390与1440屏宽查看公共组件、弹窗和长文案。",
+      "requirements": "R06",
+      "kind": "task",
+      "issueNumber": 11,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/11"
+    },
+    {
+      "code": "C01",
+      "title": "实现新闻与品牌内容管理API",
+      "owner": "serein7758521",
+      "phase": "M1",
+      "area": "content",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B01",
+        "B03",
+        "B05"
+      ],
+      "paths": [
+        "backend/src/modules/content/",
+        "backend/migrations/",
+        "backend/test/content.e2e-spec.ts"
+      ],
+      "acceptance": [
+        "新闻/品牌页、分类CRUD与草稿/发布/归档",
+        "公开分页和详情只读已发布数据",
+        "富文本清洗，slug唯一；引用分类禁止误删",
+        "发布修改后前台能读到新数据"
+      ],
+      "validation": "T01：匿名读取草稿拒绝、发布可读、恶意HTML清洗、非法分类与重复slug失败。",
+      "requirements": "R01",
+      "kind": "task",
+      "issueNumber": 12,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/12"
+    },
+    {
+      "code": "C02",
+      "title": "接通首页新闻品牌页和内容后台",
+      "owner": "serein7758521",
+      "phase": "M1",
+      "area": "content",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B02",
+        "B07",
+        "C01"
+      ],
+      "paths": [
+        "frontend/src/views/HomeView.vue",
+        "frontend/src/views/ContentPage.vue",
+        "frontend/src/views/content/",
+        "frontend/src/services/content.js",
+        "frontend/src/router/index.js"
+      ],
+      "acceptance": [
+        "新增新闻列表/详情、分类分页、品牌内容页面",
+        "内容后台新建/编辑/发布/归档，数据来自API",
+        "首页新闻与推荐区域来自接口，无虚构经营指标",
+        "完整空/错误反馈，UI使用公共tokens"
+      ],
+      "validation": "npm run build；浏览器从后台发布到匿名新窗口查看新闻并刷新重试。",
+      "requirements": "R01 R06",
+      "kind": "task",
+      "issueNumber": 13,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/13"
+    },
+    {
+      "code": "C03",
+      "title": "实现产品分类与公开产品API",
+      "owner": "Snowed-night",
+      "phase": "M1",
+      "area": "product",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B01",
+        "B03",
+        "B05"
+      ],
+      "paths": [
+        "backend/src/modules/catalog/",
+        "backend/migrations/",
+        "backend/test/catalog.e2e-spec.ts"
+      ],
+      "acceptance": [
+        "分类/产品CRUD、SKU与slug唯一、搜索与分页",
+        "多图使用有效媒体key，发布有必填校验",
+        "公开DTO不含dealer_price或折扣；权限在服务端",
+        "价格只作已核对展示；删除归档，保留历史关系"
+      ],
+      "validation": "T02：公开/后台权限、分页上限、搜索参数化、未发布不可读、重复SKU和分类引用冲突。",
+      "requirements": "R02",
+      "kind": "task",
+      "issueNumber": 14,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/14"
+    },
+    {
+      "code": "C04",
+      "title": "接通产品列表详情与产品后台",
+      "owner": "Snowed-night",
+      "phase": "M1",
+      "area": "product",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B02",
+        "B07",
+        "B06",
+        "C03"
+      ],
+      "paths": [
+        "frontend/src/views/WorkshopView.vue",
+        "frontend/src/views/ProductDetail.vue",
+        "frontend/src/views/product/",
+        "frontend/src/services/product.js",
+        "frontend/src/stores/product.js"
+      ],
+      "acceptance": [
+        "产品搜索/分类/分页/多图详情从API读取",
+        "后台新增/修改/归档、分类维护与多图选择",
+        "旧路径兼容，新分类与详情URL不冲突",
+        "关闭正式流程中的假购物/付款，适当使用咨询CTA"
+      ],
+      "validation": "npm run build；T02真实前后台闭环，产品不存在与接口失败都有可见反馈。",
+      "requirements": "R02 R06",
+      "kind": "task",
+      "issueNumber": 15,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/15"
+    },
+    {
+      "code": "C05",
+      "title": "完成用户中心与用户管理员后台",
+      "owner": "cy0207kaw",
+      "phase": "M1",
+      "area": "account",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B02",
+        "B05",
+        "B07"
+      ],
+      "paths": [
+        "frontend/src/components/LoginModal.vue",
+        "frontend/src/stores/user.js",
+        "frontend/src/views/account/",
+        "frontend/src/services/account.js",
+        "backend/src/modules/identity/"
+      ],
+      "acceptance": [
+        "登录/注册/找回/重置页面调用真实API",
+        "本人资料和改密，后台用户搜索/启停",
+        "超管创建/停用管理员，客户端不能提交role提权",
+        "移除正式模式角色切换，操作后正确刷新会话"
+      ],
+      "validation": "npm run build；T03–T05与另一个浏览器会话测试停用、退出和旧密码拒绝。",
+      "requirements": "R03 R06",
+      "kind": "task",
+      "issueNumber": 16,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/16"
+    },
+    {
+      "code": "C06",
+      "title": "完成联系表单与留言处理闭环",
+      "owner": "22099yang",
+      "phase": "M1",
+      "area": "support",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B01",
+        "B02",
+        "B03",
+        "B05",
+        "B07"
+      ],
+      "paths": [
+        "backend/src/modules/support/",
+        "backend/migrations/",
+        "frontend/src/views/support/",
+        "frontend/src/services/support.js"
+      ],
+      "acceptance": [
+        "联系表单客户端/服务端校验，提交生成持久ticketNo",
+        "本人留言与后台搜索/状态处理，不泄露他人记录",
+        "基础FAQ和核对过的下载/联系入口可用",
+        "限流、重复提交防护，内部备注不出现在本人接口"
+      ],
+      "validation": "T06/T11：合法提交、重启持久化、超长/注入/重复提交、跨用户访问失败。",
+      "requirements": "R04",
+      "kind": "task",
+      "issueNumber": 17,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/17"
+    },
+    {
+      "code": "C07",
+      "title": "完成网站设置Banner与运营概览",
+      "owner": "chenyi-c",
+      "phase": "M1",
+      "area": "operation",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B01",
+        "B02",
+        "B03",
+        "B05",
+        "B06",
+        "B07"
+      ],
+      "paths": [
+        "backend/src/modules/operation/",
+        "backend/migrations/",
+        "frontend/src/views/operation/",
+        "frontend/src/services/operation.js",
+        "frontend/src/views/AdminView.vue"
+      ],
+      "acceptance": [
+        "网站名称/Logo/联系信息等白名单设置可保存并反映前台",
+        "Banner新增/编辑/排序/启停，图片来自核对媒体",
+        "运营概览来自真实表汇总，定义清晰",
+        "不接管其他领域CRUD，后台入口路由清楚"
+      ],
+      "validation": "T07：前后台修改验证、匿名读不到私有配置；npm run build与后台授权用例。",
+      "requirements": "R05",
+      "kind": "task",
+      "issueNumber": 18,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/18"
+    },
+    {
+      "code": "C08",
+      "title": "编写并执行核心闭环联调用例",
+      "owner": "GLOCKDDD",
+      "phase": "M1",
+      "area": "quality",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "C02",
+        "C04",
+        "C06",
+        "C07"
+      ],
+      "paths": [
+        "tests/e2e/",
+        "docs/delivery/test-report.md"
+      ],
+      "acceptance": [
+        "先写T01/T02/T06/T07用例，待接口完成运行",
+        "至少两名成员的新浏览器/进程复验持久化",
+        "问题有复现步骤和归属，失败项保持开放",
+        "真实模式不读取Mock、无假成功/隐藏错误"
+      ],
+      "validation": "使用实际可运行E2E命令或完整人工步骤记录；链接commit与截图，不以构建替代。",
+      "requirements": "R01 R02 R04 R05 R07",
+      "kind": "task",
+      "issueNumber": 19,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/19"
+    },
+    {
+      "code": "C09",
+      "title": "独立验证身份与数据访问边界",
+      "owner": "GLOCKDDD",
+      "phase": "M1",
+      "area": "quality",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "B05",
+        "C05"
+      ],
+      "paths": [
+        "backend/test/identity.e2e-spec.ts",
+        "docs/delivery/test-report.md"
+      ],
+      "acceptance": [
+        "验证游客401/普通用户403/伪造role无效",
+        "覆盖密码找回单次过期与旧会话撤销",
+        "覆盖禁用账号、最后超管保护和CSRF",
+        "结果反馈cy0207kaw并复测修复"
+      ],
+      "validation": "T03/T04/T05/T11；至少使用两个账户，记录实际响应码与运行命令。",
+      "requirements": "R03 R07",
+      "kind": "task",
+      "issueNumber": 20,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/20"
+    },
+    {
+      "code": "E01",
+      "title": "可裁剪的经销商申请审核最小闭环",
+      "owner": "GLOCKDDD",
+      "phase": "M2",
+      "area": "dealer",
+      "priority": "P1",
+      "estimatedHours": 4,
+      "dependsOn": [
+        "B01",
+        "B02",
+        "B03",
+        "B05",
+        "B07"
+      ],
+      "paths": [
+        "backend/src/modules/dealer/",
+        "backend/migrations/",
+        "frontend/src/views/DealerApply.vue",
+        "frontend/src/views/DealerPortal.vue",
+        "frontend/src/services/dealer.js"
+      ],
+      "acceptance": [
+        "仅本人申请、后台审核、本人状态查询",
+        "审核事务及version防重复，记录操作人/理由",
+        "不开放真实交易、批发价、子账号、补件或私有上传",
+        "两天模式或核心未完成时延期M4，不阻塞课程交付"
+      ],
+      "validation": "T08：申请→审核→本人查看，跨用户和重复审核被拒绝；标明是否实际实现。",
+      "requirements": "项目增强",
+      "kind": "task",
+      "issueNumber": 21,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/21"
+    },
+    {
+      "code": "E02",
+      "title": "可裁剪的FAQ后台与受控图片上传",
+      "owner": "22099yang",
+      "phase": "M2",
+      "area": "support",
+      "priority": "P1",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "B01",
+        "B02",
+        "B03",
+        "B05",
+        "B06",
+        "C06"
+      ],
+      "paths": [
+        "backend/src/modules/support/",
+        "backend/src/modules/media/",
+        "frontend/src/views/support/",
+        "frontend/src/services/support.js"
+      ],
+      "acceptance": [
+        "FAQ分类/条目后台维护并反映前台",
+        "图片上传鉴权/类型与文件头/5MiB/随机路径/重编码",
+        "只开放公开图片，不开放经销商资质上传",
+        "两天模式延期；未做上传时使用媒体选择并隐藏无效按钮"
+      ],
+      "validation": "T11：合法图片、伪扩展名、超限、路径穿越与未授权上传负例；FAQ更新可见。",
+      "requirements": "项目增强",
+      "kind": "task",
+      "issueNumber": 22,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/22"
+    },
+    {
+      "code": "Q01",
+      "title": "最终全站UI设计统一与移动端验收",
+      "owner": "lizhikeer",
+      "phase": "M3",
+      "area": "ui",
+      "priority": "P0",
+      "estimatedHours": 5,
+      "dependsOn": [
+        "B07",
+        "C02",
+        "C04",
+        "C05",
+        "C06",
+        "C07"
+      ],
+      "paths": [
+        "frontend/src/styles/",
+        "frontend/src/components/",
+        "frontend/src/views/",
+        "docs/delivery/ui-acceptance.md"
+      ],
+      "acceptance": [
+        "由lizhikeer统一最终UI，重点首页/产品列表详情/表单/后台布局",
+        "产品图片与信息优先，统一间距/字体/状态/按钮层级",
+        "360/390/768/1024/1440无意外横向滚动，键盘焦点清楚",
+        "各领域业务缺陷交原负责人修复，不重写业务契约"
+      ],
+      "validation": "T09桌面/手机截图，键盘/Esc/焦点返回，npm run build；保留现有弹窗遮挡修复。",
+      "requirements": "R06",
+      "kind": "task",
+      "issueNumber": 23,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/23"
+    },
+    {
+      "code": "Q02",
+      "title": "优化关键图片和路由包体并记录性能",
+      "owner": "lizhikeer",
+      "phase": "M3",
+      "area": "ui",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "B02",
+        "C02",
+        "C04"
+      ],
+      "paths": [
+        "frontend/src/router/index.js",
+        "frontend/src/main.js",
+        "frontend/public/images/",
+        "docs/delivery/performance.md",
+        "frontend/Dockerfile"
+      ],
+      "acceptance": [
+        "针对实际使用图片生成压缩副本并保留原图",
+        "路由懒加载，按需图标/组件改动只有测量收益才做",
+        "记录同条件构建包大小与首页/列表/详情测量",
+        "不能用提高chunk告警阈值当优化，不能伪造100并发达标",
+        "最终性能验证使用Linux生产镜像和真实Nginx访问；本地Vite构建结果单独列示"
+      ],
+      "validation": "npm run build；记录优化前1.31MB主JS/237MiB素材基线与实际变化；配合Q03性能验证。",
+      "requirements": "R06 R07",
+      "kind": "task",
+      "issueNumber": 24,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/24",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "Q03",
+      "title": "运行课程回归性能与恢复验收",
+      "owner": "GLOCKDDD",
+      "phase": "M3",
+      "area": "quality",
+      "priority": "P0",
+      "estimatedHours": 3,
+      "dependsOn": [
+        "C08",
+        "C09",
+        "Q01",
+        "Q02"
+      ],
+      "paths": [
+        "tests/e2e/",
+        "docs/delivery/test-report.md",
+        "docs/delivery/performance.md",
+        "docs/delivery/backup-restore.md"
+      ],
+      "acceptance": [
+        "汇总T01–T11，P1未做标不适用而非通过",
+        "运行100虚拟用户关键接口检查，记录数据量/机器/commit",
+        "核对浏览器兼容实测，Safari/iOS未测如实写明",
+        "复验备份恢复与阻塞缺陷，全部成员提供领域结果",
+        "在Linux Compose部署上执行核心/性能/容器重建/端口检查；记录版本、架构与健康状态，不能用本地build替代"
+      ],
+      "validation": "按quality-release约定记录3分钟压测P95/错误率、浏览器截图和迁移恢复命令，失败保留。",
+      "requirements": "R07",
+      "kind": "task",
+      "issueNumber": 25,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/25",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "Q04",
+      "title": "Docker Compose部署到Linux及备份回滚",
+      "owner": "chenyi-c",
+      "phase": "M3",
+      "area": "operation",
+      "priority": "P0",
+      "estimatedHours": 4,
+      "dependsOn": [
+        "B01",
+        "B03",
+        "C07"
+      ],
+      "paths": [
+        "docs/delivery/deployment.md",
+        "docs/delivery/operator-guide.md",
+        "infra/",
+        "compose.yaml",
+        "compose.prod.yaml",
+        "frontend/Dockerfile",
+        "frontend/.dockerignore",
+        "infra/nginx/default.conf",
+        ".env.example",
+        "docs/delivery/backup-restore.md"
+      ],
+      "acceptance": [
+        "新成员按说明在Linux使用Docker Compose启动web/api/db；开发收件箱仅通过回环/隧道访问",
+        "环境示例不含真实秘密，迁移顺序和seed明确",
+        "API404不走SPA回退；演示前备份并在新库恢复",
+        "课堂运行无需外部付费服务；列实际限制",
+        "使用Docker Engine与Compose插件在Linux服务器运行web/api/db与一次性migrate；只有web映射对外端口",
+        "持久卷、秘密文件、healthcheck、重启策略、日志轮转、HTTPS/Cookie与迁移前置条件完整",
+        "另一成员按部署说明完成Linux首次启动、兼容升级、备份恢复及镜像回滚；保留上一发布版本"
+      ],
+      "validation": "另一名成员在目标Linux复现docker compose config --quiet、镜像构建、db就绪→migrate→api/web健康、HTTPS/API路由、重建不丢数据、备份恢复与镜像回滚；记录真实命令/版本/结果。容器文件当前尚未实现。",
+      "requirements": "R07",
+      "kind": "task",
+      "issueNumber": 26,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/26",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
+    },
+    {
+      "code": "Q05",
+      "title": "汇总课程八项材料和实际贡献",
+      "owner": "chenyi-c",
+      "phase": "M3",
+      "area": "operation",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "C08",
+        "C09",
+        "Q04",
+        "Q06"
+      ],
+      "paths": [
+        "docs/delivery/",
+        "docs/delivery/workload.csv"
+      ],
+      "acceptance": [
+        "检查7份个人Web技术报告及组内计划/讨论/需求/测试/PPT/代码/贡献表",
+        "贡献占比基于真实PR/投入经七人核对，合计100%",
+        "班次组号实名与压缩包命名核对，原PDF示例不直接套用",
+        "不代发邮件；标注最终commit、已知限制和Mock边界"
+      ],
+      "validation": "逐项按quality-release材料表核对；最终提交前由七人复查实际证据。",
+      "requirements": "R07",
+      "kind": "task",
+      "issueNumber": 27,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/27"
+    },
+    {
+      "code": "Q06",
+      "title": "整理答辩故事线并组织七人演练",
+      "owner": "serein7758521",
+      "phase": "M3",
+      "area": "content",
+      "priority": "P0",
+      "estimatedHours": 2,
+      "dependsOn": [
+        "C02",
+        "C04",
+        "C05",
+        "C06",
+        "C07"
+      ],
+      "paths": [
+        "docs/delivery/defense-outline.md",
+        "docs/delivery/"
+      ],
+      "acceptance": [
+        "按真实内容→产品→账户→后台→持久化/权限组织演示",
+        "lizhikeer提供最终UI截图，各成员说明实际模块与测试",
+        "每人自行完成Web技术报告，不伪造作者/原创贡献",
+        "记录两次演练实际问题，PPT不写尚未完成的长期能力"
+      ],
+      "validation": "全员实际跑一次流程并计时；最终UI完成后替换截图，核对需求/报告/代码一致。",
+      "requirements": "R07",
+      "kind": "task",
+      "issueNumber": 28,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/28"
+    },
+    {
+      "code": "L01",
+      "title": "完整经销商企业体系与授权资料",
+      "owner": "GLOCKDDD",
+      "phase": "M4",
+      "area": "dealer",
+      "priority": "P2",
+      "estimatedHours": null,
+      "dependsOn": [
+        "E01",
+        "B05"
+      ],
+      "paths": [
+        "backend/src/modules/dealer/",
+        "backend/src/modules/identity/",
+        "backend/src/modules/media/",
+        "frontend/src/views/dealer/"
+      ],
+      "acceptance": [
+        "启动时重新估算并拆成2–4小时子任务；E01若裁剪则先补最小闭环",
+        "申请补件/邮箱激活/审核历史、企业成员与门店发布",
+        "跨企业数据隔离、企业停用、私有资料短时下载",
+        "与cy0207kaw/22099yang协作，先通过越权测试再开放"
+      ],
+      "validation": "正反向企业作用域测试、授权文件链接过期、停用即时失效；不属于三天课程门槛。",
+      "requirements": "重构§2 §4.7–4.9 §6 §8.1",
+      "kind": "epic",
+      "issueNumber": 29,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/29"
+    },
+    {
+      "code": "L02",
+      "title": "公开官网Nuxt与长期设计体系",
+      "owner": "lizhikeer",
+      "phase": "M4",
+      "area": "ui",
+      "priority": "P2",
+      "estimatedHours": null,
+      "dependsOn": [
+        "Q01",
+        "Q02"
+      ],
+      "paths": [
+        "frontend/",
+        "docs/decisions/",
+        "docs/delivery/"
+      ],
+      "acceptance": [
+        "先首页/单产品/单新闻SSR试点，再渐进迁移",
+        "公开HTML/404/旧URL301/缓存发布失效正确",
+        "私有身份和价格不进入公共缓存，后台Vue逻辑保留",
+        "英文正式文案与设计组件由serein7758521协作，不做盲目全重写"
+      ],
+      "validation": "查看初始HTML、匿名/登录缓存隔离、移动性能和路由回归，阶段启动重新估算。",
+      "requirements": "重构§3 §12 §13 §22",
+      "kind": "epic",
+      "issueNumber": 30,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/30"
+    },
+    {
+      "code": "L03",
+      "title": "内容媒体SEO与商业上线治理",
+      "owner": "serein7758521",
+      "phase": "M4",
+      "area": "content",
+      "priority": "P2",
+      "estimatedHours": null,
+      "dependsOn": [
+        "C01",
+        "B06",
+        "Q04"
+      ],
+      "paths": [
+        "backend/src/modules/content/",
+        "backend/src/modules/media/",
+        "backend/src/modules/identity/",
+        "infra/",
+        "docs/delivery/"
+      ],
+      "acceptance": [
+        "内容版本/定时发布/白名单首页模块/SEO与资源授权台账",
+        "媒体响应式副本/扫描/私有存储，由22099yang协作",
+        "cy0207kaw落实后台MFA，chenyi-c落实监控备份和真实邮件",
+        "英文站、SEO与SSR合并验收后再称为商业上线准备就绪"
+      ],
+      "validation": "发布失效、版本恢复、私有访问、MFA、真实邮件与恢复演练；按需求拆子任务。",
+      "requirements": "重构§7 §10–13 §16–20",
+      "kind": "epic",
+      "issueNumber": 31,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/31"
+    },
+    {
+      "code": "L04",
+      "title": "产品SKU价格与国际市场模型",
+      "owner": "Snowed-night",
+      "phase": "M5",
+      "area": "product",
+      "priority": "P2",
+      "estimatedHours": null,
+      "dependsOn": [
+        "C03",
+        "L01"
+      ],
+      "paths": [
+        "backend/src/modules/catalog/",
+        "backend/src/modules/pricing/",
+        "backend/migrations/",
+        "frontend/src/views/product/"
+      ],
+      "acceptance": [
+        "旧SKU兼容迁移到variant、规范属性/变体媒体",
+        "市场/币种/翻译及price list，价格优先级与有效期明确",
+        "角色和企业授权价格在服务端裁决，公开DTO不泄漏",
+        "不在完成前向订单承诺真实价格"
+      ],
+      "validation": "迁移对账、阶梯边界/有效期/多币种与越权用例；阶段启动重新估算。",
+      "requirements": "重构§9 §12 §14",
+      "kind": "epic",
+      "issueNumber": 32,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/32"
+    },
+    {
+      "code": "L05",
+      "title": "报价B2B订单与运营增长闭环",
+      "owner": "chenyi-c",
+      "phase": "M5",
+      "area": "operation",
+      "priority": "P2",
+      "estimatedHours": null,
+      "dependsOn": [
+        "L01",
+        "L04"
+      ],
+      "paths": [
+        "backend/src/modules/quote/",
+        "backend/src/modules/order/",
+        "backend/src/modules/operation/",
+        "backend/migrations/"
+      ],
+      "acceptance": [
+        "GLOCKDDD实现报价版本/有效期/接受，chenyi-c协调订单运营",
+        "订单服务端重算并固化价税/商品/地址快照",
+        "下单幂等、企业作用域、审计与业务指标定义",
+        "通知先可靠落库，达到需要再引入outbox/worker"
+      ],
+      "validation": "报价过期/重复转换、订单幂等/归属/金额快照与重试用例。",
+      "requirements": "重构§6–9 §18–19",
+      "kind": "epic",
+      "issueNumber": 33,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/33"
+    },
+    {
+      "code": "L06",
+      "title": "库存支付履约售后及外部集成",
+      "owner": "cy0207kaw",
+      "phase": "M5",
+      "area": "account",
+      "priority": "P2",
+      "estimatedHours": null,
+      "dependsOn": [
+        "L05"
+      ],
+      "paths": [
+        "backend/src/modules/inventory/",
+        "backend/src/modules/payment/",
+        "backend/src/modules/fulfillment/",
+        "backend/src/modules/support/"
+      ],
+      "acceptance": [
+        "Snowed-night协作库存预占，22099yang协作售后，服务商按实际业务选定",
+        "库存并发与超时释放，支付验签/事件幂等/金额校验",
+        "部分发货/退款/退货及ERP物流税费适配，分阶段feature flag",
+        "先服务商沙箱测试，生产开放须有独立上线决定"
+      ],
+      "validation": "并发不超卖、重复/乱序Webhook、退款额度、失败重试与恢复；无真实授权前不调用生产支付。",
+      "requirements": "重构§8–9 §15–17 §21",
+      "kind": "epic",
+      "issueNumber": 34,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/34"
+    }
+  ],
+  "milestones": {
+    "M0": {
+      "number": 1,
+      "title": "M0 首日上午开发基线",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/1"
+    },
+    "M1": {
+      "number": 2,
+      "title": "M1 一至两天课程核心",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/2"
+    },
+    "M2": {
+      "number": 3,
+      "title": "M2 可裁剪经销商与支持增强",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/3"
+    },
+    "M3": {
+      "number": 4,
+      "title": "M3 两至三天UI与课程交付",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/4"
+    },
+    "M4": {
+      "number": 5,
+      "title": "M4 课程后产品完善",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/5"
+    },
+    "M5": {
+      "number": 6,
+      "title": "M5 长期交易与运营",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/6"
+    }
+  },
+  "deploymentTarget": "Linux server / Docker Engine / Docker Compose",
+  "remoteSyncStatus": "pending: current GitHub account returns suspended / HTTP 403"
+}

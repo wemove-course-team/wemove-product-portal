@@ -1,0 +1,25 @@
+name: 开发任务
+description: 使用可验收的小任务推进课程与长期计划
+title: "[领域] 简述交付结果"
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: 目标与范围
+      description: 对应R编号或长期Epic；说明包含的页面、API和数据变化。
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 负责人 依赖 估算
+      description: 填写GitHub账号、前置Issue及预计小时；明确是否属于2天模式的可裁剪项。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收与证据
+      description: 用复现步骤描述正常、失败和权限场景，列修改路径与验证命令。
+    validations:
+      required: true
