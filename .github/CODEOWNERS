@@ -1,1 +1,31 @@
-* @chenyi-c`r`n
+# Defaults provide review routing; branch protection still requires a non-author approval.
+* @chenyi-c @lizhikeer
+/.github/ @chenyi-c
+/docs/planning/ @chenyi-c @lizhikeer
+/frontend/src/styles/ @lizhikeer
+/frontend/src/components/ @lizhikeer
+/frontend/src/router/ @lizhikeer
+/frontend/src/services/ @lizhikeer
+/frontend/src/views/content/ @serein7758521
+/frontend/src/views/product/ @Snowed-night
+/frontend/src/views/support/ @22099yang
+/frontend/src/views/dealer/ @GLOCKDDD
+/frontend/src/views/account/ @cy0207kaw
+/frontend/src/views/operation/ @chenyi-c
+/frontend/src/views/HomeView.vue @serein7758521 @lizhikeer
+/frontend/src/views/WorkshopView.vue @Snowed-night
+/frontend/src/views/ProductDetail.vue @Snowed-night
+/frontend/src/views/ContentPage.vue @serein7758521
+/frontend/src/views/DealerApply.vue @GLOCKDDD
+/frontend/src/views/DealerPortal.vue @GLOCKDDD
+/backend/ @cy0207kaw
+/backend/sql/ @Snowed-night @cy0207kaw
+/backend/migrations/ @Snowed-night @cy0207kaw
+/backend/src/modules/catalog/ @Snowed-night
+/backend/src/modules/content/ @serein7758521
+/backend/src/modules/support/ @22099yang
+/backend/src/modules/media/ @22099yang
+/backend/src/modules/dealer/ @GLOCKDDD
+/backend/src/modules/operation/ @chenyi-c
+/contracts/ @cy0207kaw @lizhikeer
+/tests/e2e/ @GLOCKDDD

@@ -1,0 +1,19 @@
+name: 缺陷
+description: 可复现的功能或质量问题
+title: "[Bug] 简述现象"
+labels: [bug]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: commit、环境、角色、页面/接口及实际结果；不要附密钥和个人信息。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果及影响
+      description: 哪个验收用例失败，是否阻碍演示，附脱敏截图/日志。
+    validations:
+      required: true
