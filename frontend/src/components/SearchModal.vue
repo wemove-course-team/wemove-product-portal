@@ -4,6 +4,7 @@
     title="全站搜索"
     width="560px"
     align-center
+    append-to-body
     :show-close="true"
     class="search-dialog"
     destroy-on-close

@@ -191,7 +191,7 @@
     </section>
 
     <!-- Appointment Dialog for Furniture -->
-    <el-dialog v-model="appointmentDialog" title="预约实木家具全屋定制" width="480px">
+    <el-dialog v-model="appointmentDialog" title="预约实木家具全屋定制" width="480px" append-to-body>
       <el-form label-position="top">
         <el-form-item label="您的姓名">
           <el-input v-model="appointment.name" placeholder="请输入姓名" />
