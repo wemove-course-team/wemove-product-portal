@@ -50,6 +50,7 @@ CREATE TABLE `dealer_company` (
 DROP TABLE IF EXISTS `dealer_application`;
 CREATE TABLE `dealer_application` (
   `id` VARCHAR(32) NOT NULL COMMENT '申请单号 (APP-2026-XXXX)',
+  `user_id` BIGINT DEFAULT NULL COMMENT '提交申请的登录用户ID',
   `company_name` VARCHAR(128) NOT NULL,
   `tax_id` VARCHAR(64) NOT NULL,
   `business_type` VARCHAR(64) NOT NULL,

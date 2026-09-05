@@ -132,7 +132,9 @@ export const useUserStore = defineStore('user', () => {
     if (isPreviewActive.value) return previewRole.value
     if (sessionUser.value) {
       const r = sessionUser.value.role
-      return r === 'ADMIN' || r === 'SUPER_ADMIN' ? 'ADMIN' : 'USER'
+      if (r === 'ADMIN' || r === 'SUPER_ADMIN') return 'ADMIN'
+      if (r === 'DEALER') return 'DEALER'
+      return 'USER'
     }
     return 'GUEST'
   })

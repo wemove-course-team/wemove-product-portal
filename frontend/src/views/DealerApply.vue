@@ -105,17 +105,14 @@
 
         <div class="quick-demo-box">
           <div class="demo-tip">
-            💡 <strong>系统演示提示</strong>：您刚才提交的申请已实时同步至后台。管理员可在
-            <router-link to="/admin" class="admin-link">【管理后台 - 经销商审核】</router-link>
-            中进行一键审核通过；审核通过后即可在此直接体验
-            <router-link to="/dealer/portal" class="portal-link">【经销商专属快速下单工作台】</router-link>！
+            申请已实时保存至系统。您可以在账户中心查看审核状态；审核通过后将获得经销商门户访问权限。
           </div>
         </div>
 
         <div class="action-row">
           <el-button size="large" @click="resetForm">再填一份申请</el-button>
-          <el-button type="primary" size="large" @click="$router.push('/dealer/portal')">
-            进入经销商工作台演示
+          <el-button type="primary" size="large" @click="$router.push('/account')">
+            查看申请状态
           </el-button>
         </div>
       </div>
@@ -124,25 +121,21 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useDealerStore } from '../stores/dealer'
+import { useUserStore } from '../stores/user'
 
 const dealerStore = useDealerStore()
+const userStore = useUserStore()
 const formRef = ref(null)
 const submitting = ref(false)
 const submittedApp = ref(null)
 
+onMounted(() => userStore.ensureSession())
+
 const form = ref({
-  companyName: '杭州智拓玩具有限公司',
-  taxId: '91330106MA2KJ8899X',
-  businessType: '母婴及连锁玩具专卖店',
-  region: '华东大区（浙江省全境）',
-  contactName: '王经理',
-  phone: '13766554433',
-  email: 'wang@zhitoy.com',
-  annualTarget: '50-100万',
-  salesChannels: '在杭州、宁波拥有5家直营早教木玩体验店，并为当地12所私立幼儿园供应教具。'
+  companyName: '', taxId: '', businessType: '', region: '', contactName: '', phone: '', email: '', annualTarget: '', salesChannels: ''
 })
 
 const rules = {
@@ -155,17 +148,22 @@ const rules = {
   email: [{ required: true, message: '请输入企业邮箱', trigger: 'blur' }]
 }
 
-function handleSubmit() {
-  formRef.value.validate((valid) => {
-    if (valid) {
-      submitting.value = true
-      setTimeout(() => {
-        submitting.value = false
-        submittedApp.value = dealerStore.submitApplication(form.value)
-        ElMessage.success('经销商申请提交成功！')
-      }, 600)
-    }
-  })
+async function handleSubmit() {
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+  if (!userStore.isAuthenticated) {
+    ElMessage.warning('请先登录后提交经销商申请')
+    return
+  }
+  submitting.value = true
+  try {
+    submittedApp.value = await dealerStore.submitApplication(form.value)
+    ElMessage.success('经销商申请提交成功！')
+  } catch (error) {
+    ElMessage.error(error?.message || '提交失败，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
 }
 
 function resetForm() {

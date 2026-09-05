@@ -189,7 +189,7 @@ const routes = [
       {
         path: 'dealers',
         name: 'AdminDealers',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
+        component: () => import('../views/admin/AdminDealers.vue'),
         meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '经销商申请与审核', ownerTask: '#90 MVP-06' }
       },
       {
