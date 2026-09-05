@@ -13,9 +13,9 @@ export class DealerApplication {
   @Column({ name: 'annual_target', length: 64 }) annualTarget!: string
   @Column({ name: 'sales_channels', type: 'text', nullable: true }) salesChannels!: string | null
   @Column({ length: 32, default: 'PENDING' }) status!: 'PENDING' | 'APPROVED' | 'REJECTED'
-  @Column({ name: 'tier_name', length: 64, nullable: true }) tierName!: string | null
+  @Column({ name: 'tier_name', type: 'varchar', length: 64, nullable: true }) tierName!: string | null
   @Column({ name: 'discount_rate', type: 'decimal', precision: 4, scale: 2, nullable: true }) discountRate!: number | null
-  @Column({ name: 'audit_note', length: 255, nullable: true }) auditNote!: string | null
+  @Column({ name: 'audit_note', type: 'varchar', length: 255, nullable: true }) auditNote!: string | null
   @Column({ name: 'audited_at', type: 'datetime', nullable: true }) auditedAt!: Date | null
   @Column({ name: 'created_at', type: 'datetime', default: () => 'CURRENT_TIMESTAMP' }) createdAt!: Date
 }
