@@ -10,3 +10,4 @@
 8. 当前可运行验证是 `cd frontend; npm ci; npm run build`。新增脚本后按实际命令验证；不得把未运行的测试、Mock 或计划中的门禁写成已通过。
 9. 不提交密钥、个人数据、node_modules、dist、数据库数据目录及未经核对的商业宣传。原始课程材料留在本地。
 10. 七人分工、任务依赖和交付证据以 `docs/planning/team-roadmap.md`、`issue-index.md` 为入口；不要凭代码行数编造实际工作量。
+11. 课程交付必须使用Docker Compose部署到Linux。遵循 `docs/planning/deployment.md`；镜像不含秘密和Windows依赖，数据使用持久卷。最终验收包含Linux镜像/Compose及服务器实测，本地npm构建不能替代。

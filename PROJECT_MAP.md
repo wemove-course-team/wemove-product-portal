@@ -31,5 +31,8 @@ docs/decisions/          架构决策记录
 | `backend/test/`、`frontend/tests/`、`tests/e2e/` | 模块、契约和真实流程测试 | 各领域与轮值测试成员 |
 | `contracts/openapi.yaml` | 从后端导出的机器契约，课程先用 API 基线表 | cy0207kaw，lizhikeer 对接消费方 |
 | `infra/`、`docs/delivery/` | 部署、运行手册和课程交付证据 | chenyi-c 协调、全员提交 |
+| `compose.yaml`、`compose.prod.yaml`、`infra/nginx/default.conf` | Linux正式部署、网络、卷、健康检查和同源代理 | chenyi-c |
+| `frontend/Dockerfile`、`frontend/.dockerignore` | Linux多阶段构建与Nginx静态镜像 | chenyi-c，lizhikeer确认 |
+| `backend/Dockerfile`、`backend/.dockerignore` | 后端及一次性迁移镜像 | cy0207kaw |
 
 不创建空占位目录，不新建平行的第二套前端工程。Nuxt 演进先做单页验证，再沿当前 `frontend/` 演进；只有独立部署收益明确时才另立管理端应用并记录 ADR。

@@ -26,9 +26,9 @@ flowchart LR
     api --> files["受控文件目录 / 本地SMTP"]
 ```
 
-开发模式 Vue 默认3000，API建议3001，使用Vite代理；交付环境由Nginx把 `/api/` 转发给后端，并提供前端静态文件。只有没有 `/api/` 前缀的页面请求才走SPA fallback，禁止把API的404包装成index.html。上传目录独立于代码目录，数据库不直接暴露公网。
+开发模式 Vue 默认3000，API建议3001，使用Vite代理；正式课程交付统一部署到Linux服务器，以Docker Compose管理web（Nginx/Vue）、api（NestJS）、db（MySQL）和一次性migrate。Nginx把 `/api/` 转发给后端，只有页面请求走SPA fallback；API404原样返回。上传和数据库使用持久卷，db/api不映射公网端口。
 
-课程只需一台开发/演示机器、一个API进程和一份演示数据库。本轮不启动这些未来服务，不要求Redis、消息队列、Kubernetes或云资源。
+课程采用单台Linux服务器，开发阶段可本地启动或使用开发Compose覆盖；最终验收必须在Linux容器中完成。Dockerfile、Compose、TLS、健康检查、备份与更新标准见 [部署基线](deployment.md)。服务器访问方式尚未提供，本轮只更新规划，不声称已部署；不增加Redis、消息队列或Kubernetes。
 
 ## 前端责任边界
 

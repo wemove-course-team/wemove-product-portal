@@ -19,11 +19,16 @@
 | [API 基线](docs/planning/api-contract.md) | 路由、鉴权、错误、状态机及模块接口 |
 | [七人分工与路线图](docs/planning/team-roadmap.md) | 负责人、协作方式、估算和里程碑 |
 | [质量与交付](docs/planning/quality-release.md) | 验收、测试、发布、课程材料 |
+| [Docker与Linux部署](docs/planning/deployment.md) | Compose容器、环境、持久卷、迁移、备份及更新 |
 | [任务索引](docs/planning/issue-index.md) | 已建立的 GitHub Issues、依赖及负责人 |
 | [贡献规范](CONTRIBUTING.md) | 分支、PR、评审与变更管理 |
 | [目录地图](PROJECT_MAP.md) | 已存在目录和未来按需创建的目录 |
 
-## 本地运行当前前端
+## 部署目标与开发运行
+
+正式课程交付采用 **Linux服务器 + Docker Engine + Docker Compose**，web（Nginx/Vue）、api（NestJS）、db（MySQL）分容器，迁移一次性执行。容器配置由B01/B03/Q04任务实现；目前尚未生成Dockerfile/Compose，也未部署服务器。
+
+下面的npm命令仅用于开发现有前端，不能替代最终Linux容器验收。
 
 准备 Node.js 24 LTS 与 npm 11；本地基线验证使用 Node 24.11.1 / npm 11.6.2。依赖版本以已有锁文件为准，不在环境准备时批量升级。
 

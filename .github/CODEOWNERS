@@ -29,3 +29,7 @@
 /backend/src/modules/operation/ @chenyi-c
 /contracts/ @cy0207kaw @lizhikeer
 /tests/e2e/ @GLOCKDDD
+/compose*.yaml @chenyi-c
+/infra/ @chenyi-c
+/frontend/Dockerfile @chenyi-c @lizhikeer
+/backend/Dockerfile @cy0207kaw

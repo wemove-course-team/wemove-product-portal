@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "date": "2026-09-05",
   "courseDuration": "2–3 days",
   "estimateMeaning": "计划有效工时，不是实际贡献；另每人预留2小时共同工作；远景启动时重新估算",
@@ -16,19 +16,22 @@
       "paths": [
         "docs/planning/scope-baseline.md",
         "docs/planning/api-contract.md",
-        "docs/delivery/schedule.md"
+        "docs/delivery/schedule.md",
+        "docs/planning/deployment.md"
       ],
       "acceptance": [
         "记录实际T0、截止时刻、班次组号与七人实名映射",
         "确认R01–R07、中文课程内容及偏题导航处理",
         "确认NestJS推荐和字段契约；仅2天时取消P1",
-        "记录真实决定，不伪造讨论记录"
+        "记录真实决定，不伪造讨论记录",
+        "确认Linux服务器地址/发行版/架构、SSH访问方式、域名与可用端口；密钥不写Issue"
       ],
       "validation": "七人逐项核对范围与接口表，在本Issue留下确认；文档链接可打开。",
       "requirements": "R01–R07",
       "kind": "task",
       "issueNumber": 4,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/4"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/4",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "B01",
@@ -47,19 +50,23 @@
         "backend/src/main.ts",
         "backend/src/app.module.ts",
         "backend/src/common/",
-        "backend/.env.example"
+        "backend/.env.example",
+        "backend/Dockerfile",
+        "backend/.dockerignore"
       ],
       "acceptance": [
         "一个应用启动并连接MySQL；GET /api/v1/health可用",
         "统一DTO校验、错误、requestId和同源开发代理约定",
         "锁定依赖、关闭synchronize、列实际启动/构建命令",
-        "提供领域模块接入示例；不搭Redis/微服务"
+        "提供领域模块接入示例；不搭Redis/微服务",
+        "提供Linux后端多阶段镜像及同版本迁移入口，非root运行；GET /ready验证数据库就绪，错误503不含秘密"
       ],
       "validation": "运行新建backend构建和health烟测；无效请求400，错误不含数据库凭证；注明实际命令。",
       "requirements": "R03 R07",
       "kind": "task",
       "issueNumber": 5,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/5"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/5",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "B02",
@@ -104,19 +111,23 @@
       "paths": [
         "backend/migrations/",
         "backend/sql/README.md",
-        "docs/planning/database.md"
+        "docs/planning/database.md",
+        "compose.yaml",
+        "docs/delivery/backup-restore.md"
       ],
       "acceptance": [
         "为新空库建立身份/产品基础结构；领域表由各负责人补迁移",
         "唯一键、关联索引、时间和ID约定一致",
         "旧DROP脚本保留但不在共享库执行；seed独立且无生产默认密码",
-        "迁移入口重复执行不会重复应用，写备份/向前修复说明"
+        "迁移入口重复执行不会重复应用，写备份/向前修复说明",
+        "MySQL使用持久卷，迁移由同版本migrate容器执行；独立库/卷实测恢复，不把旧DROP脚本挂进自动初始化目录"
       ],
       "validation": "在可丢弃MySQL库执行全迁移和第二次迁移；检查唯一/FK拒绝非法数据，记录表与行数。",
       "requirements": "R02 R07",
       "kind": "task",
       "issueNumber": 7,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/7"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/7",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "B04",
@@ -132,19 +143,23 @@
       "paths": [
         ".github/workflows/frontend-build.yml",
         ".github/CODEOWNERS",
-        "CONTRIBUTING.md"
+        "CONTRIBUTING.md",
+        "compose.yaml",
+        "compose.prod.yaml"
       ],
       "acceptance": [
         "验证规划PR已有build和CODEOWNERS有效",
         "与开放PR #1协调，只保留一个贡献规范入口，不覆盖历史",
         "main成功运行后再启用真实必需检查；保持非作者审批",
-        "后端出现后再加真实后端构建/检查，不添加空绿灯"
+        "后端出现后再加真实后端构建/检查，不添加空绿灯",
+        "Dockerfile/Compose实现后在Linux CI增加镜像构建与Compose解析；尚无文件时不添加占位绿灯"
       ],
       "validation": "检查Actions实际结果和分支保护API；如权限/计费阻碍则记录，不能声称已启用。",
       "requirements": "R07",
       "kind": "task",
       "issueNumber": 8,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/8"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/8",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "B05",
@@ -167,13 +182,15 @@
         "用户名/邮箱注册登录、密码哈希、退出和会话轮换",
         "CSRF、限流、统一找回响应；单次30分钟token验证并撤销旧会话",
         "USER/ADMIN/SUPER_ADMIN守卫与即时停用；禁止最后超管停用",
-        "本地SMTP收到找回链接并走通；实际外部投递未测需标明"
+        "本地SMTP收到找回链接并走通；实际外部投递未测需标明",
+        "Linux Nginx代理下验证Secure Cookie、转发协议/受控代理与CSRF；开发收件箱不开放公网"
       ],
       "validation": "T03/T04/T05：正确/错误密码、重复账户、过期/重复token、越权、停用与CSRF负例；先提交会话PR，再提交找回PR。",
       "requirements": "R03",
       "kind": "task",
       "issueNumber": 9,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/9"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/9",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "B06",
@@ -193,19 +210,22 @@
         "docs/delivery/asset-register.csv",
         "backend/src/modules/media/",
         "backend/migrations/",
-        "frontend/public/images/"
+        "frontend/public/images/",
+        "docs/planning/deployment.md"
       ],
       "acceptance": [
         "只核对课程实际使用素材，登记路径/来源/授权状态/用途",
         "提供已导入媒体白名单及后台选择目录，不删除原图",
         "不把未核实价格、材质或证书写为品牌事实",
-        "失效下载入口修复或明确关闭，私有资质不置于public"
+        "失效下载入口修复或明确关闭，私有资质不置于public",
+        "上传目录使用API持久卷，容器重建后文件可用，不直接公开卷根目录"
       ],
       "validation": "逐个检查必需资源可访问，统计原大小；GET admin/media受鉴权；原文件保留。",
       "requirements": "R02 R04 R06",
       "kind": "task",
       "issueNumber": 10,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/10"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/10",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "B07",
@@ -638,19 +658,22 @@
         "frontend/src/router/index.js",
         "frontend/src/main.js",
         "frontend/public/images/",
-        "docs/delivery/performance.md"
+        "docs/delivery/performance.md",
+        "frontend/Dockerfile"
       ],
       "acceptance": [
         "针对实际使用图片生成压缩副本并保留原图",
         "路由懒加载，按需图标/组件改动只有测量收益才做",
         "记录同条件构建包大小与首页/列表/详情测量",
-        "不能用提高chunk告警阈值当优化，不能伪造100并发达标"
+        "不能用提高chunk告警阈值当优化，不能伪造100并发达标",
+        "最终性能验证使用Linux生产镜像和真实Nginx访问；本地Vite构建结果单独列示"
       ],
       "validation": "npm run build；记录优化前1.31MB主JS/237MiB素材基线与实际变化；配合Q03性能验证。",
       "requirements": "R06 R07",
       "kind": "task",
       "issueNumber": 24,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/24"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/24",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "Q03",
@@ -669,28 +692,31 @@
       "paths": [
         "tests/e2e/",
         "docs/delivery/test-report.md",
-        "docs/delivery/performance.md"
+        "docs/delivery/performance.md",
+        "docs/delivery/backup-restore.md"
       ],
       "acceptance": [
         "汇总T01–T11，P1未做标不适用而非通过",
         "运行100虚拟用户关键接口检查，记录数据量/机器/commit",
         "核对浏览器兼容实测，Safari/iOS未测如实写明",
-        "复验备份恢复与阻塞缺陷，全部成员提供领域结果"
+        "复验备份恢复与阻塞缺陷，全部成员提供领域结果",
+        "在Linux Compose部署上执行核心/性能/容器重建/端口检查；记录版本、架构与健康状态，不能用本地build替代"
       ],
       "validation": "按quality-release约定记录3分钟压测P95/错误率、浏览器截图和迁移恢复命令，失败保留。",
       "requirements": "R07",
       "kind": "task",
       "issueNumber": 25,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/25"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/25",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "Q04",
-      "title": "提供部署运行备份及回滚说明",
+      "title": "Docker Compose部署到Linux及备份回滚",
       "owner": "chenyi-c",
       "phase": "M3",
       "area": "operation",
       "priority": "P0",
-      "estimatedHours": 2,
+      "estimatedHours": 4,
       "dependsOn": [
         "B01",
         "B03",
@@ -699,19 +725,30 @@
       "paths": [
         "docs/delivery/deployment.md",
         "docs/delivery/operator-guide.md",
-        "infra/"
+        "infra/",
+        "compose.yaml",
+        "compose.prod.yaml",
+        "frontend/Dockerfile",
+        "frontend/.dockerignore",
+        "infra/nginx/default.conf",
+        ".env.example",
+        "docs/delivery/backup-restore.md"
       ],
       "acceptance": [
-        "新成员按说明启动前端/API/MySQL及本地SMTP",
+        "新成员按说明在Linux使用Docker Compose启动web/api/db；开发收件箱仅通过回环/隧道访问",
         "环境示例不含真实秘密，迁移顺序和seed明确",
         "API404不走SPA回退；演示前备份并在新库恢复",
-        "课堂运行无需外部付费服务；列实际限制"
+        "课堂运行无需外部付费服务；列实际限制",
+        "使用Docker Engine与Compose插件在Linux服务器运行web/api/db与一次性migrate；只有web映射对外端口",
+        "持久卷、秘密文件、healthcheck、重启策略、日志轮转、HTTPS/Cookie与迁移前置条件完整",
+        "另一成员按部署说明完成Linux首次启动、兼容升级、备份恢复及镜像回滚；保留上一发布版本"
       ],
-      "validation": "另一名成员从干净目录复现启动/构建/恢复，记录命令与结果；本轮不自动部署真实站点。",
+      "validation": "另一名成员在目标Linux复现docker compose config --quiet、镜像构建、db就绪→migrate→api/web健康、HTTPS/API路由、重建不丢数据、备份恢复与镜像回滚；记录真实命令/版本/结果。容器文件当前尚未实现。",
       "requirements": "R07",
       "kind": "task",
       "issueNumber": 26,
-      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/26"
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/26",
+      "pendingRemoteUpdate": "Docker/Linux部署要求已本地更新；GitHub账号403，尚未同步Issue正文"
     },
     {
       "code": "Q05",
@@ -986,5 +1023,7 @@
       "title": "M5 长期交易与运营",
       "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/6"
     }
-  }
+  },
+  "deploymentTarget": "Linux server / Docker Engine / Docker Compose",
+  "remoteSyncStatus": "pending: current GitHub account returns suspended / HTTP 403"
 }

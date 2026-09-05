@@ -39,3 +39,9 @@ git push origin codex/project-planning-baseline
 ```
 
 可直接使用仓库外 `.planning-work/pr-body.md` 的完整描述创建PR。恢复时先查询该分支是否已有PR，避免重复；最终检查31个任务的负责人、里程碑、依赖与Actions实际结果。
+
+## Docker与Linux部署要求更新
+
+用户已指定Docker部署到Linux，新增部署基线与ADR0002，同步调整架构、分工、数据迁移和验收约定。Q04改为Linux Compose部署任务并由2小时调到4小时；其他相关任务补充容器交付要求，总任务仍为31项。
+
+本地backlog和索引已更新。GitHub账号只读复核仍返回相同403，本次任务变更尚未同步远端；待同步清单保存在仓库外 `.planning-work/docker-issue-updates.json`。没有新增Dockerfile/Compose、构建镜像或连接Linux服务器，部署状态仍为规划。

@@ -24,6 +24,7 @@
 | 方法与路径 | 输入/结果重点 | 权限 | 负责人 |
 | --- | --- | --- | --- |
 | GET `/health` | 服务是否存活；不泄漏配置 | 公开 | cy0207kaw |
+| GET `/ready` | API及必要数据库依赖就绪；失败503且不泄漏配置 | 公开，供容器健康检查 | cy0207kaw |
 | GET `/auth/csrf` | csrfToken | 公开/预登录会话 | cy0207kaw |
 | POST `/auth/register` | username,email,password；输出公开账户 | 公开+限流 | cy0207kaw |
 | POST `/auth/login` | identifier,password；会话Cookie | 公开+限流 | cy0207kaw |
