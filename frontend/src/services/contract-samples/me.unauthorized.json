@@ -1,0 +1,22 @@
+{
+  "scenario": "GET /api/v1/auth/me 未登录（HTTP 401）",
+  "note": "#85 统一契约 v1：401 表示未登录或会话已失效（退出/改密/停用后被撤销，SessionGuard 每请求查库校验 status）。前端收到 401 一律清除本地会话摘要并按游客处理，绝不读取本地角色。",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "headers": {
+      "Cookie": "（无 wemove_session Cookie 或会话已失效）"
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "X-Request-Id": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9J"
+    },
+    "body": {
+      "code": "AUTH_401",
+      "message": "请先登录",
+      "requestId": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9J"
+    }
+  }
+}

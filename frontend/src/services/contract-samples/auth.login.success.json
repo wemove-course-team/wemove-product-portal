@@ -1,0 +1,36 @@
+{
+  "scenario": "POST /api/v1/auth/login 成功（HTTP 200）",
+  "note": "#85 统一契约 v1：会话通过同源 HttpOnly Set-Cookie（wemove_session，SameSite=Lax）下发，响应体不包含任何令牌；成功信封 code=0。",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": "9f8e7d6c-5b4a-3210-fedc-ba9876543210",
+      "Origin": "http://localhost:3000"
+    },
+    "body": {
+      "identifier": "zhangming@example.com",
+      "password": "••••••••"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Set-Cookie": "wemove_session=<signed-jwt>; Path=/; HttpOnly; SameSite=Lax",
+      "X-Request-Id": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9G"
+    },
+    "body": {
+      "code": 0,
+      "message": "ok",
+      "data": {
+        "id": "101",
+        "username": "zhangming",
+        "email": "zhangming@example.com",
+        "role": "USER",
+        "companyId": null
+      },
+      "requestId": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9G"
+    }
+  }
+}
