@@ -7,12 +7,15 @@
 
       <nav class="footer-nav">
         <router-link to="/">品牌首页</router-link>
-        <router-link to="/workshop">益智玩具</router-link>
+        <router-link to="/products">益智玩具</router-link>
         <router-link to="/furniture">家具定制</router-link>
         <router-link to="/woodlab">中试打样</router-link>
         <router-link to="/stem">STEM课程</router-link>
         <router-link to="/dealers/apply">成为经销商</router-link>
         <router-link to="/electronic">电子说明书</router-link>
+        <router-link to="/support">联系我们</router-link>
+        <router-link to="/faq">常见问题</router-link>
+        <router-link to="/downloads">下载中心</router-link>
       </nav>
 
       <div class="footer-slogan">

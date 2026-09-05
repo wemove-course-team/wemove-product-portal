@@ -1,9 +1,12 @@
 :root {
+  /* 木色品牌色板（暖调单一品牌电压驱动 CTA，设计语言参考 awesome-design-md/airbnb） */
   --primary-color: #A89880;
-  --primary-hover: #93836C;
+  --primary-hover: #8E7E67;
   --primary-light: #F6F3EE;
   --primary-border: #D8CFC4;
   --secondary-color: #C4B8A8;
+  --accent-color: #B25E29;
+  --accent-hover: #994E20;
   --text-color: #3D3226;
   --text-muted: #776D61;
   --text-light: #A3998D;
@@ -11,12 +14,14 @@
   --bg-light: #FAF8F5;
   --border-color: #ECE7DF;
   --font-family: 'PingFang SC', 'Microsoft YaHei', 'Nunito', -apple-system, sans-serif;
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
-  --shadow-sm: 0 2px 8px rgba(61, 50, 38, 0.05);
-  --shadow-md: 0 6px 20px rgba(61, 50, 38, 0.08);
-  --shadow-lg: 0 12px 32px rgba(61, 50, 38, 0.12);
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(61, 50, 38, 0.05), 0 2px 8px rgba(61, 50, 38, 0.06);
+  --shadow-md: 0 2px 4px rgba(61, 50, 38, 0.05), 0 8px 24px rgba(61, 50, 38, 0.09);
+  --shadow-lg: 0 4px 8px rgba(61, 50, 38, 0.06), 0 16px 40px rgba(61, 50, 38, 0.13);
 
   /* Element Plus primary color override */
   --el-color-primary: #A89880;
@@ -33,6 +38,10 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-family);
   color: var(--text-color);
@@ -41,33 +50,63 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: var(--primary-light);
+  color: var(--primary-hover);
+}
+
+/* 标题排印：中等字重 + 紧字距（信任留白与图像，而非字重堆叠） */
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+}
+
 a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Base button overrides */
+:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Base button overrides —— 药丸造型 + uiverse 式微交互（渐变推移 / 悬停抬升 / 箭头位移） */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 22px;
-  background-color: var(--primary-color);
+  padding: 12px 26px;
+  background-image: linear-gradient(135deg, #B3A48D 0%, #A89880 45%, #8E7E67 100%);
+  background-size: 180% 180%;
+  background-position: 0% 50%;
   color: #ffffff !important;
   font-size: 15px;
-  font-weight: 500;
-  border-radius: 8px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px rgba(168, 152, 128, 0.35);
+  transition: background-position 0.45s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 14px rgba(142, 126, 103, 0.35);
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(168, 152, 128, 0.45);
+  background-position: 95% 50%;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(142, 126, 103, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary .el-icon {
+  transition: transform 0.25s ease;
+}
+
+.btn-primary:hover .el-icon {
+  transform: translateX(3px);
 }
 
 .btn-outline {
@@ -75,21 +114,27 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 22px;
+  padding: 12px 26px;
   background-color: #ffffff;
   color: var(--text-color) !important;
   font-size: 15px;
-  font-weight: 500;
-  border-radius: 8px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
   border: 1.5px solid var(--primary-border);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .btn-outline:hover {
   background-color: var(--primary-light);
   border-color: var(--primary-color);
   color: var(--primary-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-outline:active {
+  transform: translateY(0);
 }
 
 /* Badge tags */
@@ -112,4 +157,3 @@ a {
   padding: 2px 8px;
   border-radius: 4px;
 }
-

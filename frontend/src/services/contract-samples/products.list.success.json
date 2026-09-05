@@ -1,0 +1,39 @@
+{
+  "scenario": "GET /api/v1/products 列表成功（HTTP 200）",
+  "note": "#85 契约 v1 分页（决策 D3）：?page=1&pageSize=10&keyword= → data = { items, total, page, pageSize }，pageSize 默认 10、上限 50。items 为 #87 交接的 ProductListItem；公开 DTO 不返回 dealerPrice / moq 等经销商字段（详情接口按角色裁剪）。",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/products?page=1&pageSize=6&featured=1"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-Request-Id": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9L"
+    },
+    "body": {
+      "code": 0,
+      "message": "ok",
+      "data": {
+        "items": [
+          {
+            "id": "101",
+            "sku": "WM-BWL-001",
+            "name": "儿童实木保龄球套装 (Mini Bowling Set)",
+            "slug": "kids-bowling-set",
+            "categoryId": "1",
+            "categoryName": "益智玩具",
+            "price": 199,
+            "tag": "热销",
+            "coverImage": "/images/prod_20_1.jpg",
+            "summary": "WEMOVE SPORTS 经典运动玩具，锻炼儿童手眼协调与身体协调能力。",
+            "isFeatured": 1
+          }
+        ],
+        "total": 1,
+        "page": 1,
+        "pageSize": 6
+      },
+      "requestId": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9L"
+    }
+  }
+}

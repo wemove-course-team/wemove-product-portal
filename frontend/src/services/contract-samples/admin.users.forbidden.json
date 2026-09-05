@@ -1,0 +1,22 @@
+{
+  "scenario": "GET /api/v1/admin/users 已登录但无管理员权限（HTTP 403）",
+  "note": "#85 统一契约 v1：401 与 403 必须区分——401 未登录（引导登录），403 已登录但权限不足（呈现无权限状态）。伪造 localStorage 角色无法获得 200，权限只在服务端裁决（决策 D5：GUEST|USER|DEALER|ADMIN）。",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/admin/users?page=1&pageSize=20",
+    "headers": {
+      "Cookie": "wemove_session=<USER 会话>"
+    }
+  },
+  "response": {
+    "status": 403,
+    "headers": {
+      "X-Request-Id": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9K"
+    },
+    "body": {
+      "code": "FORBIDDEN_403",
+      "message": "您没有权限执行此操作",
+      "requestId": "req_01J9ZK7Q2M8V3B4N5C6D7E8F9K"
+    }
+  }
+}
