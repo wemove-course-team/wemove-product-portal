@@ -15,11 +15,11 @@
             <div class="filter-heading">分类品类</div>
             <div class="filter-options">
               <label
-                v-for="cat in [{ id: 0, name: '全部品类' }, ...productStore.categories]"
-                :key="cat.id"
+                v-for="cat in categoryOptions"
+                :key="cat.slug"
                 class="filter-radio-item"
-                :class="{ active: selectedCat === cat.id }"
-                @click="selectedCat = cat.id"
+                :class="{ active: activeCategorySlug === cat.slug }"
+                @click="setCategory(cat.slug)"
               >
                 <span>{{ cat.name }}</span>
               </label>
@@ -30,13 +30,13 @@
             <div class="filter-heading">适用年龄</div>
             <div class="filter-options">
               <label
-                v-for="age in ['全部年龄', '3-6岁', '6-10岁', '10岁及以上']"
-                :key="age"
+                v-for="age in AGE_OPTIONS"
+                :key="age.value"
                 class="filter-radio-item"
-                :class="{ active: selectedAge === age }"
-                @click="selectedAge = age"
+                :class="{ active: selectedAge === age.value }"
+                @click="setAge(age.value)"
               >
-                <span>{{ age }}</span>
+                <span>{{ age.label }}</span>
               </label>
             </div>
           </div>
@@ -74,14 +74,36 @@
         <main class="products-main">
           <div class="toolbar">
             <span class="count-tip">共找到 <strong>{{ filteredList.length }}</strong> 款实木益智玩具</span>
-            <div v-if="userStore.isDealer" class="dealer-status-chip">
-              <el-icon><CircleCheckFilled /></el-icon>
-              <span>当前已按【{{ userStore.userInfo.companyName }}】核心经销商专享价结算</span>
+            <div class="toolbar-right">
+              <el-input
+                v-model="searchInput"
+                class="toolbar-search"
+                placeholder="搜索产品名称 / SKU"
+                clearable
+                size="default"
+                @keyup.enter="onSearch(searchInput)"
+                @blur="onSearch(searchInput)"
+                @clear="onSearch('')"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+              <div v-if="userStore.isDealer" class="dealer-status-chip">
+                <el-icon><CircleCheckFilled /></el-icon>
+                <span>当前已按【{{ userStore.userInfo.companyName }}】核心经销商专享价结算</span>
+              </div>
             </div>
           </div>
 
-          <div v-if="filteredList.length === 0" class="no-products">
-            暂无符合筛选条件的商品，请尝试重置筛选
+          <div v-if="!categoryExists" class="no-products">
+            该产品分类不存在或已下架
+            <el-button link type="primary" @click="setCategory('all')">查看全部产品</el-button>
+          </div>
+
+          <div v-else-if="filteredList.length === 0" class="no-products">
+            暂无符合筛选条件的商品
+            <el-button link type="primary" @click="resetFilters">重置筛选</el-button>
           </div>
 
           <div v-else class="products-grid">
@@ -90,7 +112,7 @@
               :key="p.id"
               class="product-card"
             >
-              <div class="product-thumb" @click="$router.push(`/product/${p.id}`)">
+              <div class="product-thumb" @click="$router.push(`/products/${p.slug}`)">
                 <img :src="p.images[0]" :alt="p.name" />
                 <span v-if="p.tag" class="card-tag">{{ p.tag }}</span>
               </div>
@@ -100,7 +122,7 @@
                   <span class="sku">{{ p.sku }}</span>
                   <span class="age">{{ p.ageRange }}</span>
                 </div>
-                <h3 class="prod-name" @click="$router.push(`/product/${p.id}`)">
+                <h3 class="prod-name" @click="$router.push(`/products/${p.slug}`)">
                   {{ p.name }}
                 </h3>
                 <p class="prod-desc">{{ p.summary }}</p>
@@ -173,39 +195,121 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useProductStore } from '../stores/product'
 import { useUserStore } from '../stores/user'
 import { useCartStore } from '../stores/cart'
 
+const route = useRoute()
+const router = useRouter()
 const productStore = useProductStore()
 const userStore = useUserStore()
 const cartStore = useCartStore()
 
-const selectedCat = ref(0)
-const selectedAge = ref('全部年龄')
-const sortBy = ref('default')
+/* ------------------- 筛选条件进 URL（#86） -------------------
+ * 分类：/categories/:slug 路径寻址（?category= 兼容），'all' 为全部
+ * 其余条件合并进查询参数：?q=关键词 &age=3-6|6-10|10-plus &sort=price_asc|price_desc
+ * #87 接入真实 API 后，page 分页参数将沿用同一套 URL 约定。
+ */
+const categoryOptions = computed(() => [
+  { slug: 'all', name: '全部品类' },
+  ...productStore.categories
+])
 
-// Comparison
-const compareList = ref([])
-const compareDialogVisible = ref(false)
+const activeCategorySlug = computed(() => String(route.params.slug || route.query.category || 'all'))
+
+const selectedCat = computed(() => {
+  if (activeCategorySlug.value === 'all') return 0
+  const cat = productStore.categories.find(c => c.slug === activeCategorySlug.value)
+  return cat ? cat.id : -1 // -1 表示未知分类，页面呈现“分类不存在”空态
+})
+
+const categoryExists = computed(() => selectedCat.value !== -1)
+
+const AGE_OPTIONS = [
+  { label: '全部年龄', value: '' },
+  { label: '3-6岁', value: '3-6' },
+  { label: '6-10岁', value: '6-10' },
+  { label: '10岁及以上', value: '10-plus' }
+]
+
+const selectedAge = computed(() => String(route.query.age || ''))
+const searchQ = computed(() => String(route.query.q || '').trim())
+
+// 搜索框本地草稿：输入即时可编辑，提交（Enter/失焦/清空）时写入 URL
+const searchInput = ref(searchQ.value)
+watch(searchQ, (value) => {
+  searchInput.value = value
+})
+
+const sortBy = computed({
+  get: () => String(route.query.sort || 'default'),
+  set: (value) => setQuery({ sort: value })
+})
+
+function cleanQuery(raw) {
+  const query = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (value !== '' && value !== null && value !== undefined) query[key] = value
+  }
+  return query
+}
+
+// 合并写入查询参数；处于分类路径时保持 /categories/:slug 形态
+function setQuery(patch) {
+  const query = cleanQuery({ ...route.query, ...patch })
+  if (route.name === 'ProductCategory' && activeCategorySlug.value !== 'all') {
+    router.push({ name: 'ProductCategory', params: { slug: activeCategorySlug.value }, query })
+  } else {
+    router.push({ name: 'Products', query })
+  }
+}
+
+// 分类切换走路径寻址（canonical URL）
+function setCategory(slug) {
+  const { category: _stale, ...rest } = route.query
+  const query = cleanQuery(rest)
+  if (slug === 'all') {
+    router.push({ name: 'Products', query })
+  } else {
+    router.push({ name: 'ProductCategory', params: { slug }, query })
+  }
+}
+
+function setAge(value) {
+  setQuery({ age: value })
+}
+
+function onSearch(keyword) {
+  setQuery({ q: String(keyword || '').trim() })
+}
+
+function resetFilters() {
+  router.push({ name: 'Products' })
+}
 
 const filteredList = computed(() => {
   let list = productStore.products.filter(p => p.published)
 
-  if (selectedCat.value !== 0) {
+  if (selectedCat.value > 0) {
     list = list.filter(p => p.categoryId === selectedCat.value)
   }
 
-  if (selectedAge.value !== '全部年龄') {
-    if (selectedAge.value === '3-6岁') {
-      list = list.filter(p => p.ageRange.includes('3') || p.ageRange.includes('4'))
-    } else if (selectedAge.value === '6-10岁') {
-      list = list.filter(p => p.ageRange.includes('6') || p.ageRange.includes('8') || p.ageRange.includes('10'))
-    } else if (selectedAge.value === '10岁及以上') {
-      list = list.filter(p => p.ageRange.includes('12') || p.ageRange.includes('14') || p.ageRange.includes('及以上'))
-    }
+  if (searchQ.value) {
+    const q = searchQ.value.toLowerCase()
+    list = list.filter(p =>
+      [p.name, p.summary, p.sku, p.scene].some(text => String(text || '').toLowerCase().includes(q))
+    )
+  }
+
+  if (selectedAge.value === '3-6') {
+    list = list.filter(p => p.ageRange.includes('3') || p.ageRange.includes('4'))
+  } else if (selectedAge.value === '6-10') {
+    list = list.filter(p => p.ageRange.includes('6') || p.ageRange.includes('8') || p.ageRange.includes('10'))
+  } else if (selectedAge.value === '10-plus') {
+    list = list.filter(p => p.ageRange.includes('12') || p.ageRange.includes('14') || p.ageRange.includes('及以上'))
   }
 
   if (sortBy.value === 'price_asc') {
@@ -216,6 +320,10 @@ const filteredList = computed(() => {
 
   return list
 })
+
+// Comparison
+const compareList = ref([])
+const compareDialogVisible = ref(false)
 
 function handleAddToCart(p) {
   cartStore.addToCart(p, 1)
@@ -369,9 +477,21 @@ const compareTableData = [
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 20px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-search {
+  width: 220px;
 }
 
 .count-tip {

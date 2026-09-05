@@ -33,49 +33,96 @@
       </span>
     </div>
 
+    <!-- 状态反馈：loading / error / empty（数据来自公开产品接口，无本地兜底） -->
+    <div v-if="searching" class="search-state">
+      <el-icon class="spin"><Loading /></el-icon>
+      <span>正在搜索…</span>
+    </div>
+    <el-alert
+      v-else-if="searchError"
+      :title="searchError.message || '搜索失败，请稍后重试'"
+      type="error"
+      show-icon
+      :closable="false"
+    />
+    <div v-else-if="keyword.trim() && !results.length" class="search-empty">
+      未找到包含 “{{ keyword }}” 的相关内容，请尝试更换关键词
+    </div>
+
     <!-- Search Results Preview -->
-    <div v-if="filteredProducts.length > 0" class="search-results">
-      <div class="results-header">找到相关商品 ({{ filteredProducts.length }})：</div>
+    <div v-else-if="results.length" class="search-results">
+      <div class="results-header">找到相关商品 ({{ results.length }})：</div>
       <div
-        v-for="p in filteredProducts.slice(0, 5)"
+        v-for="p in results"
         :key="p.id"
         class="result-item"
-        @click="goToDetail(p.id)"
+        @click="goToDetail(p)"
       >
-        <img :src="p.images[0]" :alt="p.name" class="result-img" />
+        <img v-if="p.coverImage" :src="p.coverImage" :alt="p.name" class="result-img" />
+        <div v-else class="result-img result-img-placeholder">🧸</div>
         <div class="result-info">
           <div class="result-title">{{ p.name }}</div>
           <div class="result-desc">{{ p.summary }}</div>
         </div>
-        <div class="result-price">¥{{ productStore.getProductPrice(p) }}</div>
+        <div class="result-price">¥{{ p.price }}</div>
       </div>
-    </div>
-    <div v-else-if="keyword" class="search-empty">
-      未找到包含 “{{ keyword }}” 的相关内容，请尝试更换关键词
     </div>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useProductStore } from '../stores/product'
+import { homeApi } from '../services/home'
 
+/**
+ * 全站搜索弹窗（#86）：调用公开产品列表接口（GET /products?keyword=...），
+ * 只消费 #87 已交接的 ProductListItem 公开字段（id/name/slug/coverImage/price/summary），
+ * 输入 350ms 防抖；失败/为空给出明确状态，不做本地假数据兜底。
+ */
 const visible = ref(false)
 const keyword = ref('')
 const router = useRouter()
-const productStore = useProductStore()
 
-const filteredProducts = computed(() => {
-  if (!keyword.value.trim()) return []
-  const q = keyword.value.toLowerCase().trim()
-  return productStore.products.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    p.summary.toLowerCase().includes(q) ||
-    p.scene.toLowerCase().includes(q) ||
-    p.sku.toLowerCase().includes(q)
-  )
+const searching = ref(false)
+const searchError = ref(null)
+const results = ref([])
+
+let debounceTimer = null
+
+watch(keyword, (value) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  const q = String(value || '').trim()
+  if (!q) {
+    searching.value = false
+    searchError.value = null
+    results.value = []
+    return
+  }
+  searching.value = true
+  debounceTimer = setTimeout(() => runSearch(q), 350)
 })
+
+async function runSearch(q) {
+  searching.value = true
+  searchError.value = null
+  try {
+    const envelope = await homeApi.searchProducts(q)
+    // 仅展示仍等于当前关键词的结果，避免乱序响应覆盖
+    if (String(keyword.value || '').trim() === q) {
+      results.value = envelope?.data?.items || []
+    }
+  } catch (err) {
+    if (String(keyword.value || '').trim() === q) {
+      searchError.value = err
+      results.value = []
+    }
+  } finally {
+    if (String(keyword.value || '').trim() === q) {
+      searching.value = false
+    }
+  }
+}
 
 function open() {
   keyword.value = ''
@@ -86,10 +133,15 @@ function close() {
   visible.value = false
 }
 
-function goToDetail(id) {
+function goToDetail(p) {
   close()
-  router.push(`/product/${id}`)
+  // 产品路由以 slug 寻址（/products/:slug）
+  router.push(`/products/${p.slug || p.id}`)
 }
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 
 defineExpose({ open, close })
 </script>
@@ -128,6 +180,26 @@ defineExpose({ open, close })
   border-color: var(--primary-border);
 }
 
+.search-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.search-state .spin {
+  color: var(--primary-color);
+  animation: search-spin 1s linear infinite;
+}
+
+@keyframes search-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .search-results {
   max-height: 360px;
   overflow-y: auto;
@@ -160,6 +232,14 @@ defineExpose({ open, close })
   object-fit: cover;
   border-radius: 6px;
   background: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.result-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
 }
 
 .result-info {
@@ -188,6 +268,7 @@ defineExpose({ open, close })
   font-size: 15px;
   font-weight: 700;
   color: #B25E29;
+  flex-shrink: 0;
 }
 
 .search-empty {
@@ -197,4 +278,3 @@ defineExpose({ open, close })
   font-size: 14px;
 }
 </style>
-

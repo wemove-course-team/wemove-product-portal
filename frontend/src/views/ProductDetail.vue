@@ -4,7 +4,7 @@
       <div class="inner">
         <router-link to="/">首页</router-link>
         <span>/</span>
-        <router-link to="/workshop">玩具品类</router-link>
+        <router-link to="/products">玩具品类</router-link>
         <span>/</span>
         <span class="curr">{{ product.name }}</span>
       </div>
@@ -174,7 +174,8 @@
   </div>
   <div v-else class="not-found">
     <h2>未找到相关商品</h2>
-    <router-link to="/workshop">返回玩具列表</router-link>
+    <p>该产品不存在或已下架。</p>
+    <router-link to="/products">返回产品列表</router-link>
   </div>
 </template>
 
@@ -198,17 +199,22 @@ const quantity = ref(1)
 const activeTab = ref('desc')
 
 function loadProduct() {
-  const id = Number(route.params.id)
-  const found = productStore.products.find(p => p.id === id)
+  // 新路由 /products/:slug 以 slug 寻址；旧 /product/:id 重定向而来的是数字 id，做兼容解析
+  const key = String(route.params.slug ?? '')
+  const found =
+    productStore.products.find(p => p.slug === key) ||
+    productStore.products.find(p => String(p.id) === key)
   if (found) {
     product.value = found
     currentImage.value = found.images[0]
     quantity.value = userStore.isDealer ? (found.moq || 5) : 1
+  } else {
+    product.value = null
   }
 }
 
 onMounted(loadProduct)
-watch(() => route.params.id, loadProduct)
+watch(() => route.params.slug, loadProduct)
 
 const currentPrice = computed(() => {
   if (!product.value) return 0

@@ -163,10 +163,8 @@ const userStore = useUserStore()
 const productStore = useProductStore()
 const cartStore = useCartStore()
 
-// If currently guest, auto-switch to dealer for demo convenience
-if (!userStore.isDealer) {
-  userStore.switchRole('DEALER')
-}
+// 访问控制由路由守卫完成（/dealer/portal 要求登录）；页面内不再本地切换角色。
+// 真实经销商状态（申请/审核/等级）由任务 #90 接入服务端后在此展示。
 
 // Quick order rows
 const quickOrderRows = ref(
