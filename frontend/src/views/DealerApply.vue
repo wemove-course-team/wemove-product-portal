@@ -11,6 +11,20 @@
     </div>
 
     <div class="apply-container">
+      <div v-if="dealerStore.applications.length" class="application-status-card">
+        <div class="card-header">
+          <h2>我的申请状态</h2>
+          <p>申请记录来自服务器，刷新页面后仍会保留。</p>
+        </div>
+        <div v-for="application in dealerStore.applications" :key="application.id" class="application-status-row">
+          <div>
+            <strong>{{ application.id }}</strong>
+            <span>{{ application.companyName }}</span>
+          </div>
+          <el-tag :type="statusType(application.status)">{{ statusText(application.status) }}</el-tag>
+        </div>
+      </div>
+
       <div class="apply-card" v-if="!submittedApp">
         <div class="card-header">
           <h2>填写经销商合作申请表</h2>
@@ -132,7 +146,13 @@ const formRef = ref(null)
 const submitting = ref(false)
 const submittedApp = ref(null)
 
-onMounted(() => userStore.ensureSession())
+onMounted(async () => {
+  await userStore.ensureSession()
+  if (userStore.isAuthenticated) await dealerStore.fetchMine().catch(() => null)
+})
+
+function statusText(status) { return { PENDING: '审核中', APPROVED: '已通过', REJECTED: '未通过' }[status] || status }
+function statusType(status) { return { PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' }[status] || 'info' }
 
 const form = ref({
   companyName: '', taxId: '', businessType: '', region: '', contactName: '', phone: '', email: '', annualTarget: '', salesChannels: ''
@@ -221,6 +241,34 @@ function resetForm() {
   max-width: 900px;
   margin: 0 auto;
   padding: 40px 24px 80px;
+}
+
+.application-status-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.application-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid var(--border-color);
+  padding: 14px 0;
+}
+
+.application-status-row div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.application-status-row span {
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .apply-card, .success-card {
