@@ -26,7 +26,9 @@
       ],
       "validation": "七人逐项核对范围与接口表，在本Issue留下确认；文档链接可打开。",
       "requirements": "R01–R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 4,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/4"
     },
     {
       "code": "B01",
@@ -55,7 +57,9 @@
       ],
       "validation": "运行新建backend构建和health烟测；无效请求400，错误不含数据库凭证；注明实际命令。",
       "requirements": "R03 R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 5,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/5"
     },
     {
       "code": "B02",
@@ -82,7 +86,9 @@
       ],
       "validation": "npm run build；使用正常/400/401/403/网络失败样例检查状态，真实授权由后端验证。",
       "requirements": "R03 R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 6,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/6"
     },
     {
       "code": "B03",
@@ -108,7 +114,9 @@
       ],
       "validation": "在可丢弃MySQL库执行全迁移和第二次迁移；检查唯一/FK拒绝非法数据，记录表与行数。",
       "requirements": "R02 R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 7,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/7"
     },
     {
       "code": "B04",
@@ -134,7 +142,9 @@
       ],
       "validation": "检查Actions实际结果和分支保护API；如权限/计费阻碍则记录，不能声称已启用。",
       "requirements": "R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 8,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/8"
     },
     {
       "code": "B05",
@@ -161,7 +171,9 @@
       ],
       "validation": "T03/T04/T05：正确/错误密码、重复账户、过期/重复token、越权、停用与CSRF负例；先提交会话PR，再提交找回PR。",
       "requirements": "R03",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 9,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/9"
     },
     {
       "code": "B06",
@@ -191,7 +203,9 @@
       ],
       "validation": "逐个检查必需资源可访问，统计原大小；GET admin/media受鉴权；原文件保留。",
       "requirements": "R02 R04 R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 10,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/10"
     },
     {
       "code": "B07",
@@ -218,7 +232,9 @@
       ],
       "validation": "npm run build；360/390与1440屏宽查看公共组件、弹窗和长文案。",
       "requirements": "R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 11,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/11"
     },
     {
       "code": "C01",
@@ -246,7 +262,9 @@
       ],
       "validation": "T01：匿名读取草稿拒绝、发布可读、恶意HTML清洗、非法分类与重复slug失败。",
       "requirements": "R01",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 12,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/12"
     },
     {
       "code": "C02",
@@ -276,7 +294,9 @@
       ],
       "validation": "npm run build；浏览器从后台发布到匿名新窗口查看新闻并刷新重试。",
       "requirements": "R01 R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 13,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/13"
     },
     {
       "code": "C03",
@@ -304,7 +324,9 @@
       ],
       "validation": "T02：公开/后台权限、分页上限、搜索参数化、未发布不可读、重复SKU和分类引用冲突。",
       "requirements": "R02",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 14,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/14"
     },
     {
       "code": "C04",
@@ -335,7 +357,9 @@
       ],
       "validation": "npm run build；T02真实前后台闭环，产品不存在与接口失败都有可见反馈。",
       "requirements": "R02 R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 15,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/15"
     },
     {
       "code": "C05",
@@ -365,7 +389,9 @@
       ],
       "validation": "npm run build；T03–T05与另一个浏览器会话测试停用、退出和旧密码拒绝。",
       "requirements": "R03 R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 16,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/16"
     },
     {
       "code": "C06",
@@ -396,7 +422,9 @@
       ],
       "validation": "T06/T11：合法提交、重启持久化、超长/注入/重复提交、跨用户访问失败。",
       "requirements": "R04",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 17,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/17"
     },
     {
       "code": "C07",
@@ -429,7 +457,9 @@
       ],
       "validation": "T07：前后台修改验证、匿名读不到私有配置；npm run build与后台授权用例。",
       "requirements": "R05",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 18,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/18"
     },
     {
       "code": "C08",
@@ -457,7 +487,9 @@
       ],
       "validation": "使用实际可运行E2E命令或完整人工步骤记录；链接commit与截图，不以构建替代。",
       "requirements": "R01 R02 R04 R05 R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 19,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/19"
     },
     {
       "code": "C09",
@@ -483,7 +515,9 @@
       ],
       "validation": "T03/T04/T05/T11；至少使用两个账户，记录实际响应码与运行命令。",
       "requirements": "R03 R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 20,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/20"
     },
     {
       "code": "E01",
@@ -515,7 +549,9 @@
       ],
       "validation": "T08：申请→审核→本人查看，跨用户和重复审核被拒绝；标明是否实际实现。",
       "requirements": "项目增强",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 21,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/21"
     },
     {
       "code": "E02",
@@ -547,7 +583,9 @@
       ],
       "validation": "T11：合法图片、伪扩展名、超限、路径穿越与未授权上传负例；FAQ更新可见。",
       "requirements": "项目增强",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 22,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/22"
     },
     {
       "code": "Q01",
@@ -579,7 +617,9 @@
       ],
       "validation": "T09桌面/手机截图，键盘/Esc/焦点返回，npm run build；保留现有弹窗遮挡修复。",
       "requirements": "R06",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 23,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/23"
     },
     {
       "code": "Q02",
@@ -608,7 +648,9 @@
       ],
       "validation": "npm run build；记录优化前1.31MB主JS/237MiB素材基线与实际变化；配合Q03性能验证。",
       "requirements": "R06 R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 24,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/24"
     },
     {
       "code": "Q03",
@@ -637,7 +679,9 @@
       ],
       "validation": "按quality-release约定记录3分钟压测P95/错误率、浏览器截图和迁移恢复命令，失败保留。",
       "requirements": "R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 25,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/25"
     },
     {
       "code": "Q04",
@@ -665,7 +709,9 @@
       ],
       "validation": "另一名成员从干净目录复现启动/构建/恢复，记录命令与结果；本轮不自动部署真实站点。",
       "requirements": "R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 26,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/26"
     },
     {
       "code": "Q05",
@@ -693,7 +739,9 @@
       ],
       "validation": "逐项按quality-release材料表核对；最终提交前由七人复查实际证据。",
       "requirements": "R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 27,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/27"
     },
     {
       "code": "Q06",
@@ -722,7 +770,9 @@
       ],
       "validation": "全员实际跑一次流程并计时；最终UI完成后替换截图，核对需求/报告/代码一致。",
       "requirements": "R07",
-      "kind": "task"
+      "kind": "task",
+      "issueNumber": 28,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/28"
     },
     {
       "code": "L01",
@@ -750,7 +800,9 @@
       ],
       "validation": "正反向企业作用域测试、授权文件链接过期、停用即时失效；不属于三天课程门槛。",
       "requirements": "重构§2 §4.7–4.9 §6 §8.1",
-      "kind": "epic"
+      "kind": "epic",
+      "issueNumber": 29,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/29"
     },
     {
       "code": "L02",
@@ -777,7 +829,9 @@
       ],
       "validation": "查看初始HTML、匿名/登录缓存隔离、移动性能和路由回归，阶段启动重新估算。",
       "requirements": "重构§3 §12 §13 §22",
-      "kind": "epic"
+      "kind": "epic",
+      "issueNumber": 30,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/30"
     },
     {
       "code": "L03",
@@ -807,7 +861,9 @@
       ],
       "validation": "发布失效、版本恢复、私有访问、MFA、真实邮件与恢复演练；按需求拆子任务。",
       "requirements": "重构§7 §10–13 §16–20",
-      "kind": "epic"
+      "kind": "epic",
+      "issueNumber": 31,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/31"
     },
     {
       "code": "L04",
@@ -835,7 +891,9 @@
       ],
       "validation": "迁移对账、阶梯边界/有效期/多币种与越权用例；阶段启动重新估算。",
       "requirements": "重构§9 §12 §14",
-      "kind": "epic"
+      "kind": "epic",
+      "issueNumber": 32,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/32"
     },
     {
       "code": "L05",
@@ -863,7 +921,9 @@
       ],
       "validation": "报价过期/重复转换、订单幂等/归属/金额快照与重试用例。",
       "requirements": "重构§6–9 §18–19",
-      "kind": "epic"
+      "kind": "epic",
+      "issueNumber": 33,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/33"
     },
     {
       "code": "L06",
@@ -890,7 +950,41 @@
       ],
       "validation": "并发不超卖、重复/乱序Webhook、退款额度、失败重试与恢复；无真实授权前不调用生产支付。",
       "requirements": "重构§8–9 §15–17 §21",
-      "kind": "epic"
+      "kind": "epic",
+      "issueNumber": 34,
+      "issueUrl": "https://github.com/wemove-course-team/wemove-product-portal/issues/34"
     }
-  ]
+  ],
+  "milestones": {
+    "M0": {
+      "number": 1,
+      "title": "M0 首日上午开发基线",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/1"
+    },
+    "M1": {
+      "number": 2,
+      "title": "M1 一至两天课程核心",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/2"
+    },
+    "M2": {
+      "number": 3,
+      "title": "M2 可裁剪经销商与支持增强",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/3"
+    },
+    "M3": {
+      "number": 4,
+      "title": "M3 两至三天UI与课程交付",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/4"
+    },
+    "M4": {
+      "number": 5,
+      "title": "M4 课程后产品完善",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/5"
+    },
+    "M5": {
+      "number": 6,
+      "title": "M5 长期交易与运营",
+      "url": "https://github.com/wemove-course-team/wemove-product-portal/milestone/6"
+    }
+  }
 }
