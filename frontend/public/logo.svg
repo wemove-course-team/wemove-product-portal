@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <rect width="48" height="48" rx="10" fill="#A89880"/>
+  <!-- Wooden block geometry representing craftsmanship / toys -->
+  <path d="M14 16 L24 10 L34 16 L34 30 L24 36 L14 30 Z" fill="#E8DEC8" stroke="#3D3226" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M24 10 L24 36" stroke="#3D3226" stroke-width="2"/>
+  <path d="M14 16 L24 23 L34 16" stroke="#3D3226" stroke-width="2"/>
+  <circle cx="24" cy="23" r="3" fill="#A89880"/>
+</svg>
+
