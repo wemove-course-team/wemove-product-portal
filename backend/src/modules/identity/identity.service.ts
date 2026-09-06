@@ -82,7 +82,10 @@ export class IdentityService {
     })
     await this.resetTokens.save(token)
     // The course flow intentionally uses the dev log instead of an email provider.
-    console.log(`[identity] password reset token for ${user.email}: ${rawToken}`)
+    // Never expose reset credentials in production logs.
+    if (this.config.get<string>('NODE_ENV') !== 'production') {
+      console.log(`[identity] password reset token for ${user.email}: ${rawToken}`)
+    }
     return { accepted: true }
   }
 
