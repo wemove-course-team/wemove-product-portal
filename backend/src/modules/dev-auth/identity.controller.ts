@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Post, Res, UseGuards } from '@nestjs/common'
 import { Response } from 'express'
 import { SessionGuard } from '../../common/session.guard'
 import { CurrentUser } from '../../common/current-user.decorator'
@@ -21,6 +21,8 @@ export class IdentityController {
     return this.identityService.issueCsrf(res)
   }
 
+  // 契约样例（contract-samples/auth.login.success.json）约定登录成功为 HTTP 200
+  @HttpCode(200)
   @Post('auth/login')
   async login(
     @Body() body: { identifier?: string; password?: string },

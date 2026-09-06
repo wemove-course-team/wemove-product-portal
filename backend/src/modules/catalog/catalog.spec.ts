@@ -171,7 +171,7 @@ describe('CatalogService 公开接口（验收：草稿/下架产品不进入公
   it('featured=1 仅返回精选（#86 首页契约）', async () => {
     await publicService.listProducts({ featured: '1' })
     const andWhere = publicQb.calls.andWhere.map((args) => String(args[0]))
-    expect(andWhere.some((expr) => expr.includes('p.is_featured = 1'))).toBe(true)
+    expect(andWhere.some((expr) => expr.includes('p.isFeatured = 1'))).toBe(true)
   })
 
   it('sort=price_asc 按价格升序', async () => {

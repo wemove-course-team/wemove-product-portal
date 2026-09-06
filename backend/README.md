@@ -54,5 +54,13 @@ npm run start:dev
 ## 测试
 
 ```bash
-npm test    # 产品域单元测试（角色裁剪 / 唯一性 / 分页 / 下架不可见 / 分类删除校验）
+npm test         # 单元测试 19 例（角色裁剪 / 唯一性 / 分页 / 下架不可见 / 分类删除校验）
+npm run test:e2e # 端到端 31 例：对真实 MySQL 跑完整 HTTP 契约（需本地 3306 可连接）
 ```
+
+- e2e 由 `test/setup-db.ts` 全自动初始化独立测试库 `wemove_portal_test`
+  （基线 → 增量迁移 → seed，可重复执行），与演示库 `wemove_portal` 互不影响；
+  用例集即课程「测试报告（测试用例）」的可执行版本，见 `test/catalog.e2e-spec.ts`。
+- CI（`.github/workflows/ci.yml`）在 GitHub Actions 的 `mysql:8` service 容器上
+  运行同样两组测试 + 前后端构建；CD（`cd.yml`）在 main 合入后自动发布镜像到
+  GHCR，部署编排见 `deploy/`。

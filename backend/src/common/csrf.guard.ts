@@ -18,6 +18,9 @@ export class CsrfGuard implements CanActivate {
     const cookieToken = req.cookies?.['wemove_csrf']
     const headerToken = req.headers['x-csrf-token']
     const header = Array.isArray(headerToken) ? headerToken[0] : headerToken
+    if (process.env.CSRF_DEBUG) {
+      console.log('[csrf-debug]', req.method, req.url, 'cookie=', req.cookies?.['wemove_csrf'], 'header=', header)
+    }
     if (!cookieToken || !header || cookieToken !== header) {
       throw new ForbiddenException('会话校验失败，请刷新页面后重试')
     }

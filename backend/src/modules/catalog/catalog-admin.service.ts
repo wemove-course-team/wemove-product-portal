@@ -208,7 +208,7 @@ export class CatalogAdminService {
     }
     const count = await this.productRepo.count({ where: { categoryId: category.id } })
     if (count > 0) {
-      throw new ConflictException(`该分类下仍有 ${count} 款产品，请先移转或删除产品`)
+      throw new ConflictException(`分类「${category.name}」下仍有 ${count} 款产品，请先移转或删除产品`)
     }
     await this.categoryRepo.delete(category.id)
     return { id: String(category.id) }

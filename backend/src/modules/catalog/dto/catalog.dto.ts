@@ -8,7 +8,6 @@ import {
   IsOptional,
   IsString,
   Matches,
-  Max,
   MaxLength,
   Min,
   MinLength
@@ -29,7 +28,8 @@ export class ProductQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   page?: number
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  // pageSize 不做 @Max：只读接口对超限值按上限 50 钳制返回（服务层统一处理）
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   pageSize?: number
 
   @IsOptional() @IsString() @MaxLength(64)
@@ -56,7 +56,7 @@ export class AdminProductQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   page?: number
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   pageSize?: number
 
   @IsOptional() @IsString() @MaxLength(64)
