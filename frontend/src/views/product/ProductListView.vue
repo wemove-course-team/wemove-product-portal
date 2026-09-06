@@ -8,8 +8,8 @@
     </div>
 
     <div class="workshop-body">
-      <!-- Filter Sidebar & Toolbar -->
       <div class="catalog-layout">
+        <!-- Filter Sidebar -->
         <aside class="filter-sidebar">
           <div class="filter-group">
             <div class="filter-heading">分类品类</div>
@@ -47,10 +47,11 @@
               <el-option label="默认推荐" value="default" />
               <el-option label="价格从低到高" value="price_asc" />
               <el-option label="价格从高到低" value="price_desc" />
+              <el-option label="最新上架" value="newest" />
             </el-select>
           </div>
 
-          <!-- Compare Action Floating Hint -->
+          <!-- Compare Floating Hint -->
           <div v-if="compareList.length > 0" class="compare-box">
             <div class="compare-title">已选对比 ({{ compareList.length }}/4)</div>
             <div class="compare-chips">
@@ -73,7 +74,7 @@
         <!-- Product Grid -->
         <main class="products-main">
           <div class="toolbar">
-            <span class="count-tip">共找到 <strong>{{ filteredList.length }}</strong> 款实木益智玩具</span>
+            <span class="count-tip">共找到 <strong>{{ total }}</strong> 款实木益智玩具</span>
             <div class="toolbar-right">
               <el-input
                 v-model="searchInput"
@@ -89,107 +90,118 @@
                   <el-icon><Search /></el-icon>
                 </template>
               </el-input>
-              <div v-if="userStore.isDealer" class="dealer-status-chip">
-                <el-icon><CircleCheckFilled /></el-icon>
-                <span>当前已按【{{ userStore.userInfo.companyName }}】核心经销商专享价结算</span>
-              </div>
             </div>
           </div>
 
-          <div v-if="!categoryExists" class="no-products">
-            该产品分类不存在或已下架
-            <el-button link type="primary" @click="setCategory('all')">查看全部产品</el-button>
-          </div>
+          <AsyncState
+            :loading="loading"
+            :error="loadError"
+            :empty="!loading && !loadError && !categoryExists"
+            empty-text="该产品分类不存在或已下架"
+            @retry="fetchList"
+          >
+            <template #empty-extra>
+              <el-button link type="primary" @click="setCategory('all')">查看全部产品</el-button>
+            </template>
 
-          <div v-else-if="filteredList.length === 0" class="no-products">
-            暂无符合筛选条件的商品
-            <el-button link type="primary" @click="resetFilters">重置筛选</el-button>
-          </div>
-
-          <div v-else class="products-grid">
-            <div
-              v-for="p in filteredList"
-              :key="p.id"
-              class="product-card"
-            >
-              <div class="product-thumb" @click="$router.push(`/products/${p.slug}`)">
-                <img :src="p.images[0]" :alt="p.name" />
-                <span v-if="p.tag" class="card-tag">{{ p.tag }}</span>
-              </div>
-
-              <div class="product-body">
-                <div class="meta-row">
-                  <span class="sku">{{ p.sku }}</span>
-                  <span class="age">{{ p.ageRange }}</span>
-                </div>
-                <h3 class="prod-name" @click="$router.push(`/products/${p.slug}`)">
-                  {{ p.name }}
-                </h3>
-                <p class="prod-desc">{{ p.summary }}</p>
-
-                <div class="prod-bottom">
-                  <div class="price-box">
-                    <div class="price-val">
-                      ¥{{ productStore.getProductPrice(p) }}
-                      <span v-if="userStore.isDealer" class="badge-dealer-mini">批</span>
-                    </div>
-                    <div v-if="userStore.isDealer" class="retail-ref">
-                      零售指导价: ¥{{ p.price }}
-                    </div>
-                  </div>
-
-                  <div class="card-actions">
-                    <el-button
-                      size="small"
-                      :type="isInCompare(p.id) ? 'primary' : 'default'"
-                      plain
-                      @click="toggleCompare(p)"
-                    >
-                      {{ isInCompare(p.id) ? '已对比' : '对比' }}
-                    </el-button>
-                    <el-button
-                      size="small"
-                      type="primary"
-                      @click="handleAddToCart(p)"
-                    >
-                      加购
-                    </el-button>
-                  </div>
-                </div>
-              </div>
+            <div v-if="products.length === 0" class="no-products">
+              暂无符合筛选条件的商品
+              <el-button link type="primary" @click="resetFilters">重置筛选</el-button>
             </div>
-          </div>
+
+            <template v-else>
+              <div class="products-grid">
+                <div
+                  v-for="p in products"
+                  :key="p.id"
+                  class="product-card"
+                >
+                  <div class="product-thumb" @click="$router.push(`/products/${p.slug}`)">
+                    <img :src="p.coverImage" :alt="p.name" loading="lazy" />
+                    <span v-if="p.tag" class="card-tag">{{ p.tag }}</span>
+                  </div>
+
+                  <div class="product-body">
+                    <div class="meta-row">
+                      <span class="sku">{{ p.sku }}</span>
+                      <span class="age">{{ p.ageRange }}</span>
+                    </div>
+                    <h3 class="prod-name" @click="$router.push(`/products/${p.slug}`)">
+                      {{ p.name }}
+                    </h3>
+                    <p class="prod-desc">{{ p.summary }}</p>
+
+                    <div class="prod-bottom">
+                      <div class="price-box">
+                        <div class="price-val">¥{{ p.price }}</div>
+                        <span class="category-chip">{{ p.categoryName }}</span>
+                      </div>
+
+                      <div class="card-actions">
+                        <el-button
+                          size="small"
+                          :type="isInCompare(p.id) ? 'primary' : 'default'"
+                          plain
+                          @click="toggleCompare(p)"
+                        >
+                          {{ isInCompare(p.id) ? '已对比' : '对比' }}
+                        </el-button>
+                        <el-button size="small" type="primary" @click="$router.push(`/products/${p.slug}`)">
+                          查看详情
+                        </el-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pagination-row">
+                <el-pagination
+                  background
+                  layout="prev, pager, next, total"
+                  :total="total"
+                  :page-size="PAGE_SIZE"
+                  :current-page="currentPage"
+                  @current-change="onPageChange"
+                />
+              </div>
+            </template>
+          </AsyncState>
         </main>
       </div>
     </div>
 
-    <!-- Product Comparison Dialog -->
+    <!-- Product Comparison Dialog（对比需要详情级字段，打开时按 id 拉取详情） -->
     <el-dialog v-model="compareDialogVisible" title="产品规格横向参数对比" width="800px" append-to-body>
-      <el-table :data="compareTableData" border style="width: 100%">
-        <el-table-column prop="field" label="参数项目" width="130" fixed />
-        <el-table-column
-          v-for="prod in compareList"
-          :key="prod.id"
-          :label="prod.name"
-          min-width="180"
-        >
-          <template #default="{ row }">
-            <span v-if="row.key === 'image'">
-              <img :src="prod.images[0]" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" />
-            </span>
-            <span v-else-if="row.key === 'price'">
-              <strong style="color: #B25E29;">¥{{ productStore.getProductPrice(prod) }}</strong>
-              <small v-if="userStore.isDealer" style="display:block; color:#999">零售: ¥{{ prod.price }}</small>
-            </span>
-            <span v-else-if="row.key === 'moq'">
-              {{ prod.moq || 10 }} 件起订
-            </span>
-            <span v-else>
-              {{ row.getValue(prod) }}
-            </span>
-          </template>
-        </el-table-column>
-      </el-table>
+      <AsyncState :loading="compareLoading" :error="compareError" @retry="openCompareDialog">
+        <el-table :data="compareTableData" border style="width: 100%">
+          <el-table-column prop="field" label="参数项目" width="130" fixed />
+          <el-table-column
+            v-for="prod in compareDetails"
+            :key="prod.id"
+            :label="prod.name"
+            min-width="180"
+          >
+            <template #default="{ row }">
+              <span v-if="row.key === 'image'">
+                <img :src="prod.coverImage" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" />
+              </span>
+              <span v-else-if="row.key === 'price'">
+                <strong style="color: #B25E29;">¥{{ prod.price }}</strong>
+                <small v-if="prod.dealerPrice != null" style="display:block; color:#999">
+                  经销价: ¥{{ prod.dealerPrice }}
+                </small>
+              </span>
+              <span v-else-if="row.key === 'moq'">
+                {{ prod.moq || 10 }} 件起订
+              </span>
+              <span v-else>
+                {{ row.getValue(prod) }}
+              </span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </AsyncState>
     </el-dialog>
   </div>
 </template>
@@ -197,36 +209,38 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { useProductStore } from '../stores/product'
-import { useUserStore } from '../stores/user'
-import { useCartStore } from '../stores/cart'
+import { productApi } from '../../services/product'
+import { useProductStore } from '../../stores/product'
+import AsyncState from '../../components/AsyncState.vue'
 
+/**
+ * 产品列表/分类页（#87 MVP-03）：数据全部来自 /api/v1/products，
+ * 筛选条件写入 URL（#86 约定），分页 ?page= 服务端分页（PLP-005）。
+ */
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
-const userStore = useUserStore()
-const cartStore = useCartStore()
 
-/* ------------------- 筛选条件进 URL（#86） -------------------
- * 分类：/categories/:slug 路径寻址（?category= 兼容），'all' 为全部
- * 其余条件合并进查询参数：?q=关键词 &age=3-6|6-10|10-plus &sort=price_asc|price_desc
- * #87 接入真实 API 后，page 分页参数将沿用同一套 URL 约定。
- */
+const PAGE_SIZE = 12
+
+const loading = ref(false)
+const loadError = ref(null)
+const products = ref([])
+const total = ref(0)
+
+productStore.loadCategories()
+
 const categoryOptions = computed(() => [
-  { slug: 'all', name: '全部品类' },
+  { slug: 'all', name: '全部品类', id: 0 },
   ...productStore.categories
 ])
 
 const activeCategorySlug = computed(() => String(route.params.slug || route.query.category || 'all'))
 
-const selectedCat = computed(() => {
-  if (activeCategorySlug.value === 'all') return 0
-  const cat = productStore.categories.find(c => c.slug === activeCategorySlug.value)
-  return cat ? cat.id : -1 // -1 表示未知分类，页面呈现“分类不存在”空态
-})
-
-const categoryExists = computed(() => selectedCat.value !== -1)
+const activeCategory = computed(() =>
+  categoryOptions.value.find((c) => c.slug === activeCategorySlug.value)
+)
+const categoryExists = computed(() => activeCategorySlug.value === 'all' || Boolean(activeCategory.value))
 
 const AGE_OPTIONS = [
   { label: '全部年龄', value: '' },
@@ -237,8 +251,8 @@ const AGE_OPTIONS = [
 
 const selectedAge = computed(() => String(route.query.age || ''))
 const searchQ = computed(() => String(route.query.q || '').trim())
+const currentPage = computed(() => Math.max(1, Number(route.query.page) || 1))
 
-// 搜索框本地草稿：输入即时可编辑，提交（Enter/失焦/清空）时写入 URL
 const searchInput = ref(searchQ.value)
 watch(searchQ, (value) => {
   searchInput.value = value
@@ -257,7 +271,6 @@ function cleanQuery(raw) {
   return query
 }
 
-// 合并写入查询参数；处于分类路径时保持 /categories/:slug 形态
 function setQuery(patch) {
   const query = cleanQuery({ ...route.query, ...patch })
   if (route.name === 'ProductCategory' && activeCategorySlug.value !== 'all') {
@@ -267,9 +280,8 @@ function setQuery(patch) {
   }
 }
 
-// 分类切换走路径寻址（canonical URL）
 function setCategory(slug) {
-  const { category: _stale, ...rest } = route.query
+  const { category: _stale, page: _page, ...rest } = route.query
   const query = cleanQuery(rest)
   if (slug === 'all') {
     router.push({ name: 'Products', query })
@@ -279,94 +291,111 @@ function setCategory(slug) {
 }
 
 function setAge(value) {
-  setQuery({ age: value })
+  setQuery({ age: value, page: undefined })
 }
 
 function onSearch(keyword) {
-  setQuery({ q: String(keyword || '').trim() })
+  setQuery({ q: String(keyword || '').trim(), page: undefined })
+}
+
+function onPageChange(page) {
+  setQuery({ page: page > 1 ? String(page) : undefined })
+  window.scrollTo({ top: 0 })
 }
 
 function resetFilters() {
   router.push({ name: 'Products' })
 }
 
-const filteredList = computed(() => {
-  let list = productStore.products.filter(p => p.published)
-
-  if (selectedCat.value > 0) {
-    list = list.filter(p => p.categoryId === selectedCat.value)
+async function fetchList() {
+  loading.value = true
+  loadError.value = null
+  try {
+    const envelope = await productApi.fetchProducts({
+      page: currentPage.value,
+      pageSize: PAGE_SIZE,
+      keyword: searchQ.value,
+      // “全部品类”约定 id=0，不作为筛选条件下发（后端校验 categoryId ≥ 1）
+      categoryId: activeCategory.value && activeCategory.value.id > 0 ? activeCategory.value.id : undefined,
+      age: selectedAge.value || undefined,
+      sort: sortBy.value === 'default' ? undefined : sortBy.value
+    })
+    products.value = envelope?.data?.items || []
+    total.value = envelope?.data?.total || 0
+    loadError.value = null
+  } catch (err) {
+    loadError.value = err
+  } finally {
+    loading.value = false
   }
-
-  if (searchQ.value) {
-    const q = searchQ.value.toLowerCase()
-    list = list.filter(p =>
-      [p.name, p.summary, p.sku, p.scene].some(text => String(text || '').toLowerCase().includes(q))
-    )
-  }
-
-  if (selectedAge.value === '3-6') {
-    list = list.filter(p => p.ageRange.includes('3') || p.ageRange.includes('4'))
-  } else if (selectedAge.value === '6-10') {
-    list = list.filter(p => p.ageRange.includes('6') || p.ageRange.includes('8') || p.ageRange.includes('10'))
-  } else if (selectedAge.value === '10-plus') {
-    list = list.filter(p => p.ageRange.includes('12') || p.ageRange.includes('14') || p.ageRange.includes('及以上'))
-  }
-
-  if (sortBy.value === 'price_asc') {
-    list = [...list].sort((a, b) => productStore.getProductPrice(a) - productStore.getProductPrice(b))
-  } else if (sortBy.value === 'price_desc') {
-    list = [...list].sort((a, b) => productStore.getProductPrice(b) - productStore.getProductPrice(a))
-  }
-
-  return list
-})
-
-// Comparison
-const compareList = ref([])
-const compareDialogVisible = ref(false)
-
-function handleAddToCart(p) {
-  cartStore.addToCart(p, 1)
-  ElMessage.success(`已加入购物车：${p.name}`)
 }
 
+watch(
+  () => [route.name, route.params.slug, route.query.q, route.query.age, route.query.sort, route.query.page],
+  () => {
+    if (categoryExists.value || activeCategorySlug.value === 'all') fetchList()
+  },
+  { immediate: true }
+)
+
+/* ------------------------------ 产品对比（PLP-008） ------------------------------ */
+
+const compareList = ref([])
+const compareDialogVisible = ref(false)
+const compareLoading = ref(false)
+const compareError = ref(null)
+const compareDetails = ref([])
+
 function isInCompare(id) {
-  return compareList.value.some(i => i.id === id)
+  return compareList.value.some((i) => i.id === id)
 }
 
 function toggleCompare(p) {
   if (isInCompare(p.id)) {
     removeFromCompare(p.id)
-  } else {
-    if (compareList.value.length >= 4) {
-      ElMessage.warning('最多只可同时对比4款产品')
-      return
-    }
-    compareList.value.push(p)
+    return
   }
+  if (compareList.value.length >= 4) {
+    compareError.value = '最多只可同时对比4款产品'
+    return
+  }
+  compareList.value.push({ id: p.id, name: p.name })
 }
 
 function removeFromCompare(id) {
-  compareList.value = compareList.value.filter(i => i.id !== id)
+  compareList.value = compareList.value.filter((i) => i.id !== id)
 }
 
-function openCompareDialog() {
+async function openCompareDialog() {
   if (compareList.value.length < 2) {
-    ElMessage.info('请至少选择两款产品进行对比')
+    compareError.value = '请至少选择两款产品进行对比'
     return
   }
   compareDialogVisible.value = true
+  compareLoading.value = true
+  compareError.value = null
+  try {
+    const details = await Promise.all(
+      compareList.value.map((item) => productApi.fetchProduct(item.slug || item.id))
+    )
+    compareDetails.value = details.map((envelope) => envelope?.data).filter(Boolean)
+    compareLoading.value = false
+  } catch (err) {
+    compareDetails.value = []
+    compareError.value = err
+    compareLoading.value = false
+  }
 }
 
 const compareTableData = [
   { field: '产品图片', key: 'image' },
-  { field: '当前结算价', key: 'price' },
+  { field: '零售指导价', key: 'price' },
   { field: '建议起订量', key: 'moq' },
-  { field: '适合年龄', key: 'age', getValue: p => p.ageRange },
-  { field: '制作材质', key: 'mat', getValue: p => p.material },
-  { field: '使用场景', key: 'scene', getValue: p => p.scene },
-  { field: '产品规格', key: 'dim', getValue: p => p.specs?.dimensions || '-' },
-  { field: '整箱装箱数', key: 'pack', getValue: p => p.specs?.casePack ? `${p.specs.casePack} 箱/件` : '-' }
+  { field: '适合年龄', key: 'age', getValue: (p) => p.ageRange },
+  { field: '制作材质', key: 'mat', getValue: (p) => p.material },
+  { field: '使用场景', key: 'scene', getValue: (p) => p.scene },
+  { field: '产品规格', key: 'dim', getValue: (p) => p.specs?.dimensions || '-' },
+  { field: '整箱装箱数', key: 'pack', getValue: (p) => (p.specs?.casePack ? `${p.specs.casePack} 件/箱` : '-') }
 ]
 </script>
 
@@ -473,6 +502,7 @@ const compareTableData = [
 
 .products-main {
   flex: 1;
+  min-width: 0;
 }
 
 .toolbar {
@@ -497,19 +527,6 @@ const compareTableData = [
 .count-tip {
   font-size: 14px;
   color: var(--text-muted);
-}
-
-.dealer-status-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #FDF9F2;
-  border: 1px solid #EFE4D2;
-  color: #9C7844;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
 }
 
 .products-grid {
@@ -593,6 +610,7 @@ const compareTableData = [
   flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  -webkit-line-break: anywhere;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -605,30 +623,32 @@ const compareTableData = [
   padding-top: 12px;
 }
 
+.price-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .price-val {
   font-size: 20px;
   font-weight: 700;
   color: #B25E29;
 }
 
-.badge-dealer-mini {
+.category-chip {
   font-size: 10px;
-  background: #B25E29;
-  color: #fff;
-  padding: 1px 4px;
-  border-radius: 3px;
-  margin-left: 2px;
-}
-
-.retail-ref {
-  font-size: 11px;
   color: var(--text-light);
-  text-decoration: line-through;
 }
 
 .card-actions {
   display: flex;
   gap: 6px;
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
 }
 
 .no-products {
@@ -650,4 +670,3 @@ const compareTableData = [
   }
 }
 </style>
-
