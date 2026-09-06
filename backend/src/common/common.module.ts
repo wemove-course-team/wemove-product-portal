@@ -7,11 +7,9 @@ import { RolesGuard } from './roles.guard'
 import { CsrfGuard } from './csrf.guard'
 
 /**
- * 公共守卫/信封层（MVP-03 临时最小实现，正式实现以 #85 MVP-01 为准）
+ * 公共守卫/信封层（#85 MVP-01 基准）
  *
- * 已按 #85 冻结契约 v1 编写：SessionGuard（Cookie 会话 + 查库校验 status）、
- * OptionalSessionGuard、RolesGuard + @Roles、CsrfGuard、统一信封与错误体。
- * #85 合并时可直接替换/扩充本目录，业务模块只依赖守卫与 @CurrentUser。
+ * 业务模块只依赖守卫、角色装饰器与 @CurrentUser，不感知会话内部实现。
  */
 @Global()
 @Module({
