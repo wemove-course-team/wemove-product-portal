@@ -15,7 +15,7 @@ export class IdentityController {
   @Get('auth/csrf')
   issueCsrf(@Res({ passthrough: true }) response: Response) {
     const token = randomUUID()
-    response.cookie('wemove_csrf', token, { httpOnly: false, sameSite: 'lax', path: '/' })
+    response.cookie('wemove_csrf', token, { httpOnly: false, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' })
     return { csrfToken: token }
   }
 
@@ -27,14 +27,14 @@ export class IdentityController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
     const { token, user } = await this.identity.authenticate(body.identifier, body.password)
-    response.cookie('wemove_session', token, { httpOnly: true, sameSite: 'lax', path: '/' })
+    response.cookie('wemove_session', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' })
     return user
   }
 
   @Post('auth/logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie('wemove_session', { path: '/' })
+    response.clearCookie('wemove_session', { secure: process.env.NODE_ENV === 'production', path: '/' })
     return undefined
   }
 

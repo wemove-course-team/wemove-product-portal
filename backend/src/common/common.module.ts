@@ -17,10 +17,15 @@ import { CsrfGuard } from './csrf.guard'
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET', 'wemove-dev-secret-change-me'),
-        signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d') }
-      })
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET')
+        const isProduction = config.get<string>('NODE_ENV') === 'production'
+        if (isProduction && !secret) throw new Error('JWT_SECRET is required in production')
+        return {
+          secret: secret || 'wemove-dev-secret-change-me',
+          signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d') }
+        }
+      }
     })
   ],
   providers: [SessionGuard, OptionalSessionGuard, RolesGuard, CsrfGuard],

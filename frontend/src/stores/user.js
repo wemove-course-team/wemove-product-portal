@@ -132,7 +132,9 @@ export const useUserStore = defineStore('user', () => {
     if (isPreviewActive.value) return previewRole.value
     if (sessionUser.value) {
       const r = sessionUser.value.role
-      return r === 'ADMIN' || r === 'SUPER_ADMIN' ? 'ADMIN' : 'USER'
+      if (r === 'ADMIN' || r === 'SUPER_ADMIN') return 'ADMIN'
+      if (r === 'DEALER') return 'DEALER'
+      return 'USER'
     }
     return 'GUEST'
   })
@@ -178,7 +180,11 @@ export const useUserStore = defineStore('user', () => {
   async function login(identifier, password) {
     try {
       await authApi.login(identifier, password)
-      await ensureSession() // 登录已轮换会话，重新拉取摘要
+      // 登录会轮换服务端 Cookie；清除初始化缓存，确保不会沿用登录前的游客态。
+      sessionStatus.value = 'idle'
+      sessionUser.value = null
+      sessionError.value = null
+      await ensureSession()
       // 预览开关若残留会覆盖真实会话显示，登录成功后清除
       if (IS_DEV) switchRole(null)
       return { ok: true, error: null }

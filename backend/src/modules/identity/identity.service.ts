@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { createHash, randomBytes } from 'crypto'
 import * as bcrypt from 'bcryptjs'
 import { IsNull, Repository } from 'typeorm'
+import { DataSource } from 'typeorm'
 import { PasswordResetToken } from './password-reset-token.entity'
 import { User } from './user.entity'
 import { AdminUserQueryDto, ChangePasswordDto, ConfirmPasswordResetDto, RegisterDto, UpdateProfileDto } from './identity.dto'
@@ -15,7 +16,8 @@ export class IdentityService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(PasswordResetToken) private readonly resetTokens: Repository<PasswordResetToken>,
     private readonly jwt: JwtService,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
+    private readonly dataSource: DataSource
   ) {}
 
   async register(input: RegisterDto) {
@@ -85,16 +87,28 @@ export class IdentityService {
   }
 
   async confirmPasswordReset(input: ConfirmPasswordResetDto) {
-    const token = await this.resetTokens.findOne({ where: { tokenHash: this.hashToken(input.token) } })
-    if (!token || token.usedAt || token.expiresAt.getTime() < Date.now()) {
-      throw new UnauthorizedException({ code: 'AUTH_401', message: '重置 token 无效或已过期' })
-    }
-    const user = await this.getById(String(token.userId))
-    user.passwordHash = await bcrypt.hash(input.newPassword, 10)
-    token.usedAt = new Date()
-    await this.users.save(user)
-    await this.resetTokens.save(token)
-    return { changed: true }
+    const tokenHash = this.hashToken(input.token)
+    // Token claim, password update and usedAt mark share one transaction and row lock.
+    return this.dataSource.transaction(async (manager) => {
+      const tokenRepo = manager.getRepository(PasswordResetToken)
+      const userRepo = manager.getRepository(User)
+      const token = await tokenRepo.findOne({
+        where: { tokenHash },
+        lock: { mode: 'pessimistic_write' }
+      })
+      if (!token || token.usedAt || token.expiresAt.getTime() < Date.now()) {
+        throw new UnauthorizedException({ code: 'AUTH_401', message: '重置 token 无效或已过期' })
+      }
+      const user = await userRepo.findOne({ where: { id: token.userId } })
+      if (!user || Number(user.status) !== 1) {
+        throw new UnauthorizedException({ code: 'AUTH_401', message: '登录状态已失效，请重新登录' })
+      }
+      user.passwordHash = await bcrypt.hash(input.newPassword, 10)
+      token.usedAt = new Date()
+      await userRepo.save(user)
+      await tokenRepo.save(token)
+      return { changed: true }
+    })
   }
 
   async listUsers(query: AdminUserQueryDto) {
@@ -107,9 +121,18 @@ export class IdentityService {
     return { items: items.map((user) => this.toSummary(user, true)), total, page, pageSize }
   }
 
-  async updateUserStatus(id: string, status: 0 | 1) {
+  async updateUserStatus(id: string, status: 0 | 1, actorId?: string) {
     const user = await this.users.findOne({ where: { id: Number(id) } })
     if (!user) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '用户不存在' })
+    if (status === 0 && actorId && String(user.id) === String(actorId)) {
+      throw new ConflictException({ code: 'CONFLICT_409', message: '不能停用当前管理员账号' })
+    }
+    if (status === 0 && user.role === 'ADMIN') {
+      const activeAdmins = await this.users.count({ where: { role: 'ADMIN', status: 1 } })
+      if (activeAdmins <= 1) {
+        throw new ConflictException({ code: 'CONFLICT_409', message: '不能停用最后一个有效管理员' })
+      }
+    }
     user.status = status
     return this.toSummary(await this.users.save(user), true)
   }
