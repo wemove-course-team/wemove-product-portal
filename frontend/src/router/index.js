@@ -23,25 +23,25 @@ const routes = [
     component: HomeView,
     meta: { zone: 'public' }
   },
-  // 产品列表（关键词/年龄/排序条件在 ?q/?age/?sort 查询参数中）
+  // 产品列表（关键词/年龄/排序条件在 ?q/?age/?sort 查询参数中，#87 接入 API 分页 ?page=）
   {
     path: '/products',
     name: 'Products',
-    component: () => import('../views/WorkshopView.vue'),
+    component: () => import('../views/product/ProductListView.vue'),
     meta: { zone: 'public' }
   },
   // 产品分类列表（#87 契约：/categories/:slug）
   {
     path: '/categories/:slug',
     name: 'ProductCategory',
-    component: () => import('../views/WorkshopView.vue'),
+    component: () => import('../views/product/ProductListView.vue'),
     meta: { zone: 'public' }
   },
   // 产品详情（#87 契约：/products/:slug；旧 /product/:id 在文末重定向兼容）
   {
     path: '/products/:slug',
     name: 'ProductDetail',
-    component: () => import('../views/ProductDetail.vue'),
+    component: () => import('../views/product/ProductDetailView.vue'),
     meta: { zone: 'public' }
   },
   // 内容栏目页（7 个栏目 slug 与原站保持一致，#88 接入内容 API 后 URL 不变）
@@ -169,10 +169,23 @@ const routes = [
         meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
+        // #87 MVP-03：产品/分类管理列表（含分类管理 Tab）
         path: 'products',
         name: 'AdminProducts',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '产品与分类管理', ownerTask: '#87 MVP-03' }
+        component: () => import('../views/product/AdminProductList.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
+        path: 'products/new',
+        name: 'AdminProductCreate',
+        component: () => import('../views/product/AdminProductEdit.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
+        path: 'products/:id/edit',
+        name: 'AdminProductEdit',
+        component: () => import('../views/product/AdminProductEdit.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
         path: 'content',

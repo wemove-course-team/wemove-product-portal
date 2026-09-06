@@ -29,33 +29,33 @@
           </div>
         </div>
 
-        <!-- Product Purchase Information -->
+        <!-- Product Information -->
         <div class="info-col">
           <div class="meta-tags">
             <span class="sku-tag">SKU: {{ product.sku }}</span>
-            <span class="age-tag">{{ product.ageRange }}</span>
+            <span v-if="product.ageRange" class="age-tag">{{ product.ageRange }}</span>
             <span v-if="product.tag" class="status-tag">{{ product.tag }}</span>
           </div>
 
           <h1 class="pdp-title">{{ product.name }}</h1>
           <p class="pdp-summary">{{ product.summary }}</p>
 
-          <!-- Price Engine Box -->
+          <!-- Pricing：价格口径唯一来自 API（DEALER/ADMIN 会话下返回 dealerPrice） -->
           <div class="pricing-card">
             <div class="pricing-row">
               <span class="price-type-label">
-                {{ userStore.isDealer ? '经销商协议结算价' : '官方零售指导价' }}
+                {{ hasDealerPrice ? '经销商协议结算价' : '官方零售指导价' }}
               </span>
               <div class="price-val">
                 <span class="curr">¥</span>
-                <span class="num">{{ currentPrice }}</span>
+                <span class="num">{{ hasDealerPrice ? product.dealerPrice : product.price }}</span>
               </div>
             </div>
 
-            <div v-if="userStore.isDealer" class="dealer-pricing-meta">
+            <div v-if="hasDealerPrice" class="dealer-pricing-meta">
               <div class="dealer-pill">
                 <el-icon><Check /></el-icon>
-                <span>已应用【{{ userStore.userInfo.tierName }}】专属折扣 ({{ userStore.userInfo.discountRate * 10 }}折)</span>
+                <span>已按经销商协议价结算，批发采购请直接联系商务对接</span>
               </div>
               <div class="orig-ref">官方指导价：¥{{ product.price }}</div>
               <div class="moq-tip">建议起订量 (MOQ)：{{ product.moq || 10 }} 件</div>
@@ -70,52 +70,42 @@
           <div class="quick-params">
             <div class="param-row">
               <span class="param-label">主要材质：</span>
-              <span class="param-val">{{ product.material }}</span>
+              <span class="param-val">{{ product.material || '天然优质实木' }}</span>
             </div>
             <div class="param-row">
               <span class="param-label">适用场景：</span>
-              <span class="param-val">{{ product.scene }}</span>
+              <span class="param-val">{{ product.scene || '室内亲子 / 机构活动' }}</span>
             </div>
             <div class="param-row">
-              <span class="param-label">外箱包装：</span>
-              <span class="param-val">{{ product.specs?.dimensions || '精美原木彩盒包装' }}</span>
+              <span class="param-label">所属品类：</span>
+              <span class="param-val">{{ product.categoryName || '-' }}</span>
             </div>
           </div>
 
-          <!-- Quantity and Action Buttons -->
+          <!-- CTA（决策 D9：本轮不启用购物，展示询购与合作入口） -->
           <div class="action-block">
-            <div class="qty-row">
-              <span class="qty-label">选购数量：</span>
-              <el-input-number
-                v-model="quantity"
-                :min="userStore.isDealer ? (product.moq || 5) : 1"
-                :max="999"
-                size="large"
-              />
-              <span v-if="userStore.isDealer" class="moq-hint">（已预设起订量）</span>
-            </div>
-
             <div class="cta-buttons">
-              <button class="btn-primary buy-btn" @click="handleBuyNow">
-                <el-icon><ShoppingBag /></el-icon>
-                <span>立即选购下单</span>
+              <button class="btn-primary buy-btn" @click="handleContact">
+                <el-icon><ChatDotRound /></el-icon>
+                <span>咨询与订购</span>
               </button>
-              <button class="btn-outline add-btn" @click="handleAddToCart">
-                <el-icon><ShoppingCart /></el-icon>
-                <span>加入购物车</span>
+              <button v-if="!hasDealerPrice" class="btn-outline add-btn" @click="handleDealerApply">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>经销合作</span>
               </button>
             </div>
+            <p class="cta-note">支持亲子试用体验与机构批量采购，提交咨询后我们将在 1 个工作日内联系您。</p>
           </div>
         </div>
       </div>
 
-      <!-- Detail Tabs (Specifications, Instructions, Certifications) -->
+      <!-- Detail Tabs -->
       <div class="pdp-tabs-section">
         <el-tabs v-model="activeTab" class="custom-tabs">
           <el-tab-pane label="产品详细介绍与玩法" name="desc">
             <div class="tab-body">
               <h3>设计理念与玩法指南</h3>
-              <p>{{ product.description }}</p>
+              <p>{{ product.description || product.summary }}</p>
               <div class="highlights-box">
                 <h4>核心特点：</h4>
                 <ul>
@@ -135,7 +125,7 @@
                     <td class="td-key">SKU 编号</td>
                     <td class="td-val">{{ product.sku }}</td>
                     <td class="td-key">建议年龄</td>
-                    <td class="td-val">{{ product.ageRange }}</td>
+                    <td class="td-val">{{ product.ageRange || '-' }}</td>
                   </tr>
                   <tr>
                     <td class="td-key">产品尺寸</td>
@@ -172,64 +162,79 @@
       </div>
     </div>
   </div>
-  <div v-else class="not-found">
-    <h2>未找到相关商品</h2>
-    <p>该产品不存在或已下架。</p>
-    <router-link to="/products">返回产品列表</router-link>
+
+  <div v-else class="detail-state">
+    <AsyncState
+      :loading="loading"
+      :error="loadError"
+      :not-found="notFound"
+      :show-retry="!notFound"
+      @retry="loadProduct"
+    >
+      <span></span>
+    </AsyncState>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { useProductStore } from '../stores/product'
-import { useUserStore } from '../stores/user'
-import { useCartStore } from '../stores/cart'
+import { productApi } from '../../services/product'
+import AsyncState from '../../components/AsyncState.vue'
 
+/**
+ * 产品详情页（#87 MVP-03）：GET /products/:slug（旧 /product/:id 由后端兼容解析）。
+ * 经销商价仅在 DEALER/ADMIN 会话下由 API 返回（服务端裁剪），页面按字段是否出现渲染。
+ */
 const route = useRoute()
 const router = useRouter()
-const productStore = useProductStore()
-const userStore = useUserStore()
-const cartStore = useCartStore()
 
 const product = ref(null)
 const currentImage = ref('')
-const quantity = ref(1)
 const activeTab = ref('desc')
+const loading = ref(false)
+const loadError = ref(null)
+const notFound = ref(false)
 
-function loadProduct() {
-  // 新路由 /products/:slug 以 slug 寻址；旧 /product/:id 重定向而来的是数字 id，做兼容解析
-  const key = String(route.params.slug ?? '')
-  const found =
-    productStore.products.find(p => p.slug === key) ||
-    productStore.products.find(p => String(p.id) === key)
-  if (found) {
-    product.value = found
-    currentImage.value = found.images[0]
-    quantity.value = userStore.isDealer ? (found.moq || 5) : 1
-  } else {
-    product.value = null
+const hasDealerPrice = computed(
+  () => product.value && product.value.dealerPrice != null && product.value.moq != null
+)
+
+async function loadProduct() {
+  loading.value = true
+  loadError.value = null
+  notFound.value = false
+  product.value = null
+  try {
+    const key = String(route.params.slug ?? '')
+    const envelope = await productApi.fetchProduct(key)
+    const detail = envelope?.data
+    if (!detail) {
+      notFound.value = true
+    } else {
+      product.value = detail
+      currentImage.value = detail.images?.[0] || ''
+    }
+  } catch (err) {
+    if (err?.status === 404) {
+      notFound.value = true
+    } else {
+      loadError.value = err
+    }
+  } finally {
+    loading.value = false
   }
 }
 
 onMounted(loadProduct)
 watch(() => route.params.slug, loadProduct)
 
-const currentPrice = computed(() => {
-  if (!product.value) return 0
-  return productStore.getProductPrice(product.value)
-})
-
-function handleAddToCart() {
-  if (!product.value) return
-  cartStore.addToCart(product.value, quantity.value)
-  ElMessage.success(`已成功添加 ${quantity.value} 件至购物车！`)
+function handleContact() {
+  router.push('/support')
 }
 
-function handleBuyNow() {
-  handleAddToCart()
-  router.push('/cart')
+function handleDealerApply() {
+  router.push('/dealers/apply')
 }
 </script>
 
@@ -324,6 +329,7 @@ function handleBuyNow() {
 
 .meta-tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -471,28 +477,17 @@ function handleBuyNow() {
 .action-block {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.qty-row {
-  display: flex;
-  align-items: center;
   gap: 12px;
-}
-
-.qty-label {
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.moq-hint {
-  font-size: 12px;
-  color: #8E7E67;
 }
 
 .cta-buttons {
   display: flex;
   gap: 16px;
+}
+
+.cta-note {
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 .buy-btn, .add-btn {
@@ -553,9 +548,10 @@ function handleBuyNow() {
   color: var(--text-color);
 }
 
-.not-found {
-  padding: 80px 24px;
-  text-align: center;
+.detail-state {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 60px 24px;
 }
 
 @media (max-width: 960px) {
@@ -564,4 +560,3 @@ function handleBuyNow() {
   }
 }
 </style>
-
