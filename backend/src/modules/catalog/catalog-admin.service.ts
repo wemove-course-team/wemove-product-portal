@@ -14,6 +14,13 @@ import {
 } from './dto/catalog.dto'
 import { toAdminProduct, toCategory } from './catalog.mapper'
 
+/** 可选文本清空时写入 NULL，避免后台表单无法真正移除旧内容。 */
+function nullableText(value: string | undefined): string | null {
+  if (value === undefined) return null
+  const normalized = value.trim()
+  return normalized || null
+}
+
 /**
  * 产品/分类管理服务（#87 MVP-03，ADMIN 权限由 SessionGuard + RolesGuard 裁决）
  *
@@ -79,16 +86,16 @@ export class CatalogAdminService {
       price: dto.price,
       dealerPrice: dto.dealerPrice,
       moq: dto.moq ?? 10,
-      ageRange: dto.ageRange ?? null,
-      material: dto.material ?? null,
-      scene: dto.scene ?? null,
-      summary: dto.summary ?? null,
-      description: dto.description ?? null,
+      ageRange: nullableText(dto.ageRange),
+      material: nullableText(dto.material),
+      scene: nullableText(dto.scene),
+      summary: nullableText(dto.summary),
+      description: nullableText(dto.description),
       images: dto.images ?? [],
       specs: dto.specs ?? {},
       isPublished: dto.isPublished ?? 1,
       isFeatured: dto.isFeatured ?? 0,
-      tag: dto.tag ?? null
+      tag: nullableText(dto.tag)
     })
     const saved = await this.productRepo.save(product)
     return this.getProduct(String(saved.id))
@@ -115,16 +122,16 @@ export class CatalogAdminService {
     if (dto.price !== undefined) patch.price = dto.price
     if (dto.dealerPrice !== undefined) patch.dealerPrice = dto.dealerPrice
     if (dto.moq !== undefined) patch.moq = dto.moq
-    if (dto.ageRange !== undefined) patch.ageRange = dto.ageRange
-    if (dto.material !== undefined) patch.material = dto.material
-    if (dto.scene !== undefined) patch.scene = dto.scene
-    if (dto.summary !== undefined) patch.summary = dto.summary
-    if (dto.description !== undefined) patch.description = dto.description
+    if (dto.ageRange !== undefined) patch.ageRange = nullableText(dto.ageRange)
+    if (dto.material !== undefined) patch.material = nullableText(dto.material)
+    if (dto.scene !== undefined) patch.scene = nullableText(dto.scene)
+    if (dto.summary !== undefined) patch.summary = nullableText(dto.summary)
+    if (dto.description !== undefined) patch.description = nullableText(dto.description)
     if (dto.images !== undefined) patch.images = dto.images
     if (dto.specs !== undefined) patch.specs = dto.specs
     if (dto.isPublished !== undefined) patch.isPublished = dto.isPublished
     if (dto.isFeatured !== undefined) patch.isFeatured = dto.isFeatured
-    if (dto.tag !== undefined) patch.tag = dto.tag
+    if (dto.tag !== undefined) patch.tag = nullableText(dto.tag)
 
     // save 而非 update：JSON 列（images_json/specs_json）在 update 的深 Partial 类型下
     // 需要 as any 强转，save 直接接受完整实体，也让 @UpdateDateColumn 由 ORM 统一维护
@@ -145,13 +152,15 @@ export class CatalogAdminService {
   }
 
   /**
-   * 物理删除。注意：正式下架请使用 PUT /:id/status（需求 ADM-P-001：下架不物理删除），
-   * 本接口供误建数据清理；历史订单明细冗余存储了 SKU/名称，不受删除影响。
+   * 兼容既有 DELETE 路由，但按 ADM-P-001 执行可恢复的归档语义：
+   * 保留产品、SKU、关联和审计基础数据，仅从公开目录移除并取消精选。
    */
   async deleteProduct(id: string) {
     const product = await this.findProductOrFail(id)
-    await this.productRepo.delete(product.id)
-    return { id: String(product.id) }
+    product.isPublished = 0
+    product.isFeatured = 0
+    await this.productRepo.save(product)
+    return { id: String(product.id), archived: true }
   }
 
   // ------------------------------ 分类管理 ------------------------------

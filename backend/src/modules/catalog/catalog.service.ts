@@ -60,6 +60,9 @@ export class CatalogService {
       case 'newest':
         qb.orderBy('p.createdAt', 'DESC')
         break
+      case 'name_asc':
+        qb.orderBy('p.name', 'ASC')
+        break
       default:
         // 默认推荐：精选优先，其余按上架时间稳定排序
         qb.orderBy('p.isFeatured', 'DESC').addOrderBy('p.createdAt', 'ASC')

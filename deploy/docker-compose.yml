@@ -1,60 +1,83 @@
-# WEMOVE 平台一键部署（MySQL + 后端 + 前端/nginx）
-#
-# 前置：镜像已由 CD 流水线发布到 GHCR（push main 自动触发）；
-#       也可本地构建：docker build -t ghcr.io/wemove-course-team/wemove-backend ./backend 等。
-#
-# 首次启动需初始化数据库（一次性）：
-#   docker compose up -d mysql
-#   docker compose exec mysql sh -c \
-#     'mysql -uroot -p$MYSQL_ROOT_PASSWORD < /sql/init_schema_and_data.sql && \
-#      mysql -uroot -p$MYSQL_ROOT_PASSWORD wemove_portal < /sql/migrations/mvp03_catalog_incremental.sql && \
-#      mysql -uroot -p$MYSQL_ROOT_PASSWORD wemove_portal < /sql/seed/seed_catalog_mvp03.sql && \
-#      mysql -uroot -p$MYSQL_ROOT_PASSWORD wemove_portal < /sql/seed/seed_identity_demo_accounts.sql'
-#   docker compose up -d backend frontend
-#
-# 访问：http://localhost:8080 （前端）→ /api 同源转发到后端
-# 登录演示账号见 backend/README.md（首次部署后建议改掉口令）
+# WEMOVE 平台部署编排。敏感值必须写入 deploy/.env，禁止在本文件中硬编码。
+name: wemove-product-portal
 
 services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: wemove123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 deploy/.env 设置 MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: wemove_portal
+      MYSQL_USER: ${MYSQL_USER:-wemove}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请在 deploy/.env 设置 MYSQL_PASSWORD}
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql-data:/var/lib/mysql
-      # 只读挂载 SQL 目录，供上面的首次初始化命令使用
-      - ../backend/sql:/sql:ro
+      # MySQL 官方镜像仅在新数据卷首次启动时按文件名顺序执行这些脚本。
+      - ../backend/sql/init_schema_and_data.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ../backend/sql/migrations/mvp03_catalog_incremental.sql:/docker-entrypoint-initdb.d/20-catalog-migration.sql:ro
+      - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/30-catalog-seed.sql:ro
+      - ../backend/sql/seed/seed_identity_demo_accounts.sql:/docker-entrypoint-initdb.d/40-demo-accounts.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pwemove123"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
 
   backend:
-    image: ghcr.io/wemove-course-team/wemove-backend:latest
+    image: ghcr.io/wemove-course-team/wemove-backend:${IMAGE_TAG:-latest}
     environment:
+      NODE_ENV: production
       PORT: "3001"
       DB_HOST: mysql
       DB_PORT: "3306"
-      DB_USER: root
-      DB_PASSWORD: wemove123
+      DB_USER: ${MYSQL_USER:-wemove}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?请在 deploy/.env 设置 MYSQL_PASSWORD}
       DB_NAME: wemove_portal
-      # 生产部署必须替换为强随机值
-      JWT_SECRET: change-me-in-production
+      JWT_SECRET: ${JWT_SECRET:?请在 deploy/.env 设置 JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/api/v1/categories"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
 
   frontend:
-    image: ghcr.io/wemove-course-team/wemove-frontend:latest
+    image: ghcr.io/wemove-course-team/wemove-frontend:${IMAGE_TAG:-latest}
     ports:
-      - "8080:80"
+      - "${WEMOVE_HTTP_PORT:-8080}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
 
 volumes:
   mysql-data:
+
+networks:
+  internal:
+    internal: true

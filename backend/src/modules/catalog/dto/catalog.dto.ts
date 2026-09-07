@@ -46,8 +46,8 @@ export class ProductQueryDto {
   @IsOptional() @IsIn(['3-6', '6-10', '10-plus'])
   age?: '3-6' | '6-10' | '10-plus'
 
-  @IsOptional() @IsIn(['default', 'price_asc', 'price_desc', 'newest'])
-  sort?: 'default' | 'price_asc' | 'price_desc' | 'newest'
+  @IsOptional() @IsIn(['default', 'price_asc', 'price_desc', 'newest', 'name_asc'])
+  sort?: 'default' | 'price_asc' | 'price_desc' | 'newest' | 'name_asc'
 }
 
 // ------------------------------ 管理端 ------------------------------

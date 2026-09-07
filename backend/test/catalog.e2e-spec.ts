@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import type { Response } from 'superagent'
+import { DataSource } from 'typeorm'
 import { AppModule } from '../src/app.module'
 import { configureApp } from '../src/app-setup'
 import { setupTestDatabase } from './setup-db'
@@ -17,7 +18,7 @@ import { setupTestDatabase } from './setup-db'
  *   npm run test:e2e
  */
 
-// 环境变量需在 AppModule 装配（ConfigModule 读取）前写入
+// 环境变量需在 Nest 应用初始化（TypeOrmModule 异步工厂读取）前写入
 process.env.DB_HOST = process.env.DB_HOST || '127.0.0.1'
 process.env.DB_PORT = process.env.DB_PORT || '3306'
 process.env.DB_USER = process.env.DB_USER || 'root'
@@ -205,6 +206,16 @@ describe('Catalog API (e2e)', () => {
       const prices: number[] = res.body.data.items.map((i: { price: number }) => i.price)
       const sorted = [...prices].sort((a, b) => a - b)
       expect(prices).toEqual(sorted)
+    })
+
+    it('sort=name_asc 产品名称升序', async () => {
+      const res = await request(app.getHttpServer()).get('/api/v1/products?sort=name_asc&pageSize=50').expect(200)
+      const names: string[] = res.body.data.items.map((i: { name: string }) => i.name)
+      // 中文排序以数据库实际 collation 为准，不能用运行机 ICU 的 localeCompare 代替。
+      const expected = await app.get(DataSource).query(
+        'SELECT `name` FROM `product` WHERE `is_published` = 1 ORDER BY `name` ASC, `id` ASC'
+      )
+      expect(names).toEqual(expected.map((row: { name: string }) => row.name))
     })
 
     it('page 超出范围返回空 items 而非报错（PLP-006 空态由前端呈现）', async () => {
@@ -417,15 +428,24 @@ describe('Catalog API (e2e)', () => {
       expect(again.body.data.items[0].isFeatured).toBe(1)
     })
 
-    it('删除 → 公开 404（闭环第 3 步；正式下架应走 status 接口）', async () => {
+    it('归档 → 公开 404 且后台仍保留记录（ADM-P-001 不物理删除）', async () => {
       const list = await admin.get('/api/v1/admin/products?keyword=' + SKU)
       const productId = list.body.data.items[0].id
 
       const removed = await admin.delete(`/api/v1/admin/products/${productId}`)
       expect(removed.status).toBe(200)
+      expect(removed.body.data).toMatchObject({ id: String(productId), archived: true })
 
       const gone = await request(app.getHttpServer()).get('/api/v1/products/wm-e2e-01')
       expect(gone.status).toBe(404)
+
+      const archived = await admin.get('/api/v1/admin/products?keyword=' + SKU)
+      expect(archived.body.data.total).toBe(1)
+      expect(archived.body.data.items[0]).toMatchObject({
+        id: String(productId),
+        isPublished: 0,
+        isFeatured: 0
+      })
     })
   })
 
@@ -445,6 +465,7 @@ describe('Catalog API (e2e)', () => {
       })
       expect(res.status).toBe(201)
       const categoryId = res.body.data.id
+      expect(res.body.data.sortOrder).toBe(99)
 
       const categories = await request(app.getHttpServer()).get('/api/v1/categories')
       const created = categories.body.data.find((c: { slug: string }) => c.slug === 'e2e-cat')

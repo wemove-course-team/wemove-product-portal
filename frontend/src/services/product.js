@@ -65,7 +65,7 @@ export const productApi = {
     return http.put(`/admin/products/${id}/status`, body)
   },
 
-  /** 物理删除（正式下架请用 updateProductStatus，需求 ADM-P-001） */
+  /** 兼容 DELETE 路由的可恢复归档：后端保留记录，仅从公开目录移除。 */
   deleteProduct(id) {
     return http.delete(`/admin/products/${id}`)
   },

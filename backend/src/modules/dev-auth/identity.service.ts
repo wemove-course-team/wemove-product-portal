@@ -1,5 +1,4 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { DataSource } from 'typeorm'
 import { Response } from 'express'
@@ -29,8 +28,7 @@ interface DemoUserRow {
 export class IdentityService {
   constructor(
     private readonly dataSource: DataSource,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly jwtService: JwtService
   ) {}
 
   issueCsrf(res: Response) {
@@ -64,7 +62,7 @@ export class IdentityService {
       throw new UnauthorizedException('账号已被停用，请联系管理员')
     }
 
-    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '7d')
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d'
     const token = await this.jwtService.signAsync({
       sub: String(user.id),
       role: user.role

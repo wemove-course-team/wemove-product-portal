@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { CommonModule } from './common/common.module'
 import { CatalogModule } from './modules/catalog/catalog.module'
@@ -19,16 +18,15 @@ import { ProductCategory } from './modules/catalog/category.entity'
  */
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      // 延迟到 Nest 初始化时读取环境变量，确保 e2e 可在应用启动前注入独立测试库配置。
+      useFactory: () => ({
         type: 'mysql' as const,
-        host: config.get<string>('DB_HOST', '127.0.0.1'),
-        port: config.get<number>('DB_PORT', 3306),
-        username: config.get<string>('DB_USER', 'root'),
-        password: config.get<string>('DB_PASSWORD', ''),
-        database: config.get<string>('DB_NAME', 'wemove_portal'),
+        host: process.env.DB_HOST || '127.0.0.1',
+        port: Number(process.env.DB_PORT || 3306),
+        username: process.env.DB_USER || process.env.DB_USERNAME || 'root',
+        password: process.env.DB_PASSWORD || '',
+        database: process.env.DB_NAME || process.env.DB_DATABASE || 'wemove_portal',
         entities: [Product, ProductCategory],
         // 建表与增量一律走 sql/ 脚本（决策 D6），禁止 synchronize 改表
         synchronize: false,
