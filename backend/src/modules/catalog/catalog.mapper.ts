@@ -45,6 +45,7 @@ export interface CategoryDto {
   name: string
   slug: string
   description: string | null
+  sortOrder: number
   productCount: number
 }
 
@@ -142,6 +143,7 @@ export function toCategory(category: ProductCategory, productCount: number): Cat
     name: category.name,
     slug: category.slug,
     description: category.description ?? null,
+    sortOrder: Number(category.sortOrder),
     productCount
   }
 }

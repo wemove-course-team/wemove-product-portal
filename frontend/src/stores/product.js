@@ -18,18 +18,28 @@ export const useProductStore = defineStore('product', () => {
   const products = ref([])
   const categoriesError = ref(null)
   const productsError = ref(null)
+  const categoriesLoaded = ref(false)
   const productsLoaded = ref(false)
+  let categoriesPromise = null
 
   async function loadCategories(force = false) {
-    if (!force && categories.value.length > 0) return categories.value
-    try {
-      const envelope = await productApi.fetchCategories()
-      categories.value = envelope?.data ?? []
-      categoriesError.value = null
-    } catch (err) {
-      categoriesError.value = err
-    }
-    return categories.value
+    if (!force && categoriesLoaded.value) return categories.value
+    if (!force && categoriesPromise) return categoriesPromise
+    categoriesPromise = (async () => {
+      try {
+        const envelope = await productApi.fetchCategories()
+        categories.value = envelope?.data ?? []
+        categoriesLoaded.value = true
+        categoriesError.value = null
+      } catch (err) {
+        categoriesLoaded.value = false
+        categoriesError.value = err
+      } finally {
+        categoriesPromise = null
+      }
+      return categories.value
+    })()
+    return categoriesPromise
   }
 
   async function loadProducts(force = false) {
@@ -79,6 +89,7 @@ export const useProductStore = defineStore('product', () => {
     products,
     categoriesError,
     productsError,
+    categoriesLoaded,
     productsLoaded,
     loadCategories,
     loadProducts,

@@ -33,6 +33,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+deploy/.env
 
 # Backend / Java / Python ignores
 target/
@@ -42,3 +43,6 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Local agent scratch artifacts and browser QA profiles
+work/

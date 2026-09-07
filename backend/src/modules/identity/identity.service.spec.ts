@@ -33,12 +33,11 @@ function repository(items: any[] = []) {
 }
 
 describe('IdentityService', () => {
-  const config = { get: jest.fn((_key: string, fallback: string) => fallback) }
   const jwt = { signAsync: jest.fn() }
 
   it('注册用户时保存密码哈希并设置 USER 角色', async () => {
     const users = repository()
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     const user = await service.register({
       username: 'demo_user',
@@ -53,7 +52,7 @@ describe('IdentityService', () => {
 
   it('拒绝重复的用户名或邮箱', async () => {
     const users = repository([{ id: 1, username: 'demo_user', email: 'demo@example.com' }])
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     await expect(
       service.register({ username: 'demo_user', email: 'other@example.com', password: '12345678' })
@@ -68,21 +67,21 @@ describe('IdentityService', () => {
       passwordHash: '$2b$10$invalid',
       status: 0
     }])
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     await expect(service.authenticate('demo_user', '12345678')).rejects.toBeInstanceOf(UnauthorizedException)
   })
 
   it('读取当前用户时要求账号有效', async () => {
     const users = repository([{ id: 1, status: 0 }])
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     await expect(service.getById('1')).rejects.toMatchObject({ status: 401 })
   })
 
   it('限制用户列表的分页参数', async () => {
     const users = repository([{ id: 1, username: 'a', email: 'a@example.com', status: 1 }])
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     const result = await service.listUsers({ page: 0, pageSize: 500 })
 
@@ -93,14 +92,14 @@ describe('IdentityService', () => {
 
   it('禁止管理员停用自己', async () => {
     const users = repository([{ id: 1, role: 'ADMIN', status: 1 }])
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     await expect(service.updateUserStatus('1', 0, '1')).rejects.toBeInstanceOf(ConflictException)
   })
 
   it('禁止停用最后一个有效管理员', async () => {
     const users = repository([{ id: 1, role: 'ADMIN', status: 1 }])
-    const service = new IdentityService(users as any, repository() as any, jwt as any, config as any, {} as any)
+    const service = new IdentityService(users as any, repository() as any, jwt as any, {} as any)
 
     await expect(service.updateUserStatus('1', 0, '2')).rejects.toBeInstanceOf(ConflictException)
   })

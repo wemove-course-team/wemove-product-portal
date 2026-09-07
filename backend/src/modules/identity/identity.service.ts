@@ -1,5 +1,4 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import { createHash, randomBytes } from 'crypto'
@@ -15,7 +14,6 @@ export class IdentityService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(PasswordResetToken) private readonly resetTokens: Repository<PasswordResetToken>,
     private readonly jwt: JwtService,
-    private readonly config: ConfigService,
     private readonly dataSource: DataSource
   ) {}
 
@@ -53,7 +51,7 @@ export class IdentityService {
 
     const token = await this.jwt.signAsync(
       { sub: String(user.id), role: user.role },
-      { expiresIn: this.config.get('JWT_EXPIRES_IN', '7d') }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     )
     return { token, user: this.toSummary(user) }
   }
@@ -94,7 +92,7 @@ export class IdentityService {
     })
     await this.resetTokens.save(token)
     // 本地开发暂时把 token 写入日志，生产环境不输出敏感信息。
-    if (this.config.get<string>('NODE_ENV') !== 'production') {
+    if (process.env.NODE_ENV !== 'production') {
       console.log(`[identity] password reset token for ${user.email}: ${rawToken}`)
     }
     return { accepted: true }

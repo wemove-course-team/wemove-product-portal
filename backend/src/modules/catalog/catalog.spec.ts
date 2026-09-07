@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { CatalogService } from './catalog.service'
 import { CatalogAdminService } from './catalog-admin.service'
-import { canSeeDealerPrice, toDetail, toListItem } from './catalog.mapper'
+import { canSeeDealerPrice, toCategory, toDetail, toListItem } from './catalog.mapper'
 import type { Product } from './product.entity'
 import type { ProductCategory } from './category.entity'
 
@@ -141,6 +141,13 @@ describe('catalog.mapper 角色裁剪（验收：公开接口不返回经销商�
     expect(item.categoryName).toBe('益智玩具')
     expect(item.id).toBe('101')
   })
+
+  it('分类 DTO 保留后台排序值，编辑回填不会重置顺序', () => {
+    expect(toCategory(makeCategory({ sortOrder: 7 }), 3)).toMatchObject({
+      sortOrder: 7,
+      productCount: 3
+    })
+  })
 })
 
 describe('CatalogService 公开接口（验收：草稿/下架产品不进入公开列表）', () => {
@@ -171,13 +178,20 @@ describe('CatalogService 公开接口（验收：草稿/下架产品不进入公
   it('featured=1 仅返回精选（#86 首页契约）', async () => {
     await publicService.listProducts({ featured: '1' })
     const andWhere = publicQb.calls.andWhere.map((args) => String(args[0]))
-    expect(andWhere.some((expr) => expr.includes('p.is_featured = 1'))).toBe(true)
+    expect(andWhere.some((expr) => expr.includes('p.isFeatured = 1'))).toBe(true)
   })
 
   it('sort=price_asc 按价格升序', async () => {
     await publicService.listProducts({ sort: 'price_asc' })
     const orderBy = publicQb.calls.orderBy[publicQb.calls.orderBy.length - 1]
     expect(orderBy[0]).toBe('p.price')
+    expect(orderBy[1]).toBe('ASC')
+  })
+
+  it('sort=name_asc 按产品名称升序', async () => {
+    await publicService.listProducts({ sort: 'name_asc' })
+    const orderBy = publicQb.calls.orderBy[publicQb.calls.orderBy.length - 1]
+    expect(orderBy[0]).toBe('p.name')
     expect(orderBy[1]).toBe('ASC')
   })
 
@@ -302,6 +316,35 @@ describe('CatalogAdminService 管理端（验收：SKU、slug 唯一）', () => 
     expect(productRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ id: '101', isPublished: 0, isFeatured: 1 })
     )
+  })
+
+  it('编辑产品：空文本会规范化为 NULL，允许后台真正清空可选字段', async () => {
+    productRepo.findOne.mockResolvedValue(makeProduct())
+    await adminService.updateProduct('101', {
+      summary: '   ',
+      description: '',
+      material: '',
+      scene: '',
+      tag: ''
+    })
+    expect(productRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: null,
+        description: null,
+        material: null,
+        scene: null,
+        tag: null
+      })
+    )
+  })
+
+  it('归档产品：保留数据库记录，仅下架并取消精选', async () => {
+    productRepo.findOne.mockResolvedValue(makeProduct())
+    await expect(adminService.deleteProduct('101')).resolves.toEqual({ id: '101', archived: true })
+    expect(productRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: '101', isPublished: 0, isFeatured: 0 })
+    )
+    expect(productRepo.delete).not.toHaveBeenCalled()
   })
 
   it('管理详情/编辑：产品不存在返回 404', async () => {

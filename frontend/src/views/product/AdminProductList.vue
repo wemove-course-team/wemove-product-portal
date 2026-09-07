@@ -69,7 +69,7 @@
                 <el-button link type="primary" @click="$router.push(`/admin/products/${row.id}/edit`)">编辑</el-button>
                 <el-button v-if="row.isPublished === 1" link type="warning" @click="setStatus(row, 0)">下架</el-button>
                 <el-button v-else link type="success" @click="setStatus(row, 1)">发布</el-button>
-                <el-button link type="danger" @click="removeProduct(row)">删除</el-button>
+                <el-button link type="danger" @click="removeProduct(row)">归档</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -230,19 +230,19 @@ async function toggleFeatured(row, value) {
 async function removeProduct(row) {
   try {
     await ElMessageBox.confirm(
-      `确定删除「${row.name}」（${row.sku}）吗？正式下架建议使用“下架”而非删除。`,
-      '删除确认',
-      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+      `确定归档「${row.name}」（${row.sku}）吗？归档后产品会从公开目录移除，但数据仍会保留。`,
+      '归档确认',
+      { type: 'warning', confirmButtonText: '归档', cancelButtonText: '取消' }
     )
   } catch {
     return
   }
   try {
     await productApi.deleteProduct(row.id)
-    ElMessage.success('产品已删除')
+    ElMessage.success('产品已归档并从公开目录移除')
     fetchProducts()
   } catch (err) {
-    ElMessage.error(err?.message || '删除失败，请稍后重试')
+    ElMessage.error(err?.message || '归档失败，请稍后重试')
   }
 }
 
@@ -252,7 +252,7 @@ const categoryForm = ref({ id: null, name: '', slug: '', description: '', sortOr
 
 function openCategoryDialog(row) {
   categoryForm.value = row
-    ? { id: row.id, name: row.name, slug: row.slug, description: row.description || '', sortOrder: 0 }
+    ? { id: row.id, name: row.name, slug: row.slug, description: row.description || '', sortOrder: Number(row.sortOrder || 0) }
     : { id: null, name: '', slug: '', description: '', sortOrder: adminCategories.value.length + 1 }
   categoryDialogVisible.value = true
 }

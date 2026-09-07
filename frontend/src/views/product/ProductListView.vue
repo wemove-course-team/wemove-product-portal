@@ -2,8 +2,8 @@
   <div class="workshop-page">
     <div class="page-header">
       <div class="header-inner">
-        <h1 class="page-title">玩具品类与产品中心</h1>
-        <p class="page-subtitle">精选天然实木益智游戏、儿童保龄球、摇摆平衡板与重力滚珠轨道系统</p>
+        <h1 class="page-title">WEMOVE SPORTS 产品中心</h1>
+        <p class="page-subtitle">探索儿童保龄球、平衡协调、亲子运动与开放式游戏产品</p>
       </div>
     </div>
 
@@ -14,30 +14,32 @@
           <div class="filter-group">
             <div class="filter-heading">分类品类</div>
             <div class="filter-options">
-              <label
+              <button
                 v-for="cat in categoryOptions"
                 :key="cat.slug"
+                type="button"
                 class="filter-radio-item"
                 :class="{ active: activeCategorySlug === cat.slug }"
                 @click="setCategory(cat.slug)"
               >
                 <span>{{ cat.name }}</span>
-              </label>
+              </button>
             </div>
           </div>
 
           <div class="filter-group">
             <div class="filter-heading">适用年龄</div>
             <div class="filter-options">
-              <label
+              <button
                 v-for="age in AGE_OPTIONS"
                 :key="age.value"
+                type="button"
                 class="filter-radio-item"
                 :class="{ active: selectedAge === age.value }"
                 @click="setAge(age.value)"
               >
                 <span>{{ age.label }}</span>
-              </label>
+              </button>
             </div>
           </div>
 
@@ -48,6 +50,7 @@
               <el-option label="价格从低到高" value="price_asc" />
               <el-option label="价格从高到低" value="price_desc" />
               <el-option label="最新上架" value="newest" />
+              <el-option label="名称 A-Z" value="name_asc" />
             </el-select>
           </div>
 
@@ -74,7 +77,7 @@
         <!-- Product Grid -->
         <main class="products-main">
           <div class="toolbar">
-            <span class="count-tip">共找到 <strong>{{ total }}</strong> 款实木益智玩具</span>
+            <span class="count-tip">共找到 <strong>{{ total }}</strong> 款产品</span>
             <div class="toolbar-right">
               <el-input
                 v-model="searchInput"
@@ -94,11 +97,11 @@
           </div>
 
           <AsyncState
-            :loading="loading"
-            :error="loadError"
-            :empty="!loading && !loadError && !categoryExists"
+            :loading="loading || (!categoriesLoaded && !categoryLoadError)"
+            :error="loadError || categoryLoadError"
+            :empty="!loading && !loadError && categoriesLoaded && !categoryExists"
             empty-text="该产品分类不存在或已下架"
-            @retry="fetchList"
+            @retry="retryPage"
           >
             <template #empty-extra>
               <el-button link type="primary" @click="setCategory('all')">查看全部产品</el-button>
@@ -116,18 +119,19 @@
                   :key="p.id"
                   class="product-card"
                 >
-                  <div class="product-thumb" @click="$router.push(`/products/${p.slug}`)">
-                    <img :src="p.coverImage" :alt="p.name" loading="lazy" />
+                  <router-link class="product-thumb" :to="`/products/${p.slug}`" :aria-label="`查看 ${p.name} 详情`">
+                    <img v-if="p.coverImage" :src="p.coverImage" :alt="p.name" loading="lazy" />
+                    <span v-else class="product-image-empty" aria-hidden="true">暂无图片</span>
                     <span v-if="p.tag" class="card-tag">{{ p.tag }}</span>
-                  </div>
+                  </router-link>
 
                   <div class="product-body">
                     <div class="meta-row">
                       <span class="sku">{{ p.sku }}</span>
                       <span class="age">{{ p.ageRange }}</span>
                     </div>
-                    <h3 class="prod-name" @click="$router.push(`/products/${p.slug}`)">
-                      {{ p.name }}
+                    <h3 class="prod-name">
+                      <router-link :to="`/products/${p.slug}`">{{ p.name }}</router-link>
                     </h3>
                     <p class="prod-desc">{{ p.summary }}</p>
 
@@ -193,7 +197,7 @@
                 </small>
               </span>
               <span v-else-if="row.key === 'moq'">
-                {{ prod.moq || 10 }} 件起订
+                {{ prod.moq != null ? `${prod.moq} 件起订` : '登录经销商账户后查看' }}
               </span>
               <span v-else>
                 {{ row.getValue(prod) }}
@@ -227,8 +231,11 @@ const loading = ref(false)
 const loadError = ref(null)
 const products = ref([])
 const total = ref(0)
+let listRequestSerial = 0
 
 productStore.loadCategories()
+const categoriesLoaded = computed(() => productStore.categoriesLoaded)
+const categoryLoadError = computed(() => productStore.categoriesError)
 
 const categoryOptions = computed(() => [
   { slug: 'all', name: '全部品类', id: 0 },
@@ -307,7 +314,13 @@ function resetFilters() {
   router.push({ name: 'Products' })
 }
 
+async function retryPage() {
+  if (!categoriesLoaded.value) await productStore.loadCategories(true)
+  if (categoryExists.value) await fetchList()
+}
+
 async function fetchList() {
+  const requestSerial = ++listRequestSerial
   loading.value = true
   loadError.value = null
   try {
@@ -320,18 +333,28 @@ async function fetchList() {
       age: selectedAge.value || undefined,
       sort: sortBy.value === 'default' ? undefined : sortBy.value
     })
-    products.value = envelope?.data?.items || []
-    total.value = envelope?.data?.total || 0
-    loadError.value = null
+    if (requestSerial === listRequestSerial) {
+      products.value = envelope?.data?.items || []
+      total.value = envelope?.data?.total || 0
+      loadError.value = null
+    }
   } catch (err) {
-    loadError.value = err
+    if (requestSerial === listRequestSerial) loadError.value = err
   } finally {
-    loading.value = false
+    if (requestSerial === listRequestSerial) loading.value = false
   }
 }
 
 watch(
-  () => [route.name, route.params.slug, route.query.q, route.query.age, route.query.sort, route.query.page],
+  () => [
+    route.name,
+    route.params.slug,
+    route.query.q,
+    route.query.age,
+    route.query.sort,
+    route.query.page,
+    categoryExists.value
+  ],
   () => {
     if (categoryExists.value || activeCategorySlug.value === 'all') fetchList()
   },
@@ -359,7 +382,8 @@ function toggleCompare(p) {
     compareError.value = '最多只可同时对比4款产品'
     return
   }
-  compareList.value.push({ id: p.id, name: p.name })
+  // 保存 slug，避免数字 id 与纯数字 slug 同时存在时详情寻址到错误产品。
+  compareList.value.push({ id: p.id, slug: p.slug, name: p.name })
 }
 
 function removeFromCompare(id) {
@@ -387,16 +411,25 @@ async function openCompareDialog() {
   }
 }
 
-const compareTableData = [
+const baseCompareTableData = [
   { field: '产品图片', key: 'image' },
   { field: '零售指导价', key: 'price' },
-  { field: '建议起订量', key: 'moq' },
   { field: '适合年龄', key: 'age', getValue: (p) => p.ageRange },
   { field: '制作材质', key: 'mat', getValue: (p) => p.material },
   { field: '使用场景', key: 'scene', getValue: (p) => p.scene },
   { field: '产品规格', key: 'dim', getValue: (p) => p.specs?.dimensions || '-' },
   { field: '整箱装箱数', key: 'pack', getValue: (p) => (p.specs?.casePack ? `${p.specs.casePack} 件/箱` : '-') }
 ]
+
+// MOQ 属经销商私有字段：只有详情 API 实际返回该字段时才展示这一行，禁止前端猜测默认值。
+const compareTableData = computed(() => {
+  if (!compareDetails.value.some((product) => product.moq != null)) return baseCompareTableData
+  return [
+    ...baseCompareTableData.slice(0, 2),
+    { field: '建议起订量', key: 'moq' },
+    ...baseCompareTableData.slice(2)
+  ]
+})
 </script>
 
 <style scoped>
@@ -461,6 +494,11 @@ const compareTableData = [
 }
 
 .filter-radio-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
   font-size: 13px;
   color: var(--text-muted);
   padding: 6px 10px;
@@ -551,10 +589,18 @@ const compareTableData = [
 }
 
 .product-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   height: 220px;
   background: #f7f7f7;
   cursor: pointer;
+}
+
+.product-image-empty {
+  color: var(--text-light);
+  font-size: 13px;
 }
 
 .product-thumb img {
@@ -664,9 +710,67 @@ const compareTableData = [
   }
   .filter-sidebar {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .filter-group {
+    margin-bottom: 0;
+  }
+  .filter-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .filter-radio-item {
+    width: auto;
+    flex: 1 1 90px;
+    text-align: center;
+  }
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    padding: 28px 18px;
+  }
+  .workshop-body {
+    padding: 24px 16px 56px;
+  }
+  .filter-sidebar {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .filter-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-group {
+    min-width: 220px;
+    scroll-snap-align: start;
+  }
+  .filter-options {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+  .filter-radio-item {
+    width: 100%;
+    flex: none;
+    text-align: left;
+  }
+  .toolbar,
+  .toolbar-right,
+  .toolbar-search {
+    width: 100%;
   }
   .products-grid {
     grid-template-columns: 1fr;
+  }
+  .card-actions {
+    flex-wrap: wrap;
   }
 }
 </style>

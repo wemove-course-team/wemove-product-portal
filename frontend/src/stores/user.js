@@ -147,7 +147,7 @@ export const useUserStore = defineStore('user', () => {
   async function login(identifier, password) {
     try {
       await authApi.login(identifier, password)
-      // 登录会更新 Cookie，必须重新请求 /me。
+      // 登录会轮换服务端 Cookie；清除登录页路由守卫缓存的游客态，再拉取真实会话。
       sessionStatus.value = 'idle'
       sessionUser.value = null
       sessionError.value = null

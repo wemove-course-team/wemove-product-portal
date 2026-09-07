@@ -110,6 +110,24 @@
           <el-form-item label="包装内含">
             <el-input v-model="specs.includedItems" placeholder="逗号分隔，例如：实木球瓶 x10, 保龄球 x2" />
           </el-form-item>
+          <el-form-item label="核心特点">
+            <el-input v-model="specs.highlights" type="textarea" :rows="3" placeholder="每行一条，只填写已确认的产品卖点" />
+          </el-form-item>
+          <el-form-item label="安装与准备">
+            <el-input v-model="specs.setup" type="textarea" :rows="3" placeholder="选填：正式安装或准备说明" />
+          </el-form-item>
+          <el-form-item label="玩法说明">
+            <el-input v-model="specs.howToPlay" type="textarea" :rows="3" placeholder="选填：How to Play 内容" />
+          </el-form-item>
+          <el-form-item label="保养方式">
+            <el-input v-model="specs.care" type="textarea" :rows="3" placeholder="选填：清洁与存放说明" />
+          </el-form-item>
+          <el-form-item label="安全提示">
+            <el-input v-model="specs.safetyNotes" type="textarea" :rows="3" placeholder="只填写已确认的安全提示，不自动生成认证结论" />
+          </el-form-item>
+          <el-form-item label="检测与认证">
+            <el-input v-model="specs.certifications" type="textarea" :rows="3" placeholder="每行一条，仅填写有正式文件支持的认证" />
+          </el-form-item>
         </div>
       </section>
 
@@ -170,7 +188,13 @@ const specs = reactive({
   netWeight: '',
   packageDimensions: '',
   casePack: 0,
-  includedItems: ''
+  includedItems: '',
+  highlights: '',
+  setup: '',
+  howToPlay: '',
+  care: '',
+  safetyNotes: '',
+  certifications: ''
 })
 
 const formReady = computed(() => !isEdit.value || (loaded.value && !loadError.value))
@@ -213,6 +237,12 @@ async function loadProduct() {
       specs.packageDimensions = s.packageDimensions ?? ''
       specs.casePack = Number(s.casePack ?? 0)
       specs.includedItems = s.includedItems ?? ''
+      specs.highlights = Array.isArray(s.highlights) ? s.highlights.join('\n') : (s.highlights ?? '')
+      specs.setup = s.setup ?? ''
+      specs.howToPlay = s.howToPlay ?? ''
+      specs.care = s.care ?? ''
+      specs.safetyNotes = s.safetyNotes ?? ''
+      specs.certifications = Array.isArray(s.certifications) ? s.certifications.join('\n') : (s.certifications ?? '')
     }
     loaded.value = true
   } catch (err) {
@@ -230,6 +260,14 @@ function buildPayload() {
   if (specs.packageDimensions) specObject.packageDimensions = specs.packageDimensions
   if (specs.casePack) specObject.casePack = Number(specs.casePack)
   if (specs.includedItems) specObject.includedItems = specs.includedItems
+  const highlights = specs.highlights.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
+  if (highlights.length) specObject.highlights = highlights
+  if (specs.setup.trim()) specObject.setup = specs.setup.trim()
+  if (specs.howToPlay.trim()) specObject.howToPlay = specs.howToPlay.trim()
+  if (specs.care.trim()) specObject.care = specs.care.trim()
+  if (specs.safetyNotes.trim()) specObject.safetyNotes = specs.safetyNotes.trim()
+  const certifications = specs.certifications.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
+  if (certifications.length) specObject.certifications = certifications
 
   const payload = {
     name: form.name.trim(),
@@ -241,15 +279,16 @@ function buildPayload() {
     isPublished: form.isPublished,
     isFeatured: form.featuredBool ? 1 : 0,
     images,
-    specs: specObject
+    specs: specObject,
+    // 更新时也发送空字符串，让后端把已清空字段规范化为 NULL，避免旧内容残留。
+    summary: form.summary.trim(),
+    description: form.description.trim(),
+    tag: form.tag.trim(),
+    ageRange: form.ageRange.trim(),
+    material: form.material.trim(),
+    scene: form.scene.trim()
   }
   if (form.slug.trim()) payload.slug = form.slug.trim()
-  if (form.summary.trim()) payload.summary = form.summary.trim()
-  if (form.description.trim()) payload.description = form.description.trim()
-  if (form.tag.trim()) payload.tag = form.tag.trim()
-  if (form.ageRange.trim()) payload.ageRange = form.ageRange.trim()
-  if (form.material.trim()) payload.material = form.material.trim()
-  if (form.scene.trim()) payload.scene = form.scene.trim()
   return payload
 }
 

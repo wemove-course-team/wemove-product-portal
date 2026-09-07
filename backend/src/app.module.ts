@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { CommonModule } from './common/common.module'
 import { CatalogModule } from './modules/catalog/catalog.module'
@@ -13,16 +12,15 @@ import { HealthController } from './health.controller'
 /** 应用根模块，注册公共、身份和产品目录模块。 */
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      // 延迟到 Nest 初始化时读取环境变量，确保 e2e 可在应用启动前注入独立测试库配置。
+      useFactory: () => ({
         type: 'mysql' as const,
-        host: config.get<string>('DB_HOST', '127.0.0.1'),
-        port: config.get<number>('DB_PORT', 3306),
-        username: config.get<string>('DB_USER') || config.get<string>('DB_USERNAME', 'root'),
-        password: config.get<string>('DB_PASSWORD', ''),
-        database: config.get<string>('DB_NAME') || config.get<string>('DB_DATABASE', 'wemove_portal'),
+        host: process.env.DB_HOST || '127.0.0.1',
+        port: Number(process.env.DB_PORT || 3306),
+        username: process.env.DB_USER || process.env.DB_USERNAME || 'root',
+        password: process.env.DB_PASSWORD || '',
+        database: process.env.DB_NAME || process.env.DB_DATABASE || 'wemove_portal',
         entities: [Product, ProductCategory, User, PasswordResetToken],
         // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
         synchronize: false,

@@ -63,8 +63,17 @@ npm run start:dev
 
 ```bash
 npm test -- --runInBand
+npm run test:e2e # 产品目录端到端测试：对真实 MySQL 跑完整 HTTP 契约（需本地 3306 可连接）
 npx tsc --noEmit
 npm run build
 ```
+
+- e2e 由 `test/setup-db.ts` 全自动初始化独立测试库 `wemove_portal_test`
+  （基线 → Identity/MVP03 增量迁移 → seed，可重复执行），与演示库 `wemove_portal` 互不影响；
+  用例集即课程「测试报告（测试用例）」的可执行版本，见 `test/catalog.e2e-spec.ts`。
+- CI（`.github/workflows/ci.yml`）在 GitHub Actions 的 `mysql:8` service 容器上
+  运行同样两组测试、生产依赖 high/critical 安全门、前后端构建与 Docker 镜像验证；
+  CD（`cd.yml`）仅在 main 的 CI 成功后发布镜像到
+  GHCR，部署编排见 `deploy/`。
 
 Identity 的找回密码流程在开发环境把一次性 token 写入后端日志，不接入邮件供应商。

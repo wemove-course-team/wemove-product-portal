@@ -7,6 +7,12 @@ import { SessionGuard } from '../../common/session.guard'
 import { ChangePasswordDto, ConfirmPasswordResetDto, LoginDto, RegisterDto, RequestPasswordResetDto, UpdateProfileDto } from './identity.dto'
 import { IdentityService } from './identity.service'
 
+/** 本地 HTTP 验收可显式关闭；正式 HTTPS 环境必须在部署变量中设为 true。 */
+function cookieSecure(): boolean {
+  if (process.env.COOKIE_SECURE !== undefined) return process.env.COOKIE_SECURE === 'true'
+  return process.env.NODE_ENV === 'production'
+}
+
 @Controller()
 export class IdentityController {
   constructor(private readonly identity: IdentityService) {}
@@ -14,7 +20,7 @@ export class IdentityController {
   @Get('auth/csrf')
   issueCsrf(@Res({ passthrough: true }) response: Response) {
     const token = randomUUID()
-    response.cookie('wemove_csrf', token, { httpOnly: false, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' })
+    response.cookie('wemove_csrf', token, { httpOnly: false, sameSite: 'lax', secure: cookieSecure(), path: '/' })
     return { csrfToken: token }
   }
 
@@ -28,14 +34,14 @@ export class IdentityController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
     const { token, user } = await this.identity.authenticate(body.identifier, body.password)
-    response.cookie('wemove_session', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' })
+    response.cookie('wemove_session', token, { httpOnly: true, sameSite: 'lax', secure: cookieSecure(), path: '/' })
     return user
   }
 
   @Post('auth/logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie('wemove_session', { secure: process.env.NODE_ENV === 'production', path: '/' })
+    response.clearCookie('wemove_session', { sameSite: 'lax', secure: cookieSecure(), path: '/' })
     return undefined
   }
 

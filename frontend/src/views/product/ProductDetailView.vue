@@ -15,17 +15,22 @@
         <!-- Gallery -->
         <div class="gallery-col">
           <div class="main-image-wrap">
-            <img :src="currentImage" :alt="product.name" class="main-image" />
+            <img v-if="currentImage" :src="currentImage" :alt="product.name" class="main-image" />
+            <span v-else class="main-image-empty">产品图片待发布</span>
           </div>
           <div class="thumbs-row" v-if="product.images.length > 1">
-            <img
+            <button
               v-for="(img, idx) in product.images"
               :key="idx"
-              :src="img"
+              type="button"
               class="thumb-item"
               :class="{ active: currentImage === img }"
+              :aria-label="`查看 ${product.name} 的第 ${idx + 1} 张图片`"
+              :aria-pressed="currentImage === img"
               @click="currentImage = img"
-            />
+            >
+              <img :src="img" :alt="`${product.name} - 图片 ${idx + 1}`" />
+            </button>
           </div>
         </div>
 
@@ -70,11 +75,11 @@
           <div class="quick-params">
             <div class="param-row">
               <span class="param-label">主要材质：</span>
-              <span class="param-val">{{ product.material || '天然优质实木' }}</span>
+              <span class="param-val">{{ product.material || '待补充' }}</span>
             </div>
             <div class="param-row">
               <span class="param-label">适用场景：</span>
-              <span class="param-val">{{ product.scene || '室内亲子 / 机构活动' }}</span>
+              <span class="param-val">{{ product.scene || '待补充' }}</span>
             </div>
             <div class="param-row">
               <span class="param-label">所属品类：</span>
@@ -94,7 +99,7 @@
                 <span>经销合作</span>
               </button>
             </div>
-            <p class="cta-note">支持亲子试用体验与机构批量采购，提交咨询后我们将在 1 个工作日内联系您。</p>
+            <p class="cta-note">提交产品咨询后，品牌团队将根据您提供的联系方式回复。</p>
           </div>
         </div>
       </div>
@@ -105,14 +110,26 @@
           <el-tab-pane label="产品详细介绍与玩法" name="desc">
             <div class="tab-body">
               <h3>设计理念与玩法指南</h3>
-              <p>{{ product.description || product.summary }}</p>
-              <div class="highlights-box">
+              <p>{{ product.description || product.summary || '详细内容待运营人员发布。' }}</p>
+              <div v-if="highlights.length" class="highlights-box">
                 <h4>核心特点：</h4>
                 <ul>
-                  <li>选用天然无异味原木材料，手感扎实细腻。</li>
-                  <li>边缘经多道手工倒圆打磨，无尖锐棱角，守护儿童玩耍安全。</li>
-                  <li>支持开放式建构与探索，兼容多种木制积木与扩展模块。</li>
+                  <li v-for="item in highlights" :key="item">{{ item }}</li>
                 </ul>
+              </div>
+              <div v-if="product.specs?.setup || product.specs?.howToPlay || product.specs?.care" class="instruction-grid">
+                <section v-if="product.specs?.setup">
+                  <h4>安装与准备</h4>
+                  <p>{{ product.specs.setup }}</p>
+                </section>
+                <section v-if="product.specs?.howToPlay">
+                  <h4>玩法说明</h4>
+                  <p>{{ product.specs.howToPlay }}</p>
+                </section>
+                <section v-if="product.specs?.care">
+                  <h4>保养方式</h4>
+                  <p>{{ product.specs.care }}</p>
+                </section>
               </div>
             </div>
           </el-tab-pane>
@@ -150,12 +167,13 @@
 
           <el-tab-pane label="安全与检测认证" name="cert">
             <div class="tab-body">
-              <p>WeMove 惟木匠心全系列产品均符合严格的国家玩具安全标准 (GB 6675) 及欧盟 EN71 玩具安全指令检测：</p>
-              <ul class="cert-list">
-                <li>✓ 物理机械性能安全合格（无窒息小零件危险、无危险锐利边缘）</li>
-                <li>✓ 重金属溶出量低于欧盟指令限制阈值</li>
-                <li>✓ 环保无毒水性涂层，无刺激性气味</li>
+              <p v-if="product.specs?.safetyNotes">{{ product.specs.safetyNotes }}</p>
+              <ul v-if="certifications.length" class="cert-list">
+                <li v-for="item in certifications" :key="item">{{ item }}</li>
               </ul>
+              <p v-if="!product.specs?.safetyNotes && !certifications.length" class="content-pending">
+                安全提示与检测文件尚未发布，请在使用前联系品牌方索取该产品的正式资料。
+              </p>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -195,12 +213,24 @@ const activeTab = ref('desc')
 const loading = ref(false)
 const loadError = ref(null)
 const notFound = ref(false)
+let detailRequestSerial = 0
 
 const hasDealerPrice = computed(
   () => product.value && product.value.dealerPrice != null && product.value.moq != null
 )
 
+/** JSON 字段兼容数组或换行文本，页面只展示后台真实维护的内容。 */
+function normalizeContentList(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean)
+  if (typeof value === 'string') return value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
+  return []
+}
+
+const highlights = computed(() => normalizeContentList(product.value?.specs?.highlights))
+const certifications = computed(() => normalizeContentList(product.value?.specs?.certifications))
+
 async function loadProduct() {
+  const requestSerial = ++detailRequestSerial
   loading.value = true
   loadError.value = null
   notFound.value = false
@@ -210,19 +240,22 @@ async function loadProduct() {
     const envelope = await productApi.fetchProduct(key)
     const detail = envelope?.data
     if (!detail) {
-      notFound.value = true
+      if (requestSerial === detailRequestSerial) notFound.value = true
     } else {
-      product.value = detail
-      currentImage.value = detail.images?.[0] || ''
+      if (requestSerial === detailRequestSerial) {
+        product.value = detail
+        currentImage.value = detail.images?.[0] || ''
+      }
     }
   } catch (err) {
+    if (requestSerial !== detailRequestSerial) return
     if (err?.status === 404) {
       notFound.value = true
     } else {
       loadError.value = err
     }
   } finally {
-    loading.value = false
+    if (requestSerial === detailRequestSerial) loading.value = false
   }
 }
 
@@ -285,6 +318,7 @@ function handleDealerApply() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 .main-image-wrap {
@@ -294,12 +328,22 @@ function handleDealerApply() {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-image {
+  display: block;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.main-image-empty {
+  color: var(--text-light);
+  font-size: 14px;
 }
 
 .thumbs-row {
@@ -310,12 +354,20 @@ function handleDealerApply() {
 .thumb-item {
   width: 72px;
   height: 72px;
-  object-fit: cover;
+  padding: 0;
   border-radius: 8px;
   border: 2px solid transparent;
   cursor: pointer;
   background: #f0f0f0;
   transition: all 0.2s;
+}
+
+.thumb-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .thumb-item:hover, .thumb-item.active {
@@ -325,6 +377,7 @@ function handleDealerApply() {
 .info-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .meta-tags {
@@ -365,6 +418,7 @@ function handleDealerApply() {
   color: var(--text-color);
   line-height: 1.3;
   margin-bottom: 12px;
+  overflow-wrap: anywhere;
 }
 
 .pdp-summary {
@@ -526,6 +580,27 @@ function handleDealerApply() {
   margin-top: 8px;
 }
 
+.instruction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.instruction-grid section {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-light);
+}
+
+.content-pending {
+  padding: 16px;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-light);
+}
+
 .specs-table {
   width: 100%;
   border-collapse: collapse;
@@ -557,6 +632,74 @@ function handleDealerApply() {
 @media (max-width: 960px) {
   .pdp-grid {
     grid-template-columns: 1fr;
+    min-width: 0;
+  }
+  .instruction-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .breadcrumb-bar {
+    padding: 12px 16px;
+  }
+  .breadcrumb-bar .inner {
+    flex-wrap: nowrap;
+  }
+  .breadcrumb-bar a,
+  .breadcrumb-bar .inner > span:not(.curr) {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .breadcrumb-bar .curr {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pdp-main {
+    padding: 24px 16px 56px;
+  }
+  .main-image-wrap {
+    height: min(82vw, 420px);
+  }
+  .thumbs-row {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .thumb-item {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+  }
+  .pricing-row,
+  .cta-buttons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .price-val .num {
+    font-size: 30px;
+  }
+  .specs-table,
+  .specs-table tbody,
+  .specs-table tr,
+  .specs-table td {
+    display: block;
+    width: 100%;
+  }
+  .specs-table .td-key {
+    border-bottom: 0;
+  }
+  .custom-tabs :deep(.el-tabs__nav-scroll) {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .custom-tabs :deep(.el-tabs__nav-scroll::-webkit-scrollbar) {
+    display: none;
+  }
+  .custom-tabs :deep(.el-tabs__nav) {
+    width: max-content;
+    transform: none !important;
   }
 }
 </style>
