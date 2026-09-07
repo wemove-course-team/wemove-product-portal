@@ -3,6 +3,7 @@ name: CD
 # main 合入 → 构建并发布 Docker 镜像到 GHCR（部署见 deploy/README.md）
 # 打 v* tag → 额外把前后端构建产物挂到 GitHub Release
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     tags: ['v*']
