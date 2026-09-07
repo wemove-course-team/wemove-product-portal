@@ -6,6 +6,7 @@ import { SessionGuard } from '../../common/session.guard'
 import { AdminUserQueryDto, UpdateUserStatusDto } from './identity.dto'
 import { IdentityService } from './identity.service'
 
+/** 管理员用户查询和账号启停。 */
 @Controller('admin/users')
 @UseGuards(SessionGuard, RolesGuard)
 @Roles('ADMIN')
@@ -13,7 +14,9 @@ export class AdminUsersController {
   constructor(private readonly identity: IdentityService) {}
 
   @Get()
-  list(@Query() query: AdminUserQueryDto) { return this.identity.listUsers(query) }
+  list(@Query() query: AdminUserQueryDto) {
+    return this.identity.listUsers(query)
+  }
 
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: UpdateUserStatusDto, @CurrentUser() actor: RequestUser) {

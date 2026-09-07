@@ -1,5 +1,6 @@
 import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator'
 
+/** 注册参数。 */
 export class RegisterDto {
   @IsString()
   @Matches(/^[A-Za-z0-9_]{3,32}$/, { message: '用户名需为 3-32 位字母、数字或下划线' })
@@ -14,6 +15,7 @@ export class RegisterDto {
   password!: string
 }
 
+/** 登录参数。 */
 export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: '请输入用户名或邮箱' })
@@ -24,6 +26,7 @@ export class LoginDto {
   password!: string
 }
 
+/** 可修改的个人资料。 */
 export class UpdateProfileDto {
   @IsOptional()
   @IsString()
@@ -36,6 +39,7 @@ export class UpdateProfileDto {
   phone?: string
 }
 
+/** 登录后修改密码的参数。 */
 export class ChangePasswordDto {
   @IsString()
   @IsNotEmpty({ message: '请输入当前密码' })
@@ -47,11 +51,13 @@ export class ChangePasswordDto {
   newPassword!: string
 }
 
+/** 找回密码申请参数。 */
 export class RequestPasswordResetDto {
   @IsEmail({}, { message: '请输入有效邮箱' })
   email!: string
 }
 
+/** 确认密码重置的参数。 */
 export class ConfirmPasswordResetDto {
   @IsString()
   @IsNotEmpty({ message: '请输入重置 token' })
@@ -63,6 +69,7 @@ export class ConfirmPasswordResetDto {
   newPassword!: string
 }
 
+/** 管理员用户列表筛选条件。 */
 export class AdminUserQueryDto {
   @IsOptional()
   @IsString()
@@ -79,6 +86,7 @@ export class AdminUserQueryDto {
   pageSize?: number
 }
 
+/** 管理员启用或停用账号。 */
 export class UpdateUserStatusDto {
   @IsIn([0, 1])
   status!: 0 | 1

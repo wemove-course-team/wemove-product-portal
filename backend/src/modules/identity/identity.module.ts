@@ -7,6 +7,7 @@ import { PasswordResetToken } from './password-reset-token.entity'
 import { IdentityService } from './identity.service'
 import { User } from './user.entity'
 
+/** 身份、会话和用户管理模块。 */
 @Module({
   imports: [TypeOrmModule.forFeature([User, PasswordResetToken]), CommonModule],
   controllers: [IdentityController, AdminUsersController],

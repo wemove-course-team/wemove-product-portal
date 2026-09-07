@@ -4,8 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import { createHash, randomBytes } from 'crypto'
 import * as bcrypt from 'bcryptjs'
-import { IsNull, Repository } from 'typeorm'
-import { DataSource } from 'typeorm'
+import { DataSource, IsNull, Repository } from 'typeorm'
 import { PasswordResetToken } from './password-reset-token.entity'
 import { User } from './user.entity'
 import { AdminUserQueryDto, ChangePasswordDto, ConfirmPasswordResetDto, RegisterDto, UpdateProfileDto } from './identity.dto'
@@ -21,8 +20,13 @@ export class IdentityService {
   ) {}
 
   async register(input: RegisterDto) {
-    const existing = await this.users.findOne({ where: [{ username: input.username }, { email: input.email }] })
-    if (existing) throw new ConflictException({ code: 'CONFLICT_409', message: '用户名或邮箱已存在' })
+    const existing = await this.users.findOne({
+      where: [{ username: input.username }, { email: input.email.toLowerCase() }]
+    })
+    if (existing) {
+      throw new ConflictException({ code: 'CONFLICT_409', message: '用户名或邮箱已存在' })
+    }
+
     const user = this.users.create({
       username: input.username,
       email: input.email.toLowerCase(),
@@ -37,12 +41,20 @@ export class IdentityService {
   }
 
   async authenticate(identifier: string, password: string) {
-    const user = await this.users.findOne({ where: [{ username: identifier }, { email: identifier.toLowerCase() }] })
+    const user = await this.users.findOne({
+      where: [{ username: identifier }, { email: identifier.toLowerCase() }]
+    })
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new UnauthorizedException({ code: 'AUTH_401', message: '账号或密码不正确' })
     }
-    if (Number(user.status) !== 1) throw new UnauthorizedException({ code: 'AUTH_401', message: '账号已被停用，请联系管理员' })
-    const token = await this.jwt.signAsync({ sub: String(user.id), role: user.role }, { expiresIn: this.config.get('JWT_EXPIRES_IN', '7d') })
+    if (Number(user.status) !== 1) {
+      throw new UnauthorizedException({ code: 'AUTH_401', message: '账号已被停用，请联系管理员' })
+    }
+
+    const token = await this.jwt.signAsync(
+      { sub: String(user.id), role: user.role },
+      { expiresIn: this.config.get('JWT_EXPIRES_IN', '7d') }
+    )
     return { token, user: this.toSummary(user) }
   }
 
@@ -70,7 +82,7 @@ export class IdentityService {
 
   async requestPasswordReset(email: string) {
     const user = await this.users.findOne({ where: { email: email.toLowerCase() } })
-    // Do not reveal whether an email is registered.
+    // 无论邮箱是否存在都返回相同结果，避免泄露账号信息。
     if (!user) return { accepted: true }
     await this.resetTokens.update({ userId: user.id, usedAt: IsNull() }, { usedAt: new Date() })
     const rawToken = randomBytes(32).toString('hex')
@@ -81,8 +93,7 @@ export class IdentityService {
       usedAt: null
     })
     await this.resetTokens.save(token)
-    // The course flow intentionally uses the dev log instead of an email provider.
-    // Never expose reset credentials in production logs.
+    // 本地开发暂时把 token 写入日志，生产环境不输出敏感信息。
     if (this.config.get<string>('NODE_ENV') !== 'production') {
       console.log(`[identity] password reset token for ${user.email}: ${rawToken}`)
     }
@@ -91,7 +102,7 @@ export class IdentityService {
 
   async confirmPasswordReset(input: ConfirmPasswordResetDto) {
     const tokenHash = this.hashToken(input.token)
-    // Token claim, password update and usedAt mark share one transaction and row lock.
+    // 锁定 token，并在同一事务中更新密码，避免并发重复使用。
     return this.dataSource.transaction(async (manager) => {
       const tokenRepo = manager.getRepository(PasswordResetToken)
       const userRepo = manager.getRepository(User)
@@ -117,19 +128,45 @@ export class IdentityService {
   async listUsers(query: AdminUserQueryDto) {
     const page = Math.max(1, Number(query.page) || 1)
     const pageSize = Math.min(50, Math.max(1, Number(query.pageSize) || 10))
-    const builder = this.users.createQueryBuilder('user').select(['user.id', 'user.username', 'user.realName', 'user.email', 'user.phone', 'user.role', 'user.companyId', 'user.status', 'user.createdAt']).orderBy('user.createdAt', 'DESC')
-    if (query.keyword) builder.andWhere('(user.username LIKE :keyword OR user.email LIKE :keyword OR user.realName LIKE :keyword)', { keyword: `%${query.keyword}%` })
-    if (query.status !== undefined) builder.andWhere('user.status = :status', { status: Number(query.status) })
+    const builder = this.users
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.realName',
+        'user.email',
+        'user.phone',
+        'user.role',
+        'user.companyId',
+        'user.status',
+        'user.createdAt'
+      ])
+      .orderBy('user.createdAt', 'DESC')
+
+    if (query.keyword) {
+      builder.andWhere(
+        '(user.username LIKE :keyword OR user.email LIKE :keyword OR user.realName LIKE :keyword)',
+        { keyword: `%${query.keyword}%` }
+      )
+    }
+    if (query.status !== undefined) {
+      builder.andWhere('user.status = :status', { status: Number(query.status) })
+    }
+
     const [items, total] = await builder.skip((page - 1) * pageSize).take(pageSize).getManyAndCount()
     return { items: items.map((user) => this.toSummary(user, true)), total, page, pageSize }
   }
 
   async updateUserStatus(id: string, status: 0 | 1, actorId?: string) {
     const user = await this.users.findOne({ where: { id: Number(id) } })
-    if (!user) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '用户不存在' })
+    if (!user) {
+      throw new NotFoundException({ code: 'NOT_FOUND_404', message: '用户不存在' })
+    }
+
     if (status === 0 && actorId && String(user.id) === String(actorId)) {
       throw new ConflictException({ code: 'CONFLICT_409', message: '不能停用当前管理员账号' })
     }
+
     if (status === 0 && user.role === 'ADMIN') {
       const activeAdmins = await this.users.count({ where: { role: 'ADMIN', status: 1 } })
       if (activeAdmins <= 1) {
@@ -153,5 +190,7 @@ export class IdentityService {
     }
   }
 
-  private hashToken(token: string) { return createHash('sha256').update(token).digest('hex') }
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex')
+  }
 }

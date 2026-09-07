@@ -3,13 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { DataSource } from 'typeorm'
 import { Request } from 'express'
 
-/**
- * 可选会话守卫：与 SessionGuard 相同的解析逻辑，但未登录/会话失效时静默放行
- * （req.user 不挂载，按游客处理）。
- *
- * 用于公开产品接口：登录的经销商/管理员可见 dealerPrice/moq（DTO 按角色裁剪），
- * 游客与普通用户永不可见 —— 裁剪由服务端完成，前端只渲染 API 返回的字段。
- */
+/** 解析可选会话；没有有效会话时按游客继续访问公开接口。 */
 @Injectable()
 export class OptionalSessionGuard implements CanActivate {
   constructor(
@@ -48,7 +42,7 @@ export class OptionalSessionGuard implements CanActivate {
         }
       }
     } catch {
-      // 会话无效一律按游客处理，公开接口不因坏 Cookie 报 401
+      // 无效会话按游客处理，公开接口仍可访问。
     }
     return true
   }

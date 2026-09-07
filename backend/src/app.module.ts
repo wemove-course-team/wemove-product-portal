@@ -10,15 +10,7 @@ import { Product } from './modules/catalog/product.entity'
 import { ProductCategory } from './modules/catalog/category.entity'
 import { HealthController } from './health.controller'
 
-/**
- * 应用根模块（MVP-01 Identity 基准）
- *
- * 模块归属（AI_DEVELOPMENT_RULES 规则 5）：
- * - common/（守卫、信封、错误体）：统一公共契约与访问控制
- * - modules/catalog：#87 MVP-03 产品域
- * - modules/identity：#85 平台身份、会话与用户管理
- * - modules/content / support / dealer / operation：#88 / #89 / #90 / #91
- */
+/** 应用根模块，注册公共、身份和产品目录模块。 */
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -32,7 +24,7 @@ import { HealthController } from './health.controller'
         password: config.get<string>('DB_PASSWORD', ''),
         database: config.get<string>('DB_NAME') || config.get<string>('DB_DATABASE', 'wemove_portal'),
         entities: [Product, ProductCategory, User, PasswordResetToken],
-        // 建表与增量一律走 sql/ 脚本（决策 D6），禁止 synchronize 改表
+        // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
         synchronize: false,
         timezone: 'Z',
         charset: 'utf8mb4_unicode_ci'

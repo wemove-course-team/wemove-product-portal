@@ -6,11 +6,7 @@ import { OptionalSessionGuard } from './optional-session.guard'
 import { RolesGuard } from './roles.guard'
 import { CsrfGuard } from './csrf.guard'
 
-/**
- * 公共守卫/信封层（#85 MVP-01 基准）
- *
- * 业务模块只依赖守卫、角色装饰器与 @CurrentUser，不感知会话内部实现。
- */
+/** 公共守卫和 JWT 配置，供各业务模块复用。 */
 @Global()
 @Module({
   imports: [
@@ -20,7 +16,7 @@ import { CsrfGuard } from './csrf.guard'
       useFactory: (config: ConfigService) => {
         const secret = config.get<string>('JWT_SECRET')
         const isProduction = config.get<string>('NODE_ENV') === 'production'
-        if (isProduction && !secret) throw new Error('JWT_SECRET is required in production')
+        if (isProduction && !secret) throw new Error('生产环境必须配置 JWT_SECRET')
         return {
           secret: secret || 'wemove-dev-secret-change-me',
           signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d') }

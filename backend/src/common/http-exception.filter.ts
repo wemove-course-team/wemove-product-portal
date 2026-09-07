@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 
-/** HTTP 状态码 → #85 契约错误码前缀 */
+/** HTTP 状态码对应的业务错误码。 */
 const STATUS_CODE_MAP: Record<number, string> = {
   400: 'VALIDATION_400',
   401: 'AUTH_401',
@@ -24,11 +24,7 @@ interface ErrorBody {
   requestId: string | null
 }
 
-/**
- * 统一错误体（#85 契约 v1 / 决策 D3）：
- * HTTP 状态码 + { code, message(中文), errors?([{field, message}]), requestId }。
- * 校验异常在 ValidationPipe 工厂里已带上 code/errors，这里原样透传并补齐 requestId。
- */
+/** 将异常转换为统一错误响应。 */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name)
@@ -38,7 +34,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const req = ctx.getRequest<Request & { requestId?: string }>()
     const res = ctx.getResponse<Response>()
 
-    // 非业务异常（未捕获的编程/数据库错误）必须留痕，否则线上只有 500 没有线索
+    // 未处理异常写入日志，便于定位服务器错误。
     if (!(exception instanceof HttpException)) {
       this.logger.error(
         `unhandled exception on ${req.method} ${req.originalUrl}`,

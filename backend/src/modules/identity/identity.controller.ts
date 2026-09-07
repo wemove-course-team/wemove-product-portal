@@ -1,7 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Put, Req, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Put, Res, UseGuards } from '@nestjs/common'
 import { Response } from 'express'
 import { randomUUID } from 'crypto'
-import { CsrfGuard } from '../../common/csrf.guard'
 import { CurrentUser } from '../../common/current-user.decorator'
 import { RequestUser } from '../../common/request-user'
 import { SessionGuard } from '../../common/session.guard'
@@ -21,7 +20,9 @@ export class IdentityController {
 
   @Post('auth/register')
   @HttpCode(HttpStatus.OK)
-  register(@Body() body: RegisterDto) { return this.identity.register(body) }
+  register(@Body() body: RegisterDto) {
+    return this.identity.register(body)
+  }
 
   @Post('auth/login')
   @HttpCode(HttpStatus.OK)
@@ -40,21 +41,31 @@ export class IdentityController {
 
   @Get('auth/me')
   @UseGuards(SessionGuard)
-  me(@CurrentUser() user: RequestUser) { return this.identity.getById(user.id).then((entity) => this.identity.toSummary(entity)) }
+  me(@CurrentUser() user: RequestUser) {
+    return this.identity.getById(user.id).then((entity) => this.identity.toSummary(entity))
+  }
 
   @Patch('users/me')
   @UseGuards(SessionGuard)
-  updateProfile(@CurrentUser() user: RequestUser, @Body() body: UpdateProfileDto) { return this.identity.updateProfile(user.id, body) }
+  updateProfile(@CurrentUser() user: RequestUser, @Body() body: UpdateProfileDto) {
+    return this.identity.updateProfile(user.id, body)
+  }
 
   @Put('users/me/password')
   @UseGuards(SessionGuard)
-  changePassword(@CurrentUser() user: RequestUser, @Body() body: ChangePasswordDto) { return this.identity.changePassword(user.id, body) }
+  changePassword(@CurrentUser() user: RequestUser, @Body() body: ChangePasswordDto) {
+    return this.identity.changePassword(user.id, body)
+  }
 
   @Post('auth/password-reset/request')
   @HttpCode(HttpStatus.OK)
-  requestPasswordReset(@Body() body: RequestPasswordResetDto) { return this.identity.requestPasswordReset(body.email) }
+  requestPasswordReset(@Body() body: RequestPasswordResetDto) {
+    return this.identity.requestPasswordReset(body.email)
+  }
 
   @Post('auth/password-reset/confirm')
   @HttpCode(HttpStatus.OK)
-  confirmPasswordReset(@Body() body: ConfirmPasswordResetDto) { return this.identity.confirmPasswordReset(body) }
+  confirmPasswordReset(@Body() body: ConfirmPasswordResetDto) {
+    return this.identity.confirmPasswordReset(body)
+  }
 }

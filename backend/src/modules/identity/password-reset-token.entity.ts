@@ -1,5 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
+/** 找回密码令牌，只保存哈希和使用状态。 */
 @Entity({ name: 'password_reset_token' })
 export class PasswordResetToken {
   @PrimaryGeneratedColumn({ type: 'bigint' })

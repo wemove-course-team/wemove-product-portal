@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
+/** 对应系统用户表，密码只保存哈希值。 */
 @Entity({ name: 'sys_user' })
 export class User {
   @PrimaryGeneratedColumn({ type: 'bigint' })
