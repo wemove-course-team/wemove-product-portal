@@ -90,7 +90,7 @@ const routes = [
   {
     path: '/dealers/apply',
     name: 'DealerApply',
-    component: () => import('../views/DealerApply.vue'),
+    component: () => import('../views/dealer/DealerApply.vue'),
     meta: { zone: 'public' }
   },
   // 支持中心三页（#89 交付 ContactForm / FaqList / DownloadList 前先挂占位页）
@@ -147,11 +147,11 @@ const routes = [
     component: () => import('../views/account/AccountHomeView.vue'),
     meta: { zone: 'account', roles: ['USER', 'DEALER', 'ADMIN'] }
   },
-  // 经销商门户（#90 交付真实申请/审核/等级前先以现有页面占位）
+  // 经销商门户
   {
     path: '/dealer/portal',
     name: 'DealerPortal',
-    component: () => import('../views/DealerPortal.vue'),
+    component: () => import('../views/dealer/DealerPortal.vue'),
     meta: { zone: 'account', roles: ['DEALER', 'ADMIN'] }
   },
 
@@ -202,8 +202,8 @@ const routes = [
       {
         path: 'dealers',
         name: 'AdminDealers',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '经销商申请与审核', ownerTask: '#90 MVP-06' }
+        component: () => import('../views/admin/AdminDealers.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
         path: 'users',

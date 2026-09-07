@@ -107,7 +107,7 @@ describe('Catalog API (e2e)', () => {
   }, 120000)
 
   afterAll(async () => {
-    await app.close()
+    if (app) await app.close()
   })
 
   // ============================ 公开目录接口 ============================
