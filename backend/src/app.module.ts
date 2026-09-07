@@ -2,20 +2,14 @@ import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { CommonModule } from './common/common.module'
 import { CatalogModule } from './modules/catalog/catalog.module'
-import { DevAuthModule } from './modules/dev-auth/dev-auth.module'
+import { IdentityModule } from './modules/identity/identity.module'
+import { User } from './modules/identity/user.entity'
+import { PasswordResetToken } from './modules/identity/password-reset-token.entity'
 import { Product } from './modules/catalog/product.entity'
 import { ProductCategory } from './modules/catalog/category.entity'
+import { HealthController } from './health.controller'
 
-/**
- * 应用根模块（MVP-03 临时骨架）
- *
- * 模块归属（AI_DEVELOPMENT_RULES 规则 5）：
- * - common/（守卫、信封、错误体）：MVP-03 最小实现，#85 合并时以正式实现为准
- * - modules/catalog：#87 MVP-03 产品域
- * - modules/dev-auth：MVP-03 临时登录（login/me/csrf），#85 交付 identity 后删除并接入正式模块
- *   ── 替换点：将 DevAuthModule 换为 #85 的 IdentityModule，路由契约不变 ──
- * - modules/identity / content / support / dealer / operation：#85 / #88 / #89 / #90 / #91
- */
+/** 应用根模块，注册公共、身份和产品目录模块。 */
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -27,16 +21,17 @@ import { ProductCategory } from './modules/catalog/category.entity'
         username: process.env.DB_USER || process.env.DB_USERNAME || 'root',
         password: process.env.DB_PASSWORD || '',
         database: process.env.DB_NAME || process.env.DB_DATABASE || 'wemove_portal',
-        entities: [Product, ProductCategory],
-        // 建表与增量一律走 sql/ 脚本（决策 D6），禁止 synchronize 改表
+        entities: [Product, ProductCategory, User, PasswordResetToken],
+        // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
         synchronize: false,
         timezone: 'Z',
         charset: 'utf8mb4_unicode_ci'
       })
     }),
     CommonModule,
-    DevAuthModule,
+    IdentityModule,
     CatalogModule
-  ]
+  ],
+  controllers: [HealthController]
 })
 export class AppModule {}

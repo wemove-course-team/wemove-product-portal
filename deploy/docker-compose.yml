@@ -14,9 +14,11 @@ services:
       - mysql-data:/var/lib/mysql
       # MySQL 官方镜像仅在新数据卷首次启动时按文件名顺序执行这些脚本。
       - ../backend/sql/init_schema_and_data.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
-      - ../backend/sql/migrations/mvp03_catalog_incremental.sql:/docker-entrypoint-initdb.d/20-catalog-migration.sql:ro
-      - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/30-catalog-seed.sql:ro
-      - ../backend/sql/seed/seed_identity_demo_accounts.sql:/docker-entrypoint-initdb.d/40-demo-accounts.sql:ro
+      - ../backend/sql/migrations/mvp01_identity_password_reset.sql:/docker-entrypoint-initdb.d/20-identity-migration.sql:ro
+      - ../backend/sql/migrations/mvp03_catalog_incremental.sql:/docker-entrypoint-initdb.d/30-catalog-migration.sql:ro
+      - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/40-catalog-seed.sql:ro
+      # 已知口令的演示账号只挂载、不自动导入；需要时按 deploy/README 手动执行。
+      - ../backend/sql/seed/seed_identity_demo_accounts.sql:/opt/wemove/seed/identity-demo.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s
@@ -40,6 +42,7 @@ services:
       DB_NAME: wemove_portal
       JWT_SECRET: ${JWT_SECRET:?请在 deploy/.env 设置 JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
       mysql:
         condition: service_healthy

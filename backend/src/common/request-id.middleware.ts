@@ -2,10 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common'
 import { Request, Response, NextFunction } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 
-/**
- * 请求追踪（#85 契约 v1）：每个请求分配 requestId，写入响应头 X-Request-Id，
- * 并挂到 req.requestId 供统一信封 / 错误体透出。
- */
+/** 为请求生成追踪 ID，并写入响应头和请求对象。 */
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {

@@ -4,26 +4,15 @@ import { authApi } from '../services/auth'
 import { setUnauthorizedHandler } from '../services/http'
 import { API_MODE, IS_DEV } from '../config/env'
 
-/**
- * 会话与用户状态 store（#86 维护）
- *
- * 规则（AI_DEVELOPMENT_RULES 规则 3 / #85 契约）：
- * - 会话唯一来源是服务端：HttpOnly Cookie（wemove_session）+ GET /auth/me。
- *   本 store 只保存会话摘要（id/username/email/role/companyId），demoAccounts 等
- *   本地假登录已移除，不存储、不信任任何本地令牌或角色。
- * - 权限只在服务端裁决：这里的 isAdmin/isDealer 仅用于界面呈现与路由预检，
- *   不能也不应作为真正的授权依据（路由隐藏 ≠ 后端授权）。
- * - 历史的「本地 role 快速切换」已降级为开发预览开关（IS_DEV 限定）：
- *   生产构建中 switchRole 是空操作，界面上任何角色/权限均来自真实会话。
- */
+/** 用户会话状态。真实身份始终来自服务端，预览角色仅用于开发环境。 */
 
-/** 开发预览角色在 localStorage 中的键名（仅存角色名，不含任何凭据；仅 DEV 生效） */
+/** 开发预览角色的本地存储键，只保存角色名。 */
 const DEV_PREVIEW_KEY = 'wemove_dev_preview_role'
 
-/** 服务端角色口径（决策 D5：GUEST | USER | DEALER | ADMIN）；真实经销商状态由 #90 接入 */
+/** 服务端角色。 */
 const UI_ROLES = ['GUEST', 'USER', 'DEALER', 'ADMIN']
 
-/** 开发预览用的演示档案（仅 DEV 可见，正式构建不参与任何逻辑） */
+/** 开发预览使用的演示资料，不参与真实权限判断。 */
 const PREVIEW_PROFILES = {
   USER: { id: '101', username: '张明（普通会员）', email: 'zhangming@example.com', companyName: '个人消费客户', tierName: '', discountRate: 1.0 },
   DEALER: { id: '201', username: '李经理（认证经销商）', email: 'dealer@starwood.com', companyName: '上海晨星益智玩具有限公司', tierName: '一级核心经销商', discountRate: 0.65 },
@@ -31,21 +20,16 @@ const PREVIEW_PROFILES = {
 }
 
 export const useUserStore = defineStore('user', () => {
-  /* ------------------------------ 服务端会话状态 ------------------------------ */
-
-  /** 会话摘要：null 表示未登录；字段来自 GET /me */
+  /** 服务端返回的会话摘要，未登录时为 null。 */
   const sessionUser = ref(null)
-  /** 'idle' 未初始化 | 'loading' 初始化中 | 'ready' 已完成（无论结果） */
+  /** 会话初始化状态。 */
   const sessionStatus = ref('idle')
-  /** 会话初始化失败的非 401 错误（如网络异常），供账户页呈现 */
+  /** 初始化时的网络或服务端错误。 */
   const sessionError = ref(null)
 
   let sessionPromise = null
 
-  /**
-   * 拉取服务端会话并缓存。首次调用会真实请求 /me；
-   * 401 属正常未登录（按游客处理），其余错误记录到 sessionError。
-   */
+  /** 拉取当前会话；401 按未登录处理，其他错误留给页面显示。 */
   function fetchSession() {
     sessionUser.value = null
     sessionError.value = null
@@ -65,21 +49,18 @@ export const useUserStore = defineStore('user', () => {
       })
       .catch((err) => {
         if (err?.status !== 401) {
-          // 未登录(401)是常态；其他失败（网络/500）记录供界面呈现，不伪造登录态
+          // 未登录是正常状态，其他错误交给页面提示。
           sessionError.value = err
         }
       })
   }
 
-  /**
-   * 确保会话已初始化（router 守卫在进入受保护路由前 await）。
-   * 并发调用共享同一 Promise；初始化完成后结果被缓存。
-   */
+  /** 初始化会话，并复用并发请求。 */
   function ensureSession() {
     if (sessionStatus.value === 'ready') return Promise.resolve()
     if (!sessionPromise) {
       if (API_MODE === 'mock') {
-        // Mock 模式不连接真实后端：会话保持游客，不做任何伪造
+        // Mock 模式不连接后端，保持游客状态。
         sessionStatus.value = 'ready'
         return Promise.resolve()
       }
@@ -92,27 +73,22 @@ export const useUserStore = defineStore('user', () => {
     return sessionPromise
   }
 
-  // 会话被服务端判定失效（任一请求 401）时立即清空本地摘要
+  // 任意请求返回 401 时清除本地会话摘要。
   setUnauthorizedHandler(() => {
     sessionUser.value = null
   })
-
-  /* --------------------------- 开发预览开关（仅 DEV） --------------------------- */
 
   const previewRole = ref(
     IS_DEV && UI_ROLES.includes(localStorage.getItem(DEV_PREVIEW_KEY)) ? localStorage.getItem(DEV_PREVIEW_KEY) : null
   )
 
-  /** 是否处于开发预览（界面需显示明显标识） */
+  /** 是否处于开发预览。 */
   const isPreviewActive = computed(() => IS_DEV && previewRole.value !== null)
 
-  /**
-   * 开发预览角色切换。仅开发构建生效：用于答辩/联调时预览各身份的界面样式，
-   * 不产生任何真实权限；生产构建为空操作并给出警告。
-   */
+  /** 切换开发预览角色，不改变服务端权限。 */
   function switchRole(roleKey) {
     if (!IS_DEV) {
-      // 生产构建：本地角色切换已被移除，权限以服务端会话为准
+      // 生产环境不允许本地切换角色。
       console.warn('[user] switchRole 仅在开发构建可用，真实身份由服务端会话决定')
       return
     }
@@ -125,9 +101,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  /* -------------------------------- 派生会话摘要 -------------------------------- */
-
-  // 有效角色：开发预览 > 服务端会话 > 游客
+  // 预览角色优先，其次使用服务端角色，最后按游客处理。
   const currentRole = computed(() => {
     if (isPreviewActive.value) return previewRole.value
     if (sessionUser.value) {
@@ -141,7 +115,7 @@ export const useUserStore = defineStore('user', () => {
 
   const isAuthenticated = computed(() => Boolean(sessionUser.value))
 
-  /** 会话摘要（含兼容字段）。开发预览时返回演示档案并标记 isPreview */
+  /** 提供页面使用的用户摘要。 */
   const userInfo = computed(() => {
     if (isPreviewActive.value) {
       return {
@@ -166,17 +140,10 @@ export const useUserStore = defineStore('user', () => {
   })
 
   const isGuest = computed(() => currentRole.value === 'GUEST')
-  const isRegularUser = computed(() => currentRole.value === 'USER')
   const isDealer = computed(() => currentRole.value === 'DEALER')
   const isAdmin = computed(() => currentRole.value === 'ADMIN')
 
-  /* ---------------------------------- 登录/退出 ---------------------------------- */
-
-  /**
-   * 真实登录：POST /auth/login 成功后立即拉取 /me 会话摘要。
-   * 返回 { ok, error }；失败时 error 为归一化 ApiError（含可读 message/fieldErrors），
-   * 调用方负责呈现，本 store 不做任何本地成功兜底。
-   */
+  /** 登录后重新读取服务端会话。 */
   async function login(identifier, password) {
     try {
       await authApi.login(identifier, password)
@@ -185,7 +152,7 @@ export const useUserStore = defineStore('user', () => {
       sessionUser.value = null
       sessionError.value = null
       await ensureSession()
-      // 预览开关若残留会覆盖真实会话显示，登录成功后清除
+      // 登录成功后清除残留的预览角色。
       if (IS_DEV) switchRole(null)
       return { ok: true, error: null }
     } catch (error) {
@@ -193,13 +160,13 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  /** 退出登录：调用服务端撤销会话；无论接口结果如何都清空本地摘要（Cookie 由服务端管理） */
+  /** 退出登录并清除本地摘要。 */
   async function logout() {
     let error = null
     try {
       await authApi.logout()
     } catch (err) {
-      // 会话本就失效（401）视为退出成功；其他失败保留错误供调用方提示
+      // 会话已失效时仍视为退出成功。
       if (err?.status !== 401) error = err
     }
     sessionUser.value = null
@@ -208,23 +175,18 @@ export const useUserStore = defineStore('user', () => {
   }
 
   return {
-    // 会话状态
     sessionUser,
     sessionStatus,
     sessionError,
     isAuthenticated,
     ensureSession,
-    // 派生摘要（兼容既有消费方）
     currentRole,
     userInfo,
     isGuest,
-    isRegularUser,
     isDealer,
     isAdmin,
-    // 开发预览
     isPreviewActive,
     switchRole,
-    // 动作
     login,
     logout
   }

@@ -15,13 +15,7 @@ function resolveJwtSecret(): string {
   return 'wemove-dev-secret-change-me'
 }
 
-/**
- * 公共守卫/信封层（MVP-03 临时最小实现，正式实现以 #85 MVP-01 为准）
- *
- * 已按 #85 冻结契约 v1 编写：SessionGuard（Cookie 会话 + 查库校验 status）、
- * OptionalSessionGuard、RolesGuard + @Roles、CsrfGuard、统一信封与错误体。
- * #85 合并时可直接替换/扩充本目录，业务模块只依赖守卫与 @CurrentUser。
- */
+/** 公共守卫和 JWT 配置，供各业务模块复用。 */
 @Global()
 @Module({
   imports: [

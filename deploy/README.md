@@ -27,7 +27,16 @@
    docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
    ```
 
-新数据卷首次启动时，MySQL 会自动按“基线 → MVP03 迁移 → catalog seed → 演示账号”顺序初始化。已有数据卷不会重新执行初始化脚本，后续数据库变更必须使用新的增量迁移。
+新数据卷首次启动时，MySQL 会自动按“基线 → Identity 迁移 → MVP03 迁移 → catalog seed”顺序初始化。已有数据卷不会重新执行初始化脚本，后续数据库变更必须使用新的增量迁移。
+
+课程验收环境如需演示账号，可在首次启动完成后手动导入：
+
+```bash
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/seed/identity-demo.sql'
+```
+
+该命令会创建文档中列出的已知口令账号，禁止在公网生产环境执行。
 
 默认访问地址为 `http://localhost:8080`，可通过 `WEMOVE_HTTP_PORT` 修改。上线到公网前还需要在反向代理或负载均衡器配置正式域名、HTTPS 和备份策略。
 
@@ -39,5 +48,6 @@
 
 - `deploy/.env` 已加入 `.gitignore`，不得提交真实密码、令牌或服务器地址。
 - `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD` 和 `JWT_SECRET` 均为必填项；Compose 缺少它们时会直接拒绝启动。
+- 本地 HTTP 验收使用 `COOKIE_SECURE=false`；正式域名启用 HTTPS 后必须改为 `COOKIE_SECURE=true`。
 - 应用使用独立 MySQL 用户，不再使用 root 账户连接数据库。
-- 演示账号只适用于课程验收，公开部署前必须禁用或更换口令。
+- 演示账号不会自动导入，只允许在隔离的课程验收环境手动创建。

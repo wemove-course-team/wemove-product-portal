@@ -1,4 +1,4 @@
-/** 会话用户摘要（由 SessionGuard 从会话解析并挂到 req.user） */
+/** 会话守卫解析出的用户摘要。 */
 export interface RequestUser {
   id: string
   username: string

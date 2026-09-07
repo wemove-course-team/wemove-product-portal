@@ -24,6 +24,7 @@ export async function setupTestDatabase(): Promise<string> {
   const sqlDir = join(__dirname, '..', 'sql')
   const scripts = [
     join(sqlDir, 'init_schema_and_data.sql'),
+    join(sqlDir, 'migrations', 'mvp01_identity_password_reset.sql'),
     join(sqlDir, 'migrations', 'mvp03_catalog_incremental.sql'),
     join(sqlDir, 'seed', 'seed_catalog_mvp03.sql'),
     join(sqlDir, 'seed', 'seed_identity_demo_accounts.sql')

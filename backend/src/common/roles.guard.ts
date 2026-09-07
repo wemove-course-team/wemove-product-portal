@@ -4,11 +4,7 @@ import { Request } from 'express'
 
 export const ROLES_KEY = 'wemove_roles'
 
-/**
- * 角色声明装饰器，配合 RolesGuard 使用：
- *   @UseGuards(SessionGuard, RolesGuard)
- *   @Roles('ADMIN')
- */
+/** 声明接口允许访问的角色。 */
 export function Roles(...roles: string[]) {
   return (target: object, propertyKey?: string | symbol, descriptor?: PropertyDescriptor): void => {
     if (descriptor?.value) {
@@ -19,7 +15,7 @@ export function Roles(...roles: string[]) {
   }
 }
 
-/** 角色裁决守卫：仅做“已登录用户是否具备声明角色”的判断（登录态由 SessionGuard 保证） */
+/** 校验当前用户是否具备接口声明的角色。 */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
