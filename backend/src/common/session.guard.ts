@@ -3,13 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { DataSource } from 'typeorm'
 import { Request } from 'express'
 
-/**
- * 会话守卫（#85 契约 v1）：解析 HttpOnly Cookie `wemove_session` 中的签名 JWT，
- * 并每请求查库校验用户 status —— 停用用户即使持有效会话也立即失效（#85 验收项）。
- *
- * 用法：@UseGuards(SessionGuard, RolesGuard) + @Roles('ADMIN')
- * 公开接口需要“可选会话”（如经销商价裁剪）时使用 OptionalSessionGuard。
- */
+/** 校验登录 Cookie 和数据库账号状态，并将用户写入请求。 */
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(

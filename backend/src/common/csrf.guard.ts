@@ -1,13 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
 import { Request } from 'express'
 
-/**
- * CSRF 双提交校验（#85 契约 v1 / 决策 D4）：
- * GET /auth/csrf 下发 token（写入 Cookie `wemove_csrf` 并随响应体返回），
- * 所有写请求必须携带与 Cookie 一致的 X-CSRF-Token 头。
- *
- * 前端 services/http.js 已实现自动预取与附带；本地脚本联调请先 GET /auth/csrf。
- */
+/** 校验写请求中的 CSRF Cookie 和请求头是否一致。 */
 @Injectable()
 export class CsrfGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {

@@ -9,13 +9,7 @@ import { CsrfGuard } from './common/csrf.guard'
 import cookieParser from 'cookie-parser'
 import type { NextFunction, Request, Response } from 'express'
 
-/**
- * WEMOVE 后端入口（MVP-03 临时骨架，正式骨架以 #85 MVP-01 为准）
- *
- * - 端口 3001（决策 D1：vite dev(3000) proxy /api → 3001，生产 nginx 同源转发，不开 CORS）
- * - 全局前缀 /api/v1，统一信封/错误体（决策 D2/D3），CSRF 双提交（决策 D4）
- * - 校验管道：whitelist 剔除未声明字段，错误按契约 errors:[{field, message}] 输出
- */
+/** 创建应用并注册全局校验、CSRF、响应和异常处理。 */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
