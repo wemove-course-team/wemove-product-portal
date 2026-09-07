@@ -139,8 +139,11 @@ describe('Dealer API (e2e)', () => {
 
   it('申请只能绑定当前用户，重复申请返回 409', async () => {
     const user = await loginAs(app, 'demo_user')
-    const first = await user.post('/api/v1/dealer/applications', applicationInput)
-    const second = await user.post('/api/v1/dealer/applications', { ...applicationInput, companyName: '重复申请' })
+    const results = await Promise.all([
+      user.post('/api/v1/dealer/applications', applicationInput),
+      user.post('/api/v1/dealer/applications', { ...applicationInput, companyName: '重复申请' })
+    ])
+    const [first, second] = results.sort((a, b) => a.status - b.status)
     const mine = await user.get('/api/v1/dealer/applications/mine')
 
     expect(first.status).toBe(201)
@@ -169,6 +172,10 @@ describe('Dealer API (e2e)', () => {
     const meAfterReview = await user.get('/api/v1/auth/me')
     expect(meAfterReview.status).toBe(200)
     expect(meAfterReview.body.data).toMatchObject({ role: 'DEALER' })
+
+    const dealerProduct = await user.get('/api/v1/products/kids-study-desk-set')
+    expect(dealerProduct.status).toBe(200)
+    expect(dealerProduct.body.data).toMatchObject({ dealerPrice: expect.any(Number), moq: expect.any(Number) })
 
     const db = app.get(DataSource)
     const rows = await db.query(

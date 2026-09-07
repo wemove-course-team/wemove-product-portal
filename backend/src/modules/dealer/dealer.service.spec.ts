@@ -37,7 +37,9 @@ function repository(items: any[] = []) {
 describe('DealerService', () => {
   it('绑定当前用户并创建待审核申请', async () => {
     const applications = repository()
-    const service = new DealerService(applications as any, repository() as any, repository() as any, {} as any)
+    const users = repository([{ id: 7, status: 1 }])
+    const dataSource = { transaction: async (callback: any) => callback({ getRepository: (entity: any) => entity.name === 'User' ? users : applications }) }
+    const service = new DealerService(applications as any, repository() as any, users as any, dataSource as any)
 
     const result = await service.create(
       { id: 7 } as any,
@@ -59,7 +61,9 @@ describe('DealerService', () => {
 
   it('拒绝同一用户的重复申请', async () => {
     const applications = repository([{ id: 'APP-1', userId: 7, status: 'PENDING' }])
-    const service = new DealerService(applications as any, repository() as any, repository() as any, {} as any)
+    const users = repository([{ id: 7, status: 1 }])
+    const dataSource = { transaction: async (callback: any) => callback({ getRepository: (entity: any) => entity.name === 'User' ? users : applications }) }
+    const service = new DealerService(applications as any, repository() as any, users as any, dataSource as any)
 
     await expect(
       service.create({ id: 7 } as any, { companyName: '测试企业' } as any)

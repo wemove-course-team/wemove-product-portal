@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { randomUUID } from 'crypto'
 import { DataSource, Repository } from 'typeorm'
 import { User } from '../identity/user.entity'
 import { CreateDealerApplicationDto, DealerApplicationQueryDto, ReviewDealerApplicationDto } from './dealer.dto'
@@ -16,28 +17,41 @@ export class DealerService {
   ) {}
 
   async create(user: User, input: CreateDealerApplicationDto) {
-    const active = await this.applications.findOne({
-      where: [
-        { userId: user.id, status: 'PENDING' },
-        { userId: user.id, status: 'APPROVED' }
-      ]
-    })
-    if (active) {
-      throw new ConflictException({ code: 'CONFLICT_409', message: '您已有待审核或已通过的经销商申请' })
-    }
+    return this.dataSource.transaction(async (manager) => {
+      const userRepo = manager.getRepository(User)
+      const applicationRepo = manager.getRepository(DealerApplication)
+      const userId = Number(user.id)
 
-    const application = this.applications.create({
-      ...input,
-      email: input.email.toLowerCase(),
-      userId: user.id,
-      id: this.nextId(),
-      status: 'PENDING',
-      tierName: null,
-      discountRate: null,
-      auditNote: null,
-      auditedAt: null
+      // 锁住用户行，串行化同一用户的并发申请检查。
+      const lockedUser = await userRepo.findOne({
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' }
+      })
+      if (!lockedUser) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '用户不存在' })
+
+      const active = await applicationRepo.findOne({
+        where: [
+          { userId, status: 'PENDING' },
+          { userId, status: 'APPROVED' }
+        ]
+      })
+      if (active) {
+        throw new ConflictException({ code: 'CONFLICT_409', message: '您已有待审核或已通过的经销商申请' })
+      }
+
+      const application = applicationRepo.create({
+        ...input,
+        email: input.email.toLowerCase(),
+        userId,
+        id: this.nextId(),
+        status: 'PENDING',
+        tierName: null,
+        discountRate: null,
+        auditNote: null,
+        auditedAt: null
+      })
+      return this.serialize(await applicationRepo.save(application))
     })
-    return this.serialize(await this.applications.save(application))
   }
 
   async mine(user: User) {
@@ -168,7 +182,7 @@ export class DealerService {
 
   private nextId() {
     const now = new Date()
-    const suffix = Math.floor(1000 + Math.random() * 9000)
+    const suffix = randomUUID().replaceAll('-', '').slice(0, 23)
     return `APP-${now.getFullYear()}-${suffix}`
   }
 

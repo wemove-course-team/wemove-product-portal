@@ -5,7 +5,9 @@ import { join } from 'path'
 /** 重建独立 e2e 数据库，并按基线、迁移、seed 顺序初始化。 */
 export async function setupTestDatabase(): Promise<string> {
   const dbName = process.env.E2E_DB_NAME || 'wemove_portal_test'
-  if (!/^\w+$/.test(dbName)) throw new Error('E2E_DB_NAME 只能包含字母、数字和下划线')
+  if (!/^\w+_test$/.test(dbName) || dbName === 'wemove_portal') {
+    throw new Error('E2E_DB_NAME 必须是以 _test 结尾的独立测试库，禁止使用正式库')
+  }
 
   const connection = await createConnection({
     host: process.env.DB_HOST || '127.0.0.1',

@@ -42,7 +42,7 @@
       <section v-else class="success-card">
         <h2>申请已提交</h2>
         <p>申请编号：<strong>{{ submittedApp.id }}</strong></p>
-        <el-button type="primary" @click="$router.push('/account')">查看申请状态</el-button>
+        <el-button type="primary" @click="$router.push('/dealers/apply')">查看申请状态</el-button>
       </section>
     </main>
   </div>
