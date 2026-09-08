@@ -184,6 +184,9 @@
             <div class="section-label">LATEST NEWS</div>
             <h2 class="section-title">最新动态</h2>
           </div>
+          <router-link to="/news" class="view-all-link">
+            查看全部动态 &rarr;
+          </router-link>
         </div>
 
         <AsyncState
@@ -195,7 +198,12 @@
           @retry="loadNews"
         >
           <div class="news-grid">
-            <div v-for="a in newsList" :key="a.id" class="news-card">
+            <div
+              v-for="a in newsList"
+              :key="a.id"
+              class="news-card"
+              @click="$router.push(`/news/${a.slug || a.id}`)"
+            >
               <div class="news-cover">
                 <img v-if="a.coverImage" :src="a.coverImage" :alt="a.title" />
                 <div v-else class="news-cover-placeholder">📰</div>
@@ -210,7 +218,6 @@
               </div>
             </div>
           </div>
-          <p class="news-note">文章详情页与全文阅读将随内容任务 #88 一并上线。</p>
         </AsyncState>
       </div>
     </section>

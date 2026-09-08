@@ -87,6 +87,19 @@ const routes = [
     component: () => import('../views/ContentPage.vue'),
     meta: { zone: 'public' }
   },
+  // 新闻动态列表与详情（#88 MVP-04）
+  {
+    path: '/news',
+    name: 'NewsList',
+    component: () => import('../views/content/NewsList.vue'),
+    meta: { zone: 'public' }
+  },
+  {
+    path: '/news/:slug',
+    name: 'NewsDetail',
+    component: () => import('../views/content/NewsDetail.vue'),
+    meta: { zone: 'public' }
+  },
   {
     path: '/dealers/apply',
     name: 'DealerApply',
@@ -190,8 +203,8 @@ const routes = [
       {
         path: 'content',
         name: 'AdminContent',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '内容与栏目管理', ownerTask: '#88 MVP-04' }
+        component: () => import('../views/admin/AdminContent.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
         path: 'support',

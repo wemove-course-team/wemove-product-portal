@@ -1,7 +1,16 @@
 <template>
   <div class="content-page-root">
-    <!-- Dynamic Sections from Original Website Structure -->
-    <div v-if="sections && sections.length > 0" class="sections-stream">
+    <AsyncState
+      :loading="loading"
+      loading-text="正在加载栏目内容…"
+      :error="error"
+      :not-found="notFound"
+      :empty="!loading && !error && !notFound && sections.length === 0"
+      empty-text="该栏目暂无内容"
+      @retry="fetchPage"
+    >
+      <!-- Dynamic Sections from Original Website Structure -->
+      <div v-if="sections && sections.length > 0" class="sections-stream">
       <template v-for="(sec, idx) in sections" :key="idx">
         <!-- 1. COVER / BANNER -->
         <section
@@ -37,9 +46,8 @@
                 <h2 v-if="sec.config.title" class="ti-title">{{ sec.config.title }}</h2>
                 <div
                   v-if="sec.config.text"
-                  class="ti-body"
-                  v-html="formatHtml(sec.config.text)"
-                ></div>
+                  class="ti-body formatted-text"
+                >{{ formatSafeText(sec.config.text) }}</div>
                 <div v-if="sec.config.btnText" class="ti-btn-wrap">
                   <el-button type="primary" size="large" @click="handleAction(sec.config.btnLink)">
                     {{ sec.config.btnText }}
@@ -107,14 +115,14 @@
                 <div
                   v-for="(seg, sIdx) in sec.config.segments"
                   :key="sIdx"
-                  class="seg-line"
+                  class="seg-line formatted-text"
                   :class="{ 'seg-bold': seg.bold }"
                 >
-                  {{ seg.text }}
+                  {{ formatSafeText(seg.text) }}
                 </div>
               </template>
               <template v-else>
-                <div class="plain-text" v-html="formatHtml(sec.config.text)"></div>
+                <div class="plain-text formatted-text">{{ formatSafeText(sec.config.text) }}</div>
               </template>
             </div>
           </div>
@@ -127,10 +135,10 @@
               type="primary"
               size="large"
               class="download-btn"
-              @click="handleDownload(sec.config.fileName || 'WeMove实木产品电子手册.pdf')"
+              @click="handleDownload(sec.config)"
             >
               <el-icon><Download /></el-icon>
-              <span>{{ sec.config.btnText || '下载电子说明书 PDF' }}</span>
+              <span>{{ sec.config?.btnText || '下载电子说明书 PDF' }}</span>
             </el-button>
           </div>
         </section>
@@ -151,6 +159,7 @@
         </div>
       </div>
     </div>
+    </AsyncState>
 
     <!-- User Explicitly Requested: "最底下的相关实木产品与套件支持可以保留" -->
     <section class="related-support-section">
@@ -220,23 +229,55 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import AsyncState from '../components/AsyncState.vue'
+import { contentApi } from '../services/content'
+import { formatSafeText } from '../utils/text'
 import { useProductStore } from '../stores/product'
 import { useUserStore } from '../stores/user'
-import pageSectionsData from '../data/pageSections.json'
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
 const userStore = useUserStore()
 
-const routePath = computed(() => route.path)
 const pageKey = computed(() => route.path.replace('/', '') || 'furniture')
 
+const loading = ref(false)
+const error = ref(null)
+const notFound = ref(false)
+const pageData = ref(null)
+
 const sections = computed(() => {
-  return pageSectionsData[pageKey.value] || pageSectionsData['furniture'] || []
+  return pageData.value?.sections || []
+})
+
+async function fetchPage() {
+  loading.value = true
+  error.value = null
+  notFound.value = false
+  try {
+    const res = await contentApi.getPage(pageKey.value)
+    pageData.value = res.data
+  } catch (err) {
+    if (err.status === 404 || err.code === 'NOT_FOUND_404') {
+      notFound.value = true
+    } else {
+      error.value = err
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(() => route.path, () => {
+  fetchPage()
+})
+
+onMounted(() => {
+  fetchPage()
 })
 
 const relatedProducts = computed(() => {
@@ -251,11 +292,6 @@ function getImageUrl(item) {
   return item?.url || ''
 }
 
-function formatHtml(text) {
-  if (!text) return ''
-  return text.replace(/\n/g, '<br>')
-}
-
 function handleAction(link) {
   if (!link) {
     router.push('/workshop')
@@ -266,8 +302,26 @@ function handleAction(link) {
   }
 }
 
-function handleDownload(filename) {
-  ElMessage.success(`已开始下载：${filename}`)
+function handleDownload(config) {
+  const url = (config?.fileUrl || config?.url || '').trim()
+  const filename = config?.fileName || 'WeMove实木产品电子手册.pdf'
+  if (!url) {
+    ElMessage.error('该文件暂不可用或下载链接不存在')
+    return
+  }
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    ElMessage.success(`已开始下载：${filename}`)
+  } catch (err) {
+    ElMessage.error('触发文件下载失败，请稍后重试')
+  }
 }
 
 function submitAppointment() {
@@ -378,6 +432,11 @@ function submitAppointment() {
   font-size: 15px;
   color: var(--text-muted);
   line-height: 1.8;
+}
+
+.formatted-text {
+  white-space: pre-line;
+  word-break: break-word;
 }
 
 .ti-btn-wrap {
