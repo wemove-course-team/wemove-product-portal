@@ -120,11 +120,17 @@ export class SupportService {
   }
 
   async listAdminDownloads(category?: string) { return this.downloads.find({ where: category ? { category } : {}, order: { sortOrder: 'ASC', id: 'DESC' } }) }
-  async createDownload(input: CreateDownloadDto) { return this.downloads.save(this.downloads.create(input)) }
+  async createDownload(input: CreateDownloadDto) {
+    this.assertResourceUrl(input.fileUrl)
+    if (input.coverImage) this.assertResourceUrl(input.coverImage)
+    return this.downloads.save(this.downloads.create({ ...input, fileUrl: input.fileUrl.trim(), coverImage: input.coverImage?.trim() || null }))
+  }
 
   async updateDownload(id: number, input: UpdateDownloadDto) {
     const item = await this.downloads.findOne({ where: { id } })
     if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '下载资源不存在' })
+    if (input.fileUrl) this.assertResourceUrl(input.fileUrl)
+    if (input.coverImage) this.assertResourceUrl(input.coverImage)
     Object.assign(item, input)
     return this.downloads.save(item)
   }
@@ -138,6 +144,13 @@ export class SupportService {
     if (user?.role === 'ADMIN' || user?.role === 'DEALER') return [DownloadVisibility.PUBLIC, DownloadVisibility.USER, DownloadVisibility.DEALER]
     if (user) return [DownloadVisibility.PUBLIC, DownloadVisibility.USER]
     return [DownloadVisibility.PUBLIC]
+  }
+
+  private assertResourceUrl(value: string) {
+    const url = value.trim()
+    if (!/^(\/(?!\/)|https?:\/\/[^\s]+$)/i.test(url)) {
+      throw new BadRequestException({ code: 'VALIDATION_400', message: '文件地址必须是站内路径或 http(s) 地址' })
+    }
   }
 
   private messageSummary(item: SupportMessage, includeDetails = false) {

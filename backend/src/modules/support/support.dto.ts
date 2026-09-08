@@ -81,6 +81,7 @@ export class CreateFaqDto {
   @IsOptional()
   @IsString()
   @MaxLength(64)
+  @Matches(/\S/, { message: '分类不能为空' })
   category?: string
 
   @IsOptional()
@@ -108,6 +109,7 @@ export class UpdateFaqDto {
   @IsOptional()
   @IsString()
   @MaxLength(64)
+  @Matches(/\S/, { message: '分类不能为空' })
   category?: string
 
   @IsOptional()
@@ -174,6 +176,7 @@ export class UpdateDownloadDto {
   @IsOptional()
   @IsString()
   @MaxLength(64)
+  @Matches(/\S/, { message: '分类不能为空' })
   category?: string
 
   @IsOptional()
