@@ -23,6 +23,11 @@ export class CreateMessageDto {
     email: string;
 
     @IsString()
+    @IsNotEmpty({ message: '主题不能为空' })
+    @MaxLength(100, { message: '主题不能超过100个字符' })
+    subject: string;
+
+    @IsString()
     @IsNotEmpty({ message: '留言内容不能为空' })
     @MaxLength(1000, { message: '留言内容不能超过1000个字符' })
     content: string;

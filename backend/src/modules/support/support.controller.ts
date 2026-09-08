@@ -7,10 +7,10 @@ import {
     Body,
     Param,
     Query,
-    Req,
     HttpCode,
     HttpStatus,
     ParseIntPipe,
+    UseGuards,
 } from '@nestjs/common';
 import { SupportService } from './support.service';
 import {
@@ -22,10 +22,18 @@ import {
     QueryFaqDto
 } from './support.dto';
 
+// 引入 Guard、Decorator 以及类型声明
+import { OptionalSessionGuard } from '../../common/optional-session.guard';
+import { SessionGuard } from '../../common/session.guard';
+import { RolesGuard, Roles } from '../../common/roles.guard';
+import { CurrentUser } from '../../common/current-user.decorator';
+import type { RequestUser } from '../../common/request-user';
+
 // ==========================================
 // 1. 公开与前台 C 端接口 (/api/v1/support/...)
 // ==========================================
 @Controller('support')
+@UseGuards(OptionalSessionGuard) // 挂载 Guard，确保 Cookie 会话被解析
 export class SupportController {
     constructor(private readonly supportService: SupportService) { }
 
@@ -44,24 +52,28 @@ export class SupportController {
 
     // 获取公开说明书列表 -> GET /api/v1/support/manuals
     @Get('manuals')
-    async getPublicManuals(@Req() req: any) {
-        const userRole = req.user?.role || 'PUBLIC';
+    async getPublicManuals(@CurrentUser() user: RequestUser | null) {
+        const userRole = user?.role || 'PUBLIC';
         return await this.supportService.getPublicManuals(userRole);
     }
 
     // 检查说明书下载/访问权限 -> GET /api/v1/support/manuals/:id/access
     @Get('manuals/:id/access')
-    async checkManualAccess(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-        const userRole = req.user?.role || 'PUBLIC';
+    async checkManualAccess(
+        @Param('id', ParseIntPipe) id: number,
+        @CurrentUser() user: RequestUser | null
+    ) {
+        const userRole = user?.role || 'PUBLIC';
         return await this.supportService.checkManualAccess(id, userRole);
     }
 }
 
 // ==========================================
 // 2. 后台管理 B 端接口 (/api/v1/admin/support/...)
-// 注：待 MVP-01 骨架合入后，在此 Controller 上挂载 @UseGuards(SessionGuard, RolesGuard)
 // ==========================================
 @Controller('admin/support')
+@UseGuards(SessionGuard, RolesGuard)
+@Roles('ADMIN')
 export class AdminSupportController {
     constructor(private readonly supportService: SupportService) { }
 
