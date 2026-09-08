@@ -10,6 +10,7 @@ const JAVASCRIPT_PROTO = /(javascript|vbscript):/gi
 export function sanitizeHtml(input: string | null | undefined): string {
   if (!input) return ''
   return input
+    .replace(/<br\s*\/?>/gi, '\n')
     .replace(DANGEROUS_TAGS, '')
     .replace(DANGEROUS_ATTRS, '')
     .replace(INLINE_HANDLERS, '')

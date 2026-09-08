@@ -101,6 +101,9 @@ describe('Content & CMS API (e2e)', () => {
         }
       })
       expect(res.body.data.sections.length).toBeGreaterThan(0)
+      const sectionsStr = JSON.stringify(res.body.data.sections)
+      expect(sectionsStr).not.toContain('<br')
+      expect(sectionsStr).toContain('\\n\\n')
     })
 
     it('GET /api/v1/pages/not-found-slug: 不存在返回 404', async () => {

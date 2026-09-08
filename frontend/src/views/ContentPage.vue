@@ -47,7 +47,7 @@
                 <div
                   v-if="sec.config.text"
                   class="ti-body formatted-text"
-                >{{ sec.config.text }}</div>
+                >{{ formatSafeText(sec.config.text) }}</div>
                 <div v-if="sec.config.btnText" class="ti-btn-wrap">
                   <el-button type="primary" size="large" @click="handleAction(sec.config.btnLink)">
                     {{ sec.config.btnText }}
@@ -115,14 +115,14 @@
                 <div
                   v-for="(seg, sIdx) in sec.config.segments"
                   :key="sIdx"
-                  class="seg-line"
+                  class="seg-line formatted-text"
                   :class="{ 'seg-bold': seg.bold }"
                 >
-                  {{ seg.text }}
+                  {{ formatSafeText(seg.text) }}
                 </div>
               </template>
               <template v-else>
-                <div class="plain-text formatted-text">{{ sec.config.text }}</div>
+                <div class="plain-text formatted-text">{{ formatSafeText(sec.config.text) }}</div>
               </template>
             </div>
           </div>
@@ -234,6 +234,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AsyncState from '../components/AsyncState.vue'
 import { contentApi } from '../services/content'
+import { formatSafeText } from '../utils/text'
 import { useProductStore } from '../stores/product'
 import { useUserStore } from '../stores/user'
 

@@ -332,5 +332,13 @@ describe('ContentService (unit)', () => {
       expect(cleaned.sections[1].subItems[0]).not.toContain('<script>')
       expect(cleaned.sections[1].subItems[0]).toContain('条目')
     })
+
+    it('自动将旧版 <br> 标签规范化为 \\n 换行符', () => {
+      const legacyWithBr = '段落一<br><br>段落二<br/>段落三<br >段落四'
+      const sanitized = sanitizeHtml(legacyWithBr)
+
+      expect(sanitized).not.toContain('<br')
+      expect(sanitized).toBe('段落一\n\n段落二\n段落三\n段落四')
+    })
   })
 })
