@@ -7,7 +7,7 @@
     </section>
 
     <main class="apply-container">
-      <section v-if="dealerStore.applications.length" class="status-card">
+      <section v-if="dealerStore.applications.length" ref="statusCardRef" class="status-card">
         <h2>我的申请记录</h2>
         <div v-for="item in dealerStore.applications" :key="item.id" class="status-row">
           <span>{{ item.id }} · {{ item.companyName }}</span>
@@ -42,14 +42,14 @@
       <section v-else class="success-card">
         <h2>申请已提交</h2>
         <p>申请编号：<strong>{{ submittedApp.id }}</strong></p>
-        <el-button type="primary" @click="$router.push('/dealers/apply')">查看申请状态</el-button>
+        <el-button type="primary" :loading="viewingStatus" @click="viewApplicationStatus">查看申请状态</el-button>
       </section>
     </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useDealerStore } from '../../stores/dealer'
 import { useUserStore } from '../../stores/user'
@@ -58,7 +58,9 @@ const dealerStore = useDealerStore()
 const userStore = useUserStore()
 const formRef = ref(null)
 const submitting = ref(false)
+const viewingStatus = ref(false)
 const submittedApp = ref(null)
+const statusCardRef = ref(null)
 const form = reactive({ companyName: '', taxId: '', businessType: '', region: '', contactName: '', phone: '', email: '', annualTarget: '', salesChannels: '' })
 const rules = Object.fromEntries(['companyName', 'taxId', 'businessType', 'region', 'contactName', 'phone', 'email', 'annualTarget'].map((field) => [field, [{ required: true, message: '请填写此项', trigger: 'blur' }]]))
 
@@ -82,6 +84,20 @@ async function handleSubmit() {
     ElMessage.error(err?.message || '提交失败')
   } finally {
     submitting.value = false
+  }
+}
+
+async function viewApplicationStatus() {
+  viewingStatus.value = true
+  try {
+    await dealerStore.fetchMine()
+    submittedApp.value = null
+    await nextTick()
+    statusCardRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch (err) {
+    ElMessage.error(err?.message || '申请状态加载失败')
+  } finally {
+    viewingStatus.value = false
   }
 }
 
