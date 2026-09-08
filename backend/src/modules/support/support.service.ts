@@ -1,17 +1,12 @@
-import {
-    Injectable,
-    ConflictException,
-    NotFoundException,
-    ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import {
     SupportMessage,
     SupportFaq,
     SupportManual,
     MessageStatus,
-    ManualAccessLevel,
+    ManualVisibility,
 } from './support.entity';
 
 export interface CreateMessageDto {
@@ -29,15 +24,6 @@ export interface CreateFaqDto {
     isPublished?: boolean;
 }
 
-export interface CreateManualDto {
-    title: string;
-    description?: string;
-    fileUrl: string;
-    fileSize: number;
-    accessLevel?: ManualAccessLevel;
-    isPublished?: boolean;
-}
-
 @Injectable()
 export class SupportService {
     constructor(
@@ -49,77 +35,60 @@ export class SupportService {
         private readonly manualRepo: Repository<SupportManual>,
     ) { }
 
-    // --- 联系留言业务 ---
+    // --- 1. 联系留言 ---
 
     async createMessage(dto: CreateMessageDto): Promise<SupportMessage> {
-        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-        const recentDuplicate = await this.messageRepo.createQueryBuilder('msg')
-            .where('msg.email = :email', { email: dto.email })
-            .andWhere('msg.content = :content', { content: dto.content })
-            .andWhere('msg.createdAt >= :tenMinutesAgo', { tenMinutesAgo })
-            .getOne();
-
-        if (recentDuplicate) {
-            throw new ConflictException('请勿重复提交相同的留言内容，请稍后再试。');
-        }
-
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const ticketNo = `MSG-${dateStr}${randomSuffix}`;
-
-        const message = this.messageRepo.create({
+        const ticketNo = `TK${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        const msg = this.messageRepo.create({
             ...dto,
             ticketNo,
             status: MessageStatus.PENDING,
         });
-
-        return await this.messageRepo.save(message);
+        return await this.messageRepo.save(msg);
     }
 
-    async getMessages(page = 1, limit = 10, status?: MessageStatus) {
-        const where: FindOptionsWhere<SupportMessage> = {};
-        if (status) where.status = status;
-
+    async getMessages(page = 1, pageSize = 10, status?: MessageStatus) {
+        const where = status ? { status } : {};
         const [items, total] = await this.messageRepo.findAndCount({
             where,
             order: { createdAt: 'DESC' },
-            skip: (page - 1) * limit,
-            take: limit,
+            skip: (page - 1) * pageSize,
+            take: pageSize,
         });
-
-        return { items, total, page, limit };
+        return { items, total, page, pageSize };
     }
 
-    async getMessageById(id: string): Promise<SupportMessage> {
+    async getMessageById(id: number): Promise<SupportMessage> {
         const msg = await this.messageRepo.findOne({ where: { id } });
-        if (!msg) throw new NotFoundException('未找到指定留言');
+        if (!msg) {
+            throw new NotFoundException(`Message with ID ${id} not found`);
+        }
         return msg;
     }
 
-    async updateMessageStatus(id: string, status: MessageStatus): Promise<SupportMessage> {
+    async updateMessageStatus(id: number, status: MessageStatus): Promise<SupportMessage> {
         const msg = await this.getMessageById(id);
         msg.status = status;
         return await this.messageRepo.save(msg);
     }
 
-    // --- FAQ 业务 ---
+    // --- 2. FAQ ---
 
-    async getPublicFaqs(category?: string, search?: string) {
+    async getPublicFaqs(category?: string, keyword?: string): Promise<SupportFaq[]> {
         const query = this.faqRepo.createQueryBuilder('faq')
-            .where('faq.isPublished = :isPublished', { isPublished: true });
+            .where('faq.is_published = :isPublished', { isPublished: true });
 
         if (category) {
             query.andWhere('faq.category = :category', { category });
         }
 
-        if (search) {
-            query.andWhere(
-                '(faq.question LIKE :search OR faq.answer LIKE :search)',
-                { search: `%${search}%` },
-            );
+        if (keyword) {
+            query.andWhere('(faq.question LIKE :keyword OR faq.answer LIKE :keyword)', {
+                keyword: `%${keyword}%`,
+            });
         }
 
-        return await query.orderBy('faq.sortOrder', 'ASC').addOrderBy('faq.createdAt', 'DESC').getMany();
+        return await query.orderBy('faq.sort_order', 'ASC').getMany();
     }
 
     async createFaq(dto: CreateFaqDto): Promise<SupportFaq> {
@@ -127,41 +96,46 @@ export class SupportService {
         return await this.faqRepo.save(faq);
     }
 
-    async updateFaq(id: string, dto: Partial<CreateFaqDto>): Promise<SupportFaq> {
+    async updateFaq(id: number, dto: Partial<CreateFaqDto>): Promise<SupportFaq> {
         const faq = await this.faqRepo.findOne({ where: { id } });
-        if (!faq) throw new NotFoundException('未找到指定 FAQ');
+        if (!faq) {
+            throw new NotFoundException(`FAQ with ID ${id} not found`);
+        }
         Object.assign(faq, dto);
         return await this.faqRepo.save(faq);
     }
 
-    async deleteFaq(id: string): Promise<void> {
+    async deleteFaq(id: number): Promise<void> {
         const result = await this.faqRepo.delete(id);
-        if (result.affected === 0) throw new NotFoundException('未找到指定 FAQ');
+        if (result.affected === 0) {
+            throw new NotFoundException(`FAQ with ID ${id} not found`);
+        }
     }
 
-    // --- 下载与说明书业务 ---
+    // --- 3. 下载与说明书 ---
 
-    async getPublicManuals() {
-        return await this.manualRepo.find({
-            where: { isPublished: true },
-            order: { createdAt: 'DESC' },
-        });
+    async getPublicManuals(authHeader?: string): Promise<SupportManual[]> {
+        // 简易权限判定：无 authHeader 为 PUBLIC；后续配合 MVP-01 可解析 Token 区分 USER / DEALER
+        const allowVisibilities = [ManualVisibility.PUBLIC];
+        if (authHeader) {
+            allowVisibilities.push(ManualVisibility.USER, ManualVisibility.DEALER);
+        }
+
+        return await this.manualRepo.createQueryBuilder('manual')
+            .where('manual.is_published = :isPublished', { isPublished: true })
+            .andWhere('manual.visibility IN (:...visibilities)', { visibilities: allowVisibilities })
+            .getMany();
     }
 
-    async checkManualAccess(id: string, isAuthenticated: boolean) {
+    async checkManualAccess(id: number, isAuthenticated: boolean): Promise<{ allowed: boolean }> {
         const manual = await this.manualRepo.findOne({ where: { id } });
-        if (!manual || !manual.isPublished) {
-            throw new NotFoundException('文件不存在或已被下架');
+        if (!manual) {
+            throw new NotFoundException(`Manual with ID ${id} not found`);
         }
 
-        if (manual.accessLevel === ManualAccessLevel.REGISTERED && !isAuthenticated) {
-            throw new ForbiddenException('该文件需要登录后方可下载');
+        if (manual.visibility !== ManualVisibility.PUBLIC && !isAuthenticated) {
+            return { allowed: false };
         }
-
-        return {
-            canAccess: true,
-            downloadUrl: manual.fileUrl,
-            title: manual.title,
-        };
+        return { allowed: true };
     }
 }
