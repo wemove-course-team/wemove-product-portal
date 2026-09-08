@@ -1,81 +1,65 @@
 <template>
-    <div class="download-container">
-        <el-card shadow="never">
-            <template #header>
-                <div class="card-header">
-                    <h3>Ïà¹Ø×ÊÔ´ÓëÎÄµµÏÂÔØ</h3>
-                    <el-button type="info" plain disabled>
-                        ÅúÁ¿µ¼³öÀúÊ·¹éµµ (ÔİÎ´¿ª·Å)
-                    </el-button>
-                </div>
-            </template>
-
-            <el-table v-loading="loading" :data="downloadList" stripe style="width: 100%">
-                <el-table-column prop="title" label="ÎÄ¼şÃû³Æ" min-width="200" />
-                <el-table-column prop="category" label="·ÖÀà" width="120" />
-                <el-table-column prop="fileSize" label="´óĞ¡" width="100" />
-                <el-table-column prop="updatedAt" label="¸üĞÂÊ±¼ä" width="160" />
-                <el-table-column label="²Ù×÷" width="120" fixed="right">
-                    <template #default="scope">
-                        <el-button size="small"
-                                   type="primary"
-                                   link
-                                   @click="handleDownload(scope.row)">
-                            ÏÂÔØ
-                        </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </el-card>
+  <div class="support-page">
+    <section class="page-heading">
+      <p class="eyebrow">DOWNLOADS</p>
+      <h1>{{ title }}</h1>
+      <p>å…¬å¼€èµ„æ–™æ— éœ€ç™»å½•ï¼›å—é™èµ„æ–™ä¼šæ ¹æ®å½“å‰è´¦å·æƒé™æ˜¾ç¤ºã€‚æœ¬è½®èµ„æ–™ä½¿ç”¨å…¬å¼€é™æ€æ–‡ä»¶è·¯å¾„ï¼Œæƒé™æ§åˆ¶è¦†ç›–èµ„æ–™åˆ—è¡¨å’Œæ‰“å¼€æ¥å£ã€‚</p>
+    </section>
+    <el-skeleton v-if="loading" :rows="5" animated />
+    <el-empty v-else-if="!items.length" description="æš‚æ— å¯ç”¨ä¸‹è½½èµ„æ–™" />
+    <div v-else class="download-list">
+      <el-card v-for="item in items" :key="item.id" class="download-item" shadow="never">
+        <img v-if="item.coverImage" :src="item.coverImage" :alt="item.title" class="download-cover" />
+        <div class="download-copy"><h2>{{ item.title }}</h2><p>{{ item.description || 'ç”µå­èµ„æ–™' }}</p><el-tag size="small" effect="plain">{{ visibilityText(item.visibility) }}</el-tag></div>
+        <el-button type="primary" :loading="downloading === item.id" @click="download(item)">æ‰“å¼€èµ„æ–™</el-button>
+      </el-card>
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getDownloadResources, downloadFile } from '@/services/support'
+import { supportApi } from '../../services/support'
 
+const props = defineProps({ category: { type: String, default: '' }, pageTitle: { type: String, default: 'ä¸‹è½½ä¸­å¿ƒ' } })
+const route = useRoute()
+const items = ref([])
 const loading = ref(false)
-const downloadList = ref([])
+const downloading = ref(null)
+const title = props.pageTitle
 
-const fetchResources = async () => {
+async function load() {
   loading.value = true
   try {
-    const res = await getDownloadResources()
-    downloadList.value = res.data || []
-  } catch (error) {
-    ElMessage.error('»ñÈ¡ÏÂÔØÁĞ±íÊ§°Ü£¬ÇëË¢ĞÂÖØÊÔ')
-  } finally {
-    loading.value = false
-  }
+    const category = props.category || route.query.category || ''
+    const response = await supportApi.listDownloads(category ? { category } : {})
+    items.value = response.data || []
+  } catch (error) { ElMessage.error(error.message || 'ä¸‹è½½åˆ—è¡¨åŠ è½½å¤±è´¥') } finally { loading.value = false }
 }
 
-const handleDownload = async (row) => {
+async function download(item) {
+  downloading.value = item.id
   try {
-    await downloadFile(row.id)
-    ElMessage.success(`¿ªÊ¼ÏÂÔØ: ${row.title}`)
-  } catch (error) {
-    ElMessage.error(error?.response?.data?.message || 'ÎÄ¼şÏÂÔØÊ§°Ü')
-  }
+    const response = await supportApi.accessDownload(item.id)
+    window.open(response.data.fileUrl, '_blank', 'noopener,noreferrer')
+  } catch (error) { ElMessage.error(error.message || 'å½“å‰è´¦å·æ— æ³•è®¿é—®è¯¥èµ„æ–™') } finally { downloading.value = null }
 }
 
-onMounted(() => {
-  fetchResources()
-})
+function visibilityText(value) { return { PUBLIC: 'å…¬å¼€', USER: 'ç™»å½•å¯è§', DEALER: 'ç»é”€å•†å¯è§' }[value] || value }
+onMounted(load)
 </script>
 
 <style scoped>
-    .download-container {
-        padding: 24px;
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-        .card-header h3 {
-            margin: 0;
-        }
+.support-page { max-width: 960px; margin: 0 auto; padding: 56px 24px 80px; }
+.page-heading { margin-bottom: 28px; }
+.eyebrow { margin: 0 0 8px; color: var(--primary-color); font-size: 12px; letter-spacing: 2px; }
+.page-heading h1 { margin: 0 0 10px; font-size: 32px; color: var(--text-color); }
+.page-heading p:last-child { margin: 0; color: var(--text-muted); }
+.download-list { display: grid; gap: 14px; }
+.download-item { display: flex; align-items: center; gap: 18px; border: 1px solid var(--border-color); }
+.download-cover { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; background: var(--bg-light); }
+.download-copy { flex: 1; min-width: 0; }.download-copy h2 { margin: 0 0 6px; font-size: 17px; }.download-copy p { margin: 0 0 10px; color: var(--text-muted); }
+@media (max-width: 640px) { .support-page { padding: 32px 16px 56px; } .download-item { align-items: flex-start; flex-wrap: wrap; } .download-item .el-button { margin-left: 90px; } }
 </style>

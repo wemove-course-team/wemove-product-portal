@@ -1,167 +1,148 @@
-import {
-    Injectable,
-    ConflictException,
-    NotFoundException,
-    ForbiddenException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
-import {
-    SupportMessage,
-    SupportFaq,
-    SupportManual,
-    MessageStatus,
-    ManualAccessLevel,
-} from './support.entity';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { DataSource, Repository } from 'typeorm'
+import { RequestUser } from '../../common/request-user'
+import { DownloadVisibility, FaqStatus, MessageStatus, SupportDownload, SupportFaq, SupportMessage } from './support.entity'
+import { CreateDownloadDto, CreateFaqDto, CreateMessageDto, MessageQueryDto, UpdateDownloadDto, UpdateFaqDto, UpdateMessageStatusDto } from './support.dto'
 
-export interface CreateMessageDto {
-    name: string;
-    email: string;
-    subject: string;
-    content: string;
-}
-
-export interface CreateFaqDto {
-    category: string;
-    question: string;
-    answer: string;
-    sortOrder?: number;
-    isPublished?: boolean;
-}
-
-export interface CreateManualDto {
-    title: string;
-    description?: string;
-    fileUrl: string;
-    fileSize: number;
-    accessLevel?: ManualAccessLevel;
-    isPublished?: boolean;
-}
-
+/** æ”¯æŒä¸­å¿ƒçš„ç•™è¨€ã€FAQ å’Œä¸‹è½½èµ„æºä¸šåŠ¡ã€‚ */
 @Injectable()
 export class SupportService {
-    constructor(
-        @InjectRepository(SupportMessage)
-        private readonly messageRepo: Repository<SupportMessage>,
-        @InjectRepository(SupportFaq)
-        private readonly faqRepo: Repository<SupportFaq>,
-        @InjectRepository(SupportManual)
-        private readonly manualRepo: Repository<SupportManual>,
-    ) { }
+  constructor(
+    @InjectRepository(SupportMessage) private readonly messages: Repository<SupportMessage>,
+    @InjectRepository(SupportFaq) private readonly faqs: Repository<SupportFaq>,
+    @InjectRepository(SupportDownload) private readonly downloads: Repository<SupportDownload>,
+    private readonly dataSource: DataSource
+  ) {}
 
-    // --- ÁªÏµÁôÑÔÒµÎñ ---
+  async createMessage(input: CreateMessageDto) {
+    const email = input.email.trim().toLowerCase()
+    const subject = input.subject.trim()
+    const now = new Date()
+    const recent = await this.messages.createQueryBuilder('message')
+      .where('message.email = :email', { email })
+      .andWhere('message.subject = :subject', { subject })
+      .andWhere('message.createdAt >= :since', { since: new Date(now.getTime() - 60_000) })
+      .getOne()
+    if (recent) throw new BadRequestException({ code: 'VALIDATION_400', message: 'ç›¸åŒä¸»é¢˜çš„ç•™è¨€è¯·å‹¿é‡å¤æäº¤ï¼Œè¯·ç¨åå†è¯•' })
 
-    async createMessage(dto: CreateMessageDto): Promise<SupportMessage> {
-        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-        const recentDuplicate = await this.messageRepo.createQueryBuilder('msg')
-            .where('msg.email = :email', { email: dto.email })
-            .andWhere('msg.content = :content', { content: dto.content })
-            .andWhere('msg.createdAt >= :tenMinutesAgo', { tenMinutesAgo })
-            .getOne();
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(SupportMessage)
+      const day = now.toISOString().slice(0, 10).replaceAll('-', '')
+      const prefix = `MSG-${day}-`
+      const latest = await repo.createQueryBuilder('message')
+        .where('message.code LIKE :prefix', { prefix: `${prefix}%` })
+        .orderBy('message.id', 'DESC')
+        .setLock('pessimistic_write')
+        .getOne()
+      const previous = latest ? Number(latest.code.slice(-4)) : 0
+      const message = repo.create({
+        code: `${prefix}${String(previous + 1).padStart(4, '0')}`,
+        name: input.name.trim(), email, phone: input.phone?.trim() || null,
+        subject, content: input.content.trim(), status: MessageStatus.PENDING,
+        handleNote: null, handledBy: null, handledAt: null
+      })
+      return this.messageSummary(await repo.save(message))
+    })
+  }
 
-        if (recentDuplicate) {
-            throw new ConflictException('ÇëÎğÖØ¸´Ìá½»ÏàÍ¬µÄÁôÑÔÄÚÈİ£¬ÇëÉÔºóÔÙÊÔ¡£');
-        }
+  async listMessages(query: MessageQueryDto) {
+    const page = Math.max(1, Number(query.page) || 1)
+    const pageSize = Math.min(50, Math.max(1, Number(query.pageSize) || 10))
+    const builder = this.messages.createQueryBuilder('message').orderBy('message.createdAt', 'DESC')
+    if (query.status) builder.andWhere('message.status = :status', { status: query.status })
+    if (query.keyword) builder.andWhere('(message.code LIKE :keyword OR message.name LIKE :keyword OR message.email LIKE :keyword OR message.subject LIKE :keyword)', { keyword: `%${query.keyword.trim()}%` })
+    const [items, total] = await builder.skip((page - 1) * pageSize).take(pageSize).getManyAndCount()
+    return { items: items.map((item) => this.messageSummary(item, true)), total, page, pageSize }
+  }
 
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const ticketNo = `MSG-${dateStr}${randomSuffix}`;
+  async getMessage(id: number) {
+    const item = await this.messages.findOne({ where: { id } })
+    if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'ç•™è¨€ä¸å­˜åœ¨' })
+    return this.messageSummary(item, true)
+  }
 
-        const message = this.messageRepo.create({
-            ...dto,
-            ticketNo,
-            status: MessageStatus.PENDING,
-        });
-
-        return await this.messageRepo.save(message);
+  async updateMessageStatus(id: number, input: UpdateMessageStatusDto, actor: RequestUser) {
+    const item = await this.messages.findOne({ where: { id } })
+    if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'ç•™è¨€ä¸å­˜åœ¨' })
+    const transitions: Record<MessageStatus, MessageStatus[]> = {
+      [MessageStatus.PENDING]: [MessageStatus.PENDING, MessageStatus.PROCESSING],
+      [MessageStatus.PROCESSING]: [MessageStatus.PROCESSING, MessageStatus.DONE],
+      [MessageStatus.DONE]: [MessageStatus.DONE]
     }
+    if (!transitions[item.status].includes(input.status)) throw new ConflictException({ code: 'CONFLICT_409', message: 'ç•™è¨€çŠ¶æ€ä¸èƒ½å›é€€åˆ°è¯¥çŠ¶æ€' })
+    item.status = input.status
+    item.handleNote = input.handleNote?.trim() || item.handleNote
+    item.handledBy = Number(actor.id)
+    item.handledAt = new Date()
+    return this.messageSummary(await this.messages.save(item), true)
+  }
 
-    async getMessages(page = 1, limit = 10, status?: MessageStatus) {
-        const where: FindOptionsWhere<SupportMessage> = {};
-        if (status) where.status = status;
+  async listFaqs(keyword?: string, category?: string, includeDraft = false) {
+    const builder = this.faqs.createQueryBuilder('faq').orderBy('faq.sortOrder', 'ASC').addOrderBy('faq.id', 'DESC')
+    if (!includeDraft) builder.where('faq.status = :status', { status: FaqStatus.PUBLISHED })
+    if (category) builder.andWhere('faq.category = :category', { category })
+    if (keyword) builder.andWhere('(faq.question LIKE :keyword OR faq.answer LIKE :keyword)', { keyword: `%${keyword.trim()}%` })
+    return builder.getMany()
+  }
 
-        const [items, total] = await this.messageRepo.findAndCount({
-            where,
-            order: { createdAt: 'DESC' },
-            skip: (page - 1) * limit,
-            take: limit,
-        });
+  async createFaq(input: CreateFaqDto) { return this.faqs.save(this.faqs.create({ ...input, category: input.category?.trim() || null })) }
 
-        return { items, total, page, limit };
-    }
+  async updateFaq(id: number, input: UpdateFaqDto) {
+    const item = await this.faqs.findOne({ where: { id } })
+    if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'FAQ ä¸å­˜åœ¨' })
+    Object.assign(item, input)
+    if (input.category !== undefined) item.category = input.category?.trim() || null
+    return this.faqs.save(item)
+  }
 
-    async getMessageById(id: string): Promise<SupportMessage> {
-        const msg = await this.messageRepo.findOne({ where: { id } });
-        if (!msg) throw new NotFoundException('Î´ÕÒµ½Ö¸¶¨ÁôÑÔ');
-        return msg;
-    }
+  async deleteFaq(id: number) {
+    const result = await this.faqs.delete(id)
+    if (!result.affected) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'FAQ ä¸å­˜åœ¨' })
+  }
 
-    async updateMessageStatus(id: string, status: MessageStatus): Promise<SupportMessage> {
-        const msg = await this.getMessageById(id);
-        msg.status = status;
-        return await this.messageRepo.save(msg);
-    }
+  async listDownloads(user: RequestUser | null, category?: string) {
+    const allowed = this.allowedVisibility(user)
+    const builder = this.downloads.createQueryBuilder('resource')
+      .where('resource.status = :status', { status: FaqStatus.PUBLISHED })
+      .andWhere('resource.visibility IN (:...allowed)', { allowed })
+      .orderBy('resource.sortOrder', 'ASC').addOrderBy('resource.id', 'DESC')
+    if (category) builder.andWhere('resource.category = :category', { category })
+    return builder.getMany()
+  }
 
-    // --- FAQ ÒµÎñ ---
+  async getDownloadAccess(id: number, user: RequestUser | null) {
+    const item = await this.downloads.findOne({ where: { id, status: FaqStatus.PUBLISHED } })
+    if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'ä¸‹è½½èµ„æºä¸å­˜åœ¨' })
+    if (!this.allowedVisibility(user).includes(item.visibility)) throw new ForbiddenException({ code: 'FORBIDDEN_403', message: 'å½“å‰è´¦å·æ— æƒè®¿é—®è¯¥ä¸‹è½½èµ„æº' })
+    await this.downloads.increment({ id }, 'downloadCount', 1)
+    return { id: String(item.id), title: item.title, fileUrl: item.fileUrl }
+  }
 
-    async getPublicFaqs(category?: string, search?: string) {
-        const query = this.faqRepo.createQueryBuilder('faq')
-            .where('faq.isPublished = :isPublished', { isPublished: true });
+  async listAdminDownloads(category?: string) { return this.downloads.find({ where: category ? { category } : {}, order: { sortOrder: 'ASC', id: 'DESC' } }) }
+  async createDownload(input: CreateDownloadDto) { return this.downloads.save(this.downloads.create(input)) }
 
-        if (category) {
-            query.andWhere('faq.category = :category', { category });
-        }
+  async updateDownload(id: number, input: UpdateDownloadDto) {
+    const item = await this.downloads.findOne({ where: { id } })
+    if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'ä¸‹è½½èµ„æºä¸å­˜åœ¨' })
+    Object.assign(item, input)
+    return this.downloads.save(item)
+  }
 
-        if (search) {
-            query.andWhere(
-                '(faq.question LIKE :search OR faq.answer LIKE :search)',
-                { search: `%${search}%` },
-            );
-        }
+  async deleteDownload(id: number) {
+    const result = await this.downloads.delete(id)
+    if (!result.affected) throw new NotFoundException({ code: 'NOT_FOUND_404', message: 'ä¸‹è½½èµ„æºä¸å­˜åœ¨' })
+  }
 
-        return await query.orderBy('faq.sortOrder', 'ASC').addOrderBy('faq.createdAt', 'DESC').getMany();
-    }
+  private allowedVisibility(user: RequestUser | null): DownloadVisibility[] {
+    if (user?.role === 'ADMIN' || user?.role === 'DEALER') return [DownloadVisibility.PUBLIC, DownloadVisibility.USER, DownloadVisibility.DEALER]
+    if (user) return [DownloadVisibility.PUBLIC, DownloadVisibility.USER]
+    return [DownloadVisibility.PUBLIC]
+  }
 
-    async createFaq(dto: CreateFaqDto): Promise<SupportFaq> {
-        const faq = this.faqRepo.create(dto);
-        return await this.faqRepo.save(faq);
-    }
-
-    async updateFaq(id: string, dto: Partial<CreateFaqDto>): Promise<SupportFaq> {
-        const faq = await this.faqRepo.findOne({ where: { id } });
-        if (!faq) throw new NotFoundException('Î´ÕÒµ½Ö¸¶¨ FAQ');
-        Object.assign(faq, dto);
-        return await this.faqRepo.save(faq);
-    }
-
-    async deleteFaq(id: string): Promise<void> {
-        const result = await this.faqRepo.delete(id);
-        if (result.affected === 0) throw new NotFoundException('Î´ÕÒµ½Ö¸¶¨ FAQ');
-    }
-
-    // --- ÏÂÔØÓëËµÃ÷ÊéÒµÎñ ---
-
-    async getPublicManuals() {
-        return await this.manualRepo.find({
-            where: { isPublished: true },
-            order: { createdAt: 'DESC' },
-        });
-    }
-
-    async checkManualAccess(id: string, isAuthenticated: boolean) {
-        const manual = await this.manualRepo.findOne({ where: { id } });
-        if (!manual || !manual.isPublished) {
-            throw new NotFoundException('ÎÄ¼ş²»´æÔÚ»òÒÑ±»ÏÂ¼Ü');
-        }
-
-        if (manual.accessLevel === ManualAccessLevel.REGISTERED && !isAuthenticated) {
-            throw new ForbiddenException('¸ÃÎÄ¼şĞèÒªµÇÂ¼ºó·½¿ÉÏÂÔØ');
-        }
-
-        return {
-            canAccess: true,
-            downloadUrl: manual.fileUrl,
-            title: manual.title,
-        };
-    }
+  private messageSummary(item: SupportMessage, includeDetails = false) {
+    return { id: String(item.id), code: item.code, name: item.name, email: item.email, phone: item.phone, subject: item.subject,
+      ...(includeDetails ? { content: item.content } : {}), status: item.status, handleNote: item.handleNote,
+      handledBy: item.handledBy == null ? null : String(item.handledBy), handledAt: item.handledAt, createdAt: item.createdAt }
+  }
 }

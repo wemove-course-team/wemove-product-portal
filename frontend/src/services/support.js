@@ -1,83 +1,49 @@
-import axios from 'axios';
+import http from './http'
 
-// ½¨Á¢ Axios ÊµÀý£¬Í³Ò»ÅäÖÃ baseURL Óë³¬Ê±Ê±¼ä
-const api = axios.create({
-    baseURL: '/api/v1/support',
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
+/** æ”¯æŒä¸­å¿ƒ APIï¼Œæ²¿ç”¨å…¨ç«™ç»Ÿä¸€çš„ä¼šè¯ã€CSRF å’Œé”™è¯¯å¤„ç†ã€‚ */
+export const supportApi = {
+  submitMessage(payload) {
+    return http.post('/support/messages', payload)
+  },
+  listFaqs(params = {}) {
+    return http.get('/faqs', { params })
+  },
+  listDownloads(params = {}) {
+    return http.get('/downloads', { params })
+  },
+  accessDownload(id) {
+    return http.get(`/downloads/${encodeURIComponent(id)}/access`)
+  },
+  adminMessages(params = {}) {
+    return http.get('/admin/support/messages', { params })
+  },
+  updateMessageStatus(id, payload) {
+    return http.patch(`/admin/support/messages/${encodeURIComponent(id)}/status`, payload)
+  },
+  adminFaqs(params = {}) {
+    return http.get('/admin/support/faqs', { params })
+  },
+  createFaq(payload) {
+    return http.post('/admin/support/faqs', payload)
+  },
+  updateFaq(id, payload) {
+    return http.patch(`/admin/support/faqs/${encodeURIComponent(id)}`, payload)
+  },
+  deleteFaq(id) {
+    return http.delete(`/admin/support/faqs/${encodeURIComponent(id)}`)
+  },
+  adminDownloads(params = {}) {
+    return http.get('/admin/support/downloads', { params })
+  },
+  createDownload(payload) {
+    return http.post('/admin/support/downloads', payload)
+  },
+  updateDownload(id, payload) {
+    return http.patch(`/admin/support/downloads/${encodeURIComponent(id)}`, payload)
+  },
+  deleteDownload(id) {
+    return http.delete(`/admin/support/downloads/${encodeURIComponent(id)}`)
+  }
+}
 
-// ÇëÇóÀ¹½ØÆ÷£º¶ÁÈ¡±¾µØ token ²¢¸½¼ÓÔÚÇëÇóÍ·ÖÐ
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-// ÏìÓ¦À¹½ØÆ÷£ºÌáÈ¡ response.data£¬Í³Ò»´¦ÀíÈ«¾ÖÒì³£
-api.interceptors.response.use(
-    (response) => response.data,
-    (error) => {
-        const customError = {
-            message: error.response?.data?.message || 'ÇëÇó·þÎñ·¢ÉúÒì³£',
-            status: error.response?.status,
-            data: error.response?.data,
-        };
-        return Promise.reject(customError);
-    }
-);
-
-/**
- * 1. Ìá½»Ç°Ì¨ÁªÏµ±íµ¥
- * @param {Object} data - { name, email, subject, message }
- */
-export const submitContactForm = async (data) => {
-    return await api.post('/contact', data);
-};
-
-/**
- * 2. »ñÈ¡ºóÌ¨ÁôÑÔÁÐ±í£¨¹ÜÀíÔ±£©
- * @param {Object} params - { page, limit, status, search }
- */
-export const getAdminMessages = async (params = {}) => {
-    return await api.get('/admin/messages', { params });
-};
-
-/**
- * 3. ¸üÐÂÁôÑÔ×´Ì¬£¨¹ÜÀíÔ±£©
- * @param {string|number} id - ÁôÑÔ¹¤µ¥ ID
- * @param {string} status - ×´Ì¬ ('pending' | 'in_progress' | 'resolved' | 'archived')
- */
-export const updateMessageStatus = async (id, status) => {
-    return await api.patch(`/admin/messages/${id}/status`, { status });
-};
-
-/**
- * 4. ²éÑ¯ FAQ ÁÐ±íÓë·ÖÀàËÑË÷
- * @param {Object} params - { category, query }
- */
-export const getFaqList = async (params = {}) => {
-    return await api.get('/faqs', { params });
-};
-
-/**
- * 5. »ñÈ¡¹«¿ªµç×ÓËµÃ÷ÊéÓëÏÂÔØ×ÊÔ´ÁÐ±í
- */
-export const getDownloadList = async () => {
-    return await api.get('/downloads');
-};
-
-export default {
-    submitContactForm,
-    getAdminMessages,
-    updateMessageStatus,
-    getFaqList,
-    getDownloadList,
-};
+export default supportApi

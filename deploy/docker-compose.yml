@@ -16,7 +16,11 @@ services:
       - ../backend/sql/init_schema_and_data.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
       - ../backend/sql/migrations/mvp01_identity_password_reset.sql:/docker-entrypoint-initdb.d/20-identity-migration.sql:ro
       - ../backend/sql/migrations/mvp03_catalog_incremental.sql:/docker-entrypoint-initdb.d/30-catalog-migration.sql:ro
-      - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/40-catalog-seed.sql:ro
+      - ../backend/sql/migrations/mvp04_content_tables.sql:/docker-entrypoint-initdb.d/40-content-migration.sql:ro
+      - ../backend/sql/migrations/mvp05_support.sql:/docker-entrypoint-initdb.d/50-support-migration.sql:ro
+      - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/60-catalog-seed.sql:ro
+      - ../backend/sql/seed/seed_content_mvp04.sql:/docker-entrypoint-initdb.d/70-content-seed.sql:ro
+      - ../backend/sql/migrations/mvp05_support.sql:/opt/wemove/migrations/mvp05_support.sql:ro
       # 已知口令的演示账号只挂载、不自动导入；需要时按 deploy/README 手动执行。
       - ../backend/sql/seed/seed_identity_demo_accounts.sql:/opt/wemove/seed/identity-demo.sql:ro
     healthcheck:

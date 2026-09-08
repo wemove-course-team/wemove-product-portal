@@ -90,7 +90,7 @@ const menuItems = [
   { path: '/admin', label: '概览', icon: '📊', pending: false },
   { path: '/admin/products', label: '产品与分类', icon: '🧸', pending: false },
   { path: '/admin/content', label: '内容与栏目', icon: '📝', pending: false },
-  { path: '/admin/support', label: '留言 / FAQ / 下载', icon: '💬', pending: true },
+  { path: '/admin/support', label: '留言 / FAQ / 下载', icon: '💬', pending: false },
   { path: '/admin/dealers', label: '经销商审核', icon: '🤝', pending: false },
   { path: '/admin/users', label: '用户管理', icon: '👥', pending: true }
 ]
