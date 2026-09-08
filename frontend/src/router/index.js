@@ -23,25 +23,25 @@ const routes = [
     component: HomeView,
     meta: { zone: 'public' }
   },
-  // 产品列表（关键词/年龄/排序条件在 ?q/?age/?sort 查询参数中）
+  // 产品列表（关键词/年龄/排序条件在 ?q/?age/?sort 查询参数中，#87 接入 API 分页 ?page=）
   {
     path: '/products',
     name: 'Products',
-    component: () => import('../views/WorkshopView.vue'),
+    component: () => import('../views/product/ProductListView.vue'),
     meta: { zone: 'public' }
   },
   // 产品分类列表（#87 契约：/categories/:slug）
   {
     path: '/categories/:slug',
     name: 'ProductCategory',
-    component: () => import('../views/WorkshopView.vue'),
+    component: () => import('../views/product/ProductListView.vue'),
     meta: { zone: 'public' }
   },
   // 产品详情（#87 契约：/products/:slug；旧 /product/:id 在文末重定向兼容）
   {
     path: '/products/:slug',
     name: 'ProductDetail',
-    component: () => import('../views/ProductDetail.vue'),
+    component: () => import('../views/product/ProductDetailView.vue'),
     meta: { zone: 'public' }
   },
   // 内容栏目页（7 个栏目 slug 与原站保持一致，#88 接入内容 API 后 URL 不变）
@@ -90,7 +90,7 @@ const routes = [
   {
     path: '/dealers/apply',
     name: 'DealerApply',
-    component: () => import('../views/DealerApply.vue'),
+    component: () => import('../views/dealer/DealerApply.vue'),
     meta: { zone: 'public' }
   },
   // 支持中心三页（#89 交付 ContactForm / FaqList / DownloadList 前先挂占位页）
@@ -147,11 +147,11 @@ const routes = [
     component: () => import('../views/account/AccountHomeView.vue'),
     meta: { zone: 'account', roles: ['USER', 'DEALER', 'ADMIN'] }
   },
-  // 经销商门户（#90 交付真实申请/审核/等级前先以现有页面占位）
+  // 经销商门户
   {
     path: '/dealer/portal',
     name: 'DealerPortal',
-    component: () => import('../views/DealerPortal.vue'),
+    component: () => import('../views/dealer/DealerPortal.vue'),
     meta: { zone: 'account', roles: ['DEALER', 'ADMIN'] }
   },
 
@@ -169,10 +169,23 @@ const routes = [
         meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
+        // #87 MVP-03：产品/分类管理列表（含分类管理 Tab）
         path: 'products',
         name: 'AdminProducts',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '产品与分类管理', ownerTask: '#87 MVP-03' }
+        component: () => import('../views/product/AdminProductList.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
+        path: 'products/new',
+        name: 'AdminProductCreate',
+        component: () => import('../views/product/AdminProductEdit.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
+        path: 'products/:id/edit',
+        name: 'AdminProductEdit',
+        component: () => import('../views/product/AdminProductEdit.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
         path: 'content',
@@ -189,8 +202,8 @@ const routes = [
       {
         path: 'dealers',
         name: 'AdminDealers',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '经销商申请与审核', ownerTask: '#90 MVP-06' }
+        component: () => import('../views/admin/AdminDealers.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
         path: 'users',

@@ -15,47 +15,52 @@
         <!-- Gallery -->
         <div class="gallery-col">
           <div class="main-image-wrap">
-            <img :src="currentImage" :alt="product.name" class="main-image" />
+            <img v-if="currentImage" :src="currentImage" :alt="product.name" class="main-image" />
+            <span v-else class="main-image-empty">产品图片待发布</span>
           </div>
           <div class="thumbs-row" v-if="product.images.length > 1">
-            <img
+            <button
               v-for="(img, idx) in product.images"
               :key="idx"
-              :src="img"
+              type="button"
               class="thumb-item"
               :class="{ active: currentImage === img }"
+              :aria-label="`查看 ${product.name} 的第 ${idx + 1} 张图片`"
+              :aria-pressed="currentImage === img"
               @click="currentImage = img"
-            />
+            >
+              <img :src="img" :alt="`${product.name} - 图片 ${idx + 1}`" />
+            </button>
           </div>
         </div>
 
-        <!-- Product Purchase Information -->
+        <!-- Product Information -->
         <div class="info-col">
           <div class="meta-tags">
             <span class="sku-tag">SKU: {{ product.sku }}</span>
-            <span class="age-tag">{{ product.ageRange }}</span>
+            <span v-if="product.ageRange" class="age-tag">{{ product.ageRange }}</span>
             <span v-if="product.tag" class="status-tag">{{ product.tag }}</span>
           </div>
 
           <h1 class="pdp-title">{{ product.name }}</h1>
           <p class="pdp-summary">{{ product.summary }}</p>
 
-          <!-- Price Engine Box -->
+          <!-- Pricing：价格口径唯一来自 API（DEALER/ADMIN 会话下返回 dealerPrice） -->
           <div class="pricing-card">
             <div class="pricing-row">
               <span class="price-type-label">
-                {{ userStore.isDealer ? '经销商协议结算价' : '官方零售指导价' }}
+                {{ hasDealerPrice ? '经销商协议结算价' : '官方零售指导价' }}
               </span>
               <div class="price-val">
                 <span class="curr">¥</span>
-                <span class="num">{{ currentPrice }}</span>
+                <span class="num">{{ hasDealerPrice ? product.dealerPrice : product.price }}</span>
               </div>
             </div>
 
-            <div v-if="userStore.isDealer" class="dealer-pricing-meta">
+            <div v-if="hasDealerPrice" class="dealer-pricing-meta">
               <div class="dealer-pill">
                 <el-icon><Check /></el-icon>
-                <span>已应用【{{ userStore.userInfo.tierName }}】专属折扣 ({{ userStore.userInfo.discountRate * 10 }}折)</span>
+                <span>已按经销商协议价结算，批发采购请直接联系商务对接</span>
               </div>
               <div class="orig-ref">官方指导价：¥{{ product.price }}</div>
               <div class="moq-tip">建议起订量 (MOQ)：{{ product.moq || 10 }} 件</div>
@@ -70,59 +75,61 @@
           <div class="quick-params">
             <div class="param-row">
               <span class="param-label">主要材质：</span>
-              <span class="param-val">{{ product.material }}</span>
+              <span class="param-val">{{ product.material || '待补充' }}</span>
             </div>
             <div class="param-row">
               <span class="param-label">适用场景：</span>
-              <span class="param-val">{{ product.scene }}</span>
+              <span class="param-val">{{ product.scene || '待补充' }}</span>
             </div>
             <div class="param-row">
-              <span class="param-label">外箱包装：</span>
-              <span class="param-val">{{ product.specs?.dimensions || '精美原木彩盒包装' }}</span>
+              <span class="param-label">所属品类：</span>
+              <span class="param-val">{{ product.categoryName || '-' }}</span>
             </div>
           </div>
 
-          <!-- Quantity and Action Buttons -->
+          <!-- CTA（决策 D9：本轮不启用购物，展示询购与合作入口） -->
           <div class="action-block">
-            <div class="qty-row">
-              <span class="qty-label">选购数量：</span>
-              <el-input-number
-                v-model="quantity"
-                :min="userStore.isDealer ? (product.moq || 5) : 1"
-                :max="999"
-                size="large"
-              />
-              <span v-if="userStore.isDealer" class="moq-hint">（已预设起订量）</span>
-            </div>
-
             <div class="cta-buttons">
-              <button class="btn-primary buy-btn" @click="handleBuyNow">
-                <el-icon><ShoppingBag /></el-icon>
-                <span>立即选购下单</span>
+              <button class="btn-primary buy-btn" @click="handleContact">
+                <el-icon><ChatDotRound /></el-icon>
+                <span>咨询与订购</span>
               </button>
-              <button class="btn-outline add-btn" @click="handleAddToCart">
-                <el-icon><ShoppingCart /></el-icon>
-                <span>加入购物车</span>
+              <button v-if="!hasDealerPrice" class="btn-outline add-btn" @click="handleDealerApply">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>经销合作</span>
               </button>
             </div>
+            <p class="cta-note">提交产品咨询后，品牌团队将根据您提供的联系方式回复。</p>
           </div>
         </div>
       </div>
 
-      <!-- Detail Tabs (Specifications, Instructions, Certifications) -->
+      <!-- Detail Tabs -->
       <div class="pdp-tabs-section">
         <el-tabs v-model="activeTab" class="custom-tabs">
           <el-tab-pane label="产品详细介绍与玩法" name="desc">
             <div class="tab-body">
               <h3>设计理念与玩法指南</h3>
-              <p>{{ product.description }}</p>
-              <div class="highlights-box">
+              <p>{{ product.description || product.summary || '详细内容待运营人员发布。' }}</p>
+              <div v-if="highlights.length" class="highlights-box">
                 <h4>核心特点：</h4>
                 <ul>
-                  <li>选用天然无异味原木材料，手感扎实细腻。</li>
-                  <li>边缘经多道手工倒圆打磨，无尖锐棱角，守护儿童玩耍安全。</li>
-                  <li>支持开放式建构与探索，兼容多种木制积木与扩展模块。</li>
+                  <li v-for="item in highlights" :key="item">{{ item }}</li>
                 </ul>
+              </div>
+              <div v-if="product.specs?.setup || product.specs?.howToPlay || product.specs?.care" class="instruction-grid">
+                <section v-if="product.specs?.setup">
+                  <h4>安装与准备</h4>
+                  <p>{{ product.specs.setup }}</p>
+                </section>
+                <section v-if="product.specs?.howToPlay">
+                  <h4>玩法说明</h4>
+                  <p>{{ product.specs.howToPlay }}</p>
+                </section>
+                <section v-if="product.specs?.care">
+                  <h4>保养方式</h4>
+                  <p>{{ product.specs.care }}</p>
+                </section>
               </div>
             </div>
           </el-tab-pane>
@@ -135,7 +142,7 @@
                     <td class="td-key">SKU 编号</td>
                     <td class="td-val">{{ product.sku }}</td>
                     <td class="td-key">建议年龄</td>
-                    <td class="td-val">{{ product.ageRange }}</td>
+                    <td class="td-val">{{ product.ageRange || '-' }}</td>
                   </tr>
                   <tr>
                     <td class="td-key">产品尺寸</td>
@@ -160,76 +167,107 @@
 
           <el-tab-pane label="安全与检测认证" name="cert">
             <div class="tab-body">
-              <p>WeMove 惟木匠心全系列产品均符合严格的国家玩具安全标准 (GB 6675) 及欧盟 EN71 玩具安全指令检测：</p>
-              <ul class="cert-list">
-                <li>✓ 物理机械性能安全合格（无窒息小零件危险、无危险锐利边缘）</li>
-                <li>✓ 重金属溶出量低于欧盟指令限制阈值</li>
-                <li>✓ 环保无毒水性涂层，无刺激性气味</li>
+              <p v-if="product.specs?.safetyNotes">{{ product.specs.safetyNotes }}</p>
+              <ul v-if="certifications.length" class="cert-list">
+                <li v-for="item in certifications" :key="item">{{ item }}</li>
               </ul>
+              <p v-if="!product.specs?.safetyNotes && !certifications.length" class="content-pending">
+                安全提示与检测文件尚未发布，请在使用前联系品牌方索取该产品的正式资料。
+              </p>
             </div>
           </el-tab-pane>
         </el-tabs>
       </div>
     </div>
   </div>
-  <div v-else class="not-found">
-    <h2>未找到相关商品</h2>
-    <p>该产品不存在或已下架。</p>
-    <router-link to="/products">返回产品列表</router-link>
+
+  <div v-else class="detail-state">
+    <AsyncState
+      :loading="loading"
+      :error="loadError"
+      :not-found="notFound"
+      :show-retry="!notFound"
+      @retry="loadProduct"
+    >
+      <span></span>
+    </AsyncState>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { useProductStore } from '../stores/product'
-import { useUserStore } from '../stores/user'
-import { useCartStore } from '../stores/cart'
+import { productApi } from '../../services/product'
+import AsyncState from '../../components/AsyncState.vue'
 
+/**
+ * 产品详情页（#87 MVP-03）：GET /products/:slug（旧 /product/:id 由后端兼容解析）。
+ * 经销商价仅在 DEALER/ADMIN 会话下由 API 返回（服务端裁剪），页面按字段是否出现渲染。
+ */
 const route = useRoute()
 const router = useRouter()
-const productStore = useProductStore()
-const userStore = useUserStore()
-const cartStore = useCartStore()
 
 const product = ref(null)
 const currentImage = ref('')
-const quantity = ref(1)
 const activeTab = ref('desc')
+const loading = ref(false)
+const loadError = ref(null)
+const notFound = ref(false)
+let detailRequestSerial = 0
 
-function loadProduct() {
-  // 新路由 /products/:slug 以 slug 寻址；旧 /product/:id 重定向而来的是数字 id，做兼容解析
-  const key = String(route.params.slug ?? '')
-  const found =
-    productStore.products.find(p => p.slug === key) ||
-    productStore.products.find(p => String(p.id) === key)
-  if (found) {
-    product.value = found
-    currentImage.value = found.images[0]
-    quantity.value = userStore.isDealer ? (found.moq || 5) : 1
-  } else {
-    product.value = null
+const hasDealerPrice = computed(
+  () => product.value && product.value.dealerPrice != null && product.value.moq != null
+)
+
+/** JSON 字段兼容数组或换行文本，页面只展示后台真实维护的内容。 */
+function normalizeContentList(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean)
+  if (typeof value === 'string') return value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
+  return []
+}
+
+const highlights = computed(() => normalizeContentList(product.value?.specs?.highlights))
+const certifications = computed(() => normalizeContentList(product.value?.specs?.certifications))
+
+async function loadProduct() {
+  const requestSerial = ++detailRequestSerial
+  loading.value = true
+  loadError.value = null
+  notFound.value = false
+  product.value = null
+  try {
+    const key = String(route.params.slug ?? '')
+    const envelope = await productApi.fetchProduct(key)
+    const detail = envelope?.data
+    if (!detail) {
+      if (requestSerial === detailRequestSerial) notFound.value = true
+    } else {
+      if (requestSerial === detailRequestSerial) {
+        product.value = detail
+        currentImage.value = detail.images?.[0] || ''
+      }
+    }
+  } catch (err) {
+    if (requestSerial !== detailRequestSerial) return
+    if (err?.status === 404) {
+      notFound.value = true
+    } else {
+      loadError.value = err
+    }
+  } finally {
+    if (requestSerial === detailRequestSerial) loading.value = false
   }
 }
 
 onMounted(loadProduct)
 watch(() => route.params.slug, loadProduct)
 
-const currentPrice = computed(() => {
-  if (!product.value) return 0
-  return productStore.getProductPrice(product.value)
-})
-
-function handleAddToCart() {
-  if (!product.value) return
-  cartStore.addToCart(product.value, quantity.value)
-  ElMessage.success(`已成功添加 ${quantity.value} 件至购物车！`)
+function handleContact() {
+  router.push('/support')
 }
 
-function handleBuyNow() {
-  handleAddToCart()
-  router.push('/cart')
+function handleDealerApply() {
+  router.push('/dealers/apply')
 }
 </script>
 
@@ -280,6 +318,7 @@ function handleBuyNow() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 .main-image-wrap {
@@ -289,12 +328,22 @@ function handleBuyNow() {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-image {
+  display: block;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.main-image-empty {
+  color: var(--text-light);
+  font-size: 14px;
 }
 
 .thumbs-row {
@@ -305,12 +354,20 @@ function handleBuyNow() {
 .thumb-item {
   width: 72px;
   height: 72px;
-  object-fit: cover;
+  padding: 0;
   border-radius: 8px;
   border: 2px solid transparent;
   cursor: pointer;
   background: #f0f0f0;
   transition: all 0.2s;
+}
+
+.thumb-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .thumb-item:hover, .thumb-item.active {
@@ -320,10 +377,12 @@ function handleBuyNow() {
 .info-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .meta-tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -359,6 +418,7 @@ function handleBuyNow() {
   color: var(--text-color);
   line-height: 1.3;
   margin-bottom: 12px;
+  overflow-wrap: anywhere;
 }
 
 .pdp-summary {
@@ -471,28 +531,17 @@ function handleBuyNow() {
 .action-block {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.qty-row {
-  display: flex;
-  align-items: center;
   gap: 12px;
-}
-
-.qty-label {
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.moq-hint {
-  font-size: 12px;
-  color: #8E7E67;
 }
 
 .cta-buttons {
   display: flex;
   gap: 16px;
+}
+
+.cta-note {
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 .buy-btn, .add-btn {
@@ -531,6 +580,27 @@ function handleBuyNow() {
   margin-top: 8px;
 }
 
+.instruction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.instruction-grid section {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-light);
+}
+
+.content-pending {
+  padding: 16px;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-light);
+}
+
 .specs-table {
   width: 100%;
   border-collapse: collapse;
@@ -553,15 +623,83 @@ function handleBuyNow() {
   color: var(--text-color);
 }
 
-.not-found {
-  padding: 80px 24px;
-  text-align: center;
+.detail-state {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 60px 24px;
 }
 
 @media (max-width: 960px) {
   .pdp-grid {
     grid-template-columns: 1fr;
+    min-width: 0;
+  }
+  .instruction-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .breadcrumb-bar {
+    padding: 12px 16px;
+  }
+  .breadcrumb-bar .inner {
+    flex-wrap: nowrap;
+  }
+  .breadcrumb-bar a,
+  .breadcrumb-bar .inner > span:not(.curr) {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .breadcrumb-bar .curr {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pdp-main {
+    padding: 24px 16px 56px;
+  }
+  .main-image-wrap {
+    height: min(82vw, 420px);
+  }
+  .thumbs-row {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .thumb-item {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+  }
+  .pricing-row,
+  .cta-buttons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .price-val .num {
+    font-size: 30px;
+  }
+  .specs-table,
+  .specs-table tbody,
+  .specs-table tr,
+  .specs-table td {
+    display: block;
+    width: 100%;
+  }
+  .specs-table .td-key {
+    border-bottom: 0;
+  }
+  .custom-tabs :deep(.el-tabs__nav-scroll) {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .custom-tabs :deep(.el-tabs__nav-scroll::-webkit-scrollbar) {
+    display: none;
+  }
+  .custom-tabs :deep(.el-tabs__nav) {
+    width: max-content;
+    transform: none !important;
   }
 }
 </style>
-

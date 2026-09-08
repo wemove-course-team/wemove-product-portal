@@ -12,11 +12,15 @@ dist-ssr/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.vs/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent scratch artifacts and browser QA profiles
+work/
 
 # Logs
 npm-debug.log*
@@ -33,6 +37,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+deploy/.env
 
 # Backend / Java / Python ignores
 target/
@@ -42,5 +47,3 @@ __pycache__/
 *.pyc
 venv/
 .venv/
-
-.vs/
