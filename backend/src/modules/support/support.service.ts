@@ -66,8 +66,8 @@ export class SupportService {
     const item = await this.messages.findOne({ where: { id } })
     if (!item) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '留言不存在' })
     const transitions: Record<MessageStatus, MessageStatus[]> = {
-      [MessageStatus.PENDING]: [MessageStatus.PROCESSING, MessageStatus.DONE],
-      [MessageStatus.PROCESSING]: [MessageStatus.DONE, MessageStatus.PENDING],
+      [MessageStatus.PENDING]: [MessageStatus.PENDING, MessageStatus.PROCESSING],
+      [MessageStatus.PROCESSING]: [MessageStatus.PROCESSING, MessageStatus.DONE],
       [MessageStatus.DONE]: [MessageStatus.DONE]
     }
     if (!transitions[item.status].includes(input.status)) throw new ConflictException({ code: 'CONFLICT_409', message: '留言状态不能回退到该状态' })

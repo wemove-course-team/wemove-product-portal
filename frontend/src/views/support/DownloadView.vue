@@ -3,7 +3,7 @@
     <section class="page-heading">
       <p class="eyebrow">DOWNLOADS</p>
       <h1>{{ title }}</h1>
-      <p>公开资料无需登录；受限资料会根据当前账号权限显示。</p>
+      <p>公开资料无需登录；受限资料会根据当前账号权限显示。本轮资料使用公开静态文件路径，权限控制覆盖资料列表和打开接口。</p>
     </section>
     <el-skeleton v-if="loading" :rows="5" animated />
     <el-empty v-else-if="!items.length" description="暂无可用下载资料" />

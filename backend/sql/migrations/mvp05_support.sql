@@ -1,7 +1,7 @@
 -- MVP-05 支持中心增量表。文件资源只引用 public 目录或外链，不做上传。
 USE `wemove_portal`;
 
-CREATE TABLE `contact_message` (
+CREATE TABLE IF NOT EXISTS `contact_message` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `code` VARCHAR(32) NOT NULL COMMENT 'MSG-YYYYMMDD-NNNN',
   `name` VARCHAR(64) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE `contact_message` (
   KEY `idx_contact_message_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联系表单留言';
 
-CREATE TABLE `faq` (
+CREATE TABLE IF NOT EXISTS `faq` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `question` VARCHAR(255) NOT NULL,
   `answer` TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE `faq` (
   KEY `idx_faq_status_sort` (`status`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='常见问题';
 
-CREATE TABLE `download_resource` (
+CREATE TABLE IF NOT EXISTS `download_resource` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(128) NOT NULL,
   `category` VARCHAR(64) NOT NULL DEFAULT 'manual',
@@ -57,4 +57,5 @@ INSERT INTO `faq` (`question`, `answer`, `category`, `sort_order`, `status`) VAL
 
 INSERT INTO `download_resource` (`title`, `category`, `description`, `file_url`, `cover_image`, `visibility`, `sort_order`, `status`) VALUES
 ('WeMove 电子说明书示例', 'manual', '公开电子说明书资源示例。', '/images/electronic_grid0_0_1c281559-002.png', '/images/electronic_grid0_0_1c281559-002.png', 'PUBLIC', 1, 'PUBLISHED'),
-('经销商资料包', 'dealer', '登录并通过经销商审核后可访问。', '/images/electronic_grid1_0_c4ebc66c-1c4.png', '/images/electronic_grid1_0_c4ebc66c-1c4.png', 'DEALER', 2, 'PUBLISHED');
+('会员资料包', 'catalog', '登录后可访问。', '/images/electronic_grid1_0_c4ebc66c-1c4.png', '/images/electronic_grid1_0_c4ebc66c-1c4.png', 'USER', 2, 'PUBLISHED'),
+('经销商资料包', 'dealer', '登录并通过经销商审核后可访问。', '/images/electronic_grid2_0_635fbdee-fe3.png', '/images/electronic_grid2_0_635fbdee-fe3.png', 'DEALER', 3, 'PUBLISHED');
