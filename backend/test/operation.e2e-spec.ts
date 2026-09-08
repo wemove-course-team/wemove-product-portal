@@ -342,7 +342,7 @@ describe('Operation 站点配置 / Banner / 概览 (e2e)', () => {
 
       // 与数据库真实 COUNT 对账
       const ds = app.get(DataSource)
-      const [[{ cnt: productCnt }]] = await ds.query('SELECT COUNT(*) AS cnt FROM `product`')
+      const [{ cnt: productCnt }] = await ds.query('SELECT COUNT(*) AS cnt FROM `product`')
       expect(res.body.data.productCount).toBe(Number(productCnt))
     })
   })

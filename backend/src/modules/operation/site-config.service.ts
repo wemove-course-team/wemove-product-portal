@@ -77,14 +77,16 @@ export class SiteConfigService {
       })
     }
 
-    for (const [key, value] of entries) {
-      await this.repo.save({
-        configKey: key,
-        configValue: value as string,
-        updatedBy: updatedBy ? Number(updatedBy) : null,
-        updatedAt: new Date()
-      })
-    }
+    await this.repo.manager.transaction(async (manager) => {
+      for (const [key, value] of entries) {
+        await manager.save(SiteConfig, {
+          configKey: key,
+          configValue: value as string,
+          updatedBy: updatedBy ? Number(updatedBy) : null,
+          updatedAt: new Date()
+        })
+      }
+    })
 
     return this.getPublicConfig()
   }

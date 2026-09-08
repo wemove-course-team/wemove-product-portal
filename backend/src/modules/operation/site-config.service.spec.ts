@@ -2,18 +2,46 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { SiteConfigService, SITE_CONFIG_KEYS } from './site-config.service'
 
 /** 构造内存版 SiteConfig 仓库 Mock。 */
-function createRepoMock(initial: Record<string, string> = {}) {
+type TransactionManagerMock = {
+  save: jest.Mock
+  transaction: jest.Mock
+}
+
+function createRepoMock(
+  initial: Record<string, string> = {},
+  options: { failOnSave?: number } = {}
+) {
   const store = new Map<string, { configKey: string; configValue: string }>()
   for (const [k, v] of Object.entries(initial)) {
     store.set(k, { configKey: k, configValue: v })
   }
+  let saveCount = 0
+  const save = async (entity: { configKey: string; configValue: string }) => {
+    saveCount += 1
+    if (saveCount === options.failOnSave) throw new Error('模拟数据库写入失败')
+    store.set(entity.configKey, { ...entity })
+    return entity
+  }
+  const transactionSave = async (...args: unknown[]) =>
+    save(args[args.length - 1] as { configKey: string; configValue: string })
+  const manager: TransactionManagerMock = {
+    save: jest.fn(transactionSave),
+    transaction: jest.fn(async (work: (transactionalManager: TransactionManagerMock) => Promise<unknown>) => {
+      const snapshot = new Map(store)
+      try {
+        return await work(manager)
+      } catch (error) {
+        store.clear()
+        for (const [key, value] of snapshot) store.set(key, value)
+        throw error
+      }
+    })
+  }
   return {
     store,
     find: jest.fn(async () => Array.from(store.values())),
-    save: jest.fn(async (entity: { configKey: string; configValue: string }) => {
-      store.set(entity.configKey, { ...entity })
-      return entity
-    })
+    save: jest.fn(save),
+    manager
   }
 }
 
@@ -44,6 +72,23 @@ describe('SiteConfigService（单元）', () => {
     const config = await service.getPublicConfig()
     expect(config.siteName).toBe('新站名')
     expect(config.contactPhone).toBe('13800000000')
+  })
+
+  it('updateConfig：批量写入中途失败时回滚，所有配置保持原值', async () => {
+    const repo = createRepoMock(
+      { siteName: '旧站名', contactPhone: '13800000000' },
+      { failOnSave: 2 }
+    )
+    const service = new SiteConfigService(repo as any)
+
+    await expect(
+      service.updateConfig({ siteName: '新站名', contactPhone: '13900000000' }, '1')
+    ).rejects.toThrow('模拟数据库写入失败')
+
+    expect(await service.getPublicConfig()).toMatchObject({
+      siteName: '旧站名',
+      contactPhone: '13800000000'
+    })
   })
 
   it('updateConfig：非白名单键被拒绝并返回 400，且不做任何部分写入', async () => {
