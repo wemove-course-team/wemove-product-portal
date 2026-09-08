@@ -371,7 +371,11 @@ const articleRules = {
   title: [{ required: true, message: '请输入文章标题', trigger: 'blur' }],
   slug: [
     { required: true, message: '请输入 Slug', trigger: 'blur' },
-    { pattern: /^[a-z0-9-]+$/, message: 'Slug 只能包含小写字母、数字与横线', trigger: 'blur' }
+    {
+      pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      message: 'Slug 必须为小写字母、数字与连字符组成，且不能以连字符开头或结尾',
+      trigger: 'blur'
+    }
   ]
 }
 
@@ -393,7 +397,11 @@ const categoryRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
   slug: [
     { required: true, message: '请输入分类 Slug', trigger: 'blur' },
-    { pattern: /^[a-z0-9-]+$/, message: 'Slug 只能包含小写字母、数字与横线', trigger: 'blur' }
+    {
+      pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      message: 'Slug 必须为小写字母、数字与连字符组成，且不能以连字符开头或结尾',
+      trigger: 'blur'
+    }
   ]
 }
 

@@ -46,9 +46,8 @@
                 <h2 v-if="sec.config.title" class="ti-title">{{ sec.config.title }}</h2>
                 <div
                   v-if="sec.config.text"
-                  class="ti-body"
-                  v-html="formatHtml(sec.config.text)"
-                ></div>
+                  class="ti-body formatted-text"
+                >{{ sec.config.text }}</div>
                 <div v-if="sec.config.btnText" class="ti-btn-wrap">
                   <el-button type="primary" size="large" @click="handleAction(sec.config.btnLink)">
                     {{ sec.config.btnText }}
@@ -123,7 +122,7 @@
                 </div>
               </template>
               <template v-else>
-                <div class="plain-text" v-html="formatHtml(sec.config.text)"></div>
+                <div class="plain-text formatted-text">{{ sec.config.text }}</div>
               </template>
             </div>
           </div>
@@ -136,10 +135,10 @@
               type="primary"
               size="large"
               class="download-btn"
-              @click="handleDownload(sec.config.fileName || 'WeMove实木产品电子手册.pdf')"
+              @click="handleDownload(sec.config)"
             >
               <el-icon><Download /></el-icon>
-              <span>{{ sec.config.btnText || '下载电子说明书 PDF' }}</span>
+              <span>{{ sec.config?.btnText || '下载电子说明书 PDF' }}</span>
             </el-button>
           </div>
         </section>
@@ -292,11 +291,6 @@ function getImageUrl(item) {
   return item?.url || ''
 }
 
-function formatHtml(text) {
-  if (!text) return ''
-  return text.replace(/\n/g, '<br>')
-}
-
 function handleAction(link) {
   if (!link) {
     router.push('/workshop')
@@ -307,8 +301,26 @@ function handleAction(link) {
   }
 }
 
-function handleDownload(filename) {
-  ElMessage.success(`已开始下载：${filename}`)
+function handleDownload(config) {
+  const url = (config?.fileUrl || config?.url || '').trim()
+  const filename = config?.fileName || 'WeMove实木产品电子手册.pdf'
+  if (!url) {
+    ElMessage.error('该文件暂不可用或下载链接不存在')
+    return
+  }
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    ElMessage.success(`已开始下载：${filename}`)
+  } catch (err) {
+    ElMessage.error('触发文件下载失败，请稍后重试')
+  }
 }
 
 function submitAppointment() {
@@ -419,6 +431,11 @@ function submitAppointment() {
   font-size: 15px;
   color: var(--text-muted);
   line-height: 1.8;
+}
+
+.formatted-text {
+  white-space: pre-line;
+  word-break: break-word;
 }
 
 .ti-btn-wrap {

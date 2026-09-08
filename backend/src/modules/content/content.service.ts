@@ -17,7 +17,7 @@ import { UpdatePageDto } from './dto/update-page.dto'
 import { ArticleListItemDto } from './dto/article-list-item.dto'
 import { PageResponseDto } from './dto/page-response.dto'
 import { ArticleQueryDto, AdminArticleQueryDto } from './dto/article-query.dto'
-import { sanitizeHtml } from './utils/html-sanitizer'
+import { sanitizeHtml, sanitizeDeep } from './utils/html-sanitizer'
 
 @Injectable()
 export class ContentService {
@@ -155,13 +155,22 @@ export class ContentService {
     return article
   }
 
-  /** 管理端创建文章（校验 slug 唯一并清洗 HTML） */
+  /** 管理端创建文章（校验 slug 唯一并清洗 HTML，验证分类存在） */
   async adminCreateArticle(dto: CreateArticleDto): Promise<Article> {
     const exists = await this.articleRepo.findOne({
       where: { slug: dto.slug }
     })
     if (exists) {
       throw new ConflictException(`Slug "${dto.slug}" 已存在`)
+    }
+
+    if (dto.categoryId) {
+      const category = await this.categoryRepo.findOne({
+        where: { id: String(dto.categoryId) }
+      })
+      if (!category) {
+        throw new BadRequestException(`关联的分类 #${dto.categoryId} 不存在`)
+      }
     }
 
     const article = this.articleRepo.create({
@@ -182,6 +191,15 @@ export class ContentService {
       })
       if (exists) {
         throw new ConflictException(`Slug "${dto.slug}" 已存在`)
+      }
+    }
+
+    if (dto.categoryId) {
+      const category = await this.categoryRepo.findOne({
+        where: { id: String(dto.categoryId) }
+      })
+      if (!category) {
+        throw new BadRequestException(`关联的分类 #${dto.categoryId} 不存在`)
       }
     }
 
@@ -283,7 +301,9 @@ export class ContentService {
     const updateData: any = { ...dto }
     if (dto.sectionsJson !== undefined) {
       try {
-        JSON.parse(dto.sectionsJson)
+        const parsed = JSON.parse(dto.sectionsJson)
+        const sanitized = sanitizeDeep(parsed)
+        updateData.sectionsJson = JSON.stringify(sanitized)
       } catch {
         throw new BadRequestException('sectionsJson 必须为有效 JSON 格式')
       }

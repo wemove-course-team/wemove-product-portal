@@ -224,12 +224,20 @@ describe('Content & CMS API (e2e)', () => {
       expect(publicGet.body.data.title).toBe('全自动验收测试草稿文章')
     })
 
-    it('管理员更新栏目单页内容，前台刷新即可反映', async () => {
+    it('管理员更新栏目单页内容并清洗恶意的 onerror 和脚本标签，前台安全返回', async () => {
       const admin = await loginAs(app, 'admin')
       const pagesRes = await admin.get('/api/v1/admin/pages')
       const dreamPage = pagesRes.body.data.find((p: any) => p.slug === 'dream')
 
-      const updatedSections = [{ type: 'Cover', title: '自动化测试更新标题' }]
+      const updatedSections = [
+        {
+          type: 'Cover',
+          title: '自动化测试更新标题',
+          config: {
+            text: '<img src=x onerror=alert("xss")><script>alert(1)</script>安全正文段落'
+          }
+        }
+      ]
       const updateRes = await admin.put(`/api/v1/admin/pages/${dreamPage.id}`, {
         title: '积木筑魂（已由测试更新）',
         sectionsJson: JSON.stringify(updatedSections)
@@ -241,6 +249,29 @@ describe('Content & CMS API (e2e)', () => {
       expect(publicPage.status).toBe(200)
       expect(publicPage.body.data.title).toBe('积木筑魂（已由测试更新）')
       expect(publicPage.body.data.sections[0].title).toBe('自动化测试更新标题')
+      expect(JSON.stringify(publicPage.body.data.sections)).not.toContain('onerror')
+      expect(JSON.stringify(publicPage.body.data.sections)).not.toContain('<script>')
+    })
+
+    it('创建文章拦截：非法格式 slug 或不存在的 categoryId 均返回 400', async () => {
+      const admin = await loginAs(app, 'admin')
+
+      // 1. 非法 slug 格式（大写/特殊符号）
+      const badSlugRes = await admin.post('/api/v1/admin/articles', {
+        title: '格式错误文章',
+        slug: 'INVALID_SLUG_WITH_UPPERCASE!',
+        status: 'DRAFT'
+      })
+      expect(badSlugRes.status).toBe(400)
+
+      // 2. 不存在的 categoryId
+      const badCategoryRes = await admin.post('/api/v1/admin/articles', {
+        title: '无效分类文章',
+        slug: 'valid-slug-but-invalid-category',
+        categoryId: '999999',
+        status: 'DRAFT'
+      })
+      expect(badCategoryRes.status).toBe(400)
     })
 
     it('管理员清理测试文章', async () => {

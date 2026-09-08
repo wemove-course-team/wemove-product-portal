@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { ContentService } from './content.service'
-import { sanitizeHtml } from './utils/html-sanitizer'
+import { sanitizeHtml, sanitizeDeep } from './utils/html-sanitizer'
 import type { Article } from './entities/article.entity'
 import type { ArticleCategory } from './entities/article-category.entity'
 import type { Page } from './entities/page.entity'
@@ -185,6 +185,19 @@ describe('ContentService (unit)', () => {
       ).rejects.toThrow(ConflictException)
     })
 
+    it('adminCreateArticle: categoryId 不存在抛出 BadRequestException', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(null)
+      mockCategoryRepo.findOne.mockResolvedValue(null)
+
+      await expect(
+        service.adminCreateArticle({
+          title: '分类不存在文章',
+          slug: 'non-existent-category-article',
+          categoryId: '99999'
+        })
+      ).rejects.toThrow(BadRequestException)
+    })
+
     it('adminUpdateArticle: 从草稿切换为发布时自动填充 publishedAt', async () => {
       const draftArticle = { ...sampleArticle, status: 'DRAFT', publishedAt: null }
       mockArticleRepo.findOne.mockResolvedValue(draftArticle)
@@ -197,6 +210,15 @@ describe('ContentService (unit)', () => {
           publishedAt: expect.any(Date)
         })
       )
+    })
+
+    it('adminUpdateArticle: 更新为不存在的 categoryId 抛出 BadRequestException', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(sampleArticle)
+      mockCategoryRepo.findOne.mockResolvedValue(null)
+
+      await expect(
+        service.adminUpdateArticle('10', { categoryId: '99999' })
+      ).rejects.toThrow(BadRequestException)
     })
 
     it('adminUpdateArticleStatus: 快捷切换状态', async () => {
@@ -238,6 +260,37 @@ describe('ContentService (unit)', () => {
         service.adminUpdatePage('1', { sectionsJson: '{ bad json }' })
       ).rejects.toThrow(BadRequestException)
     })
+
+    it('adminUpdatePage: 递归清洗 sectionsJson 中的恶意 onerror 与脚本标签', async () => {
+      mockPageRepo.findOne.mockResolvedValue(samplePage)
+
+      const maliciousSections = [
+        {
+          type: 'TextImage',
+          config: {
+            title: '测试',
+            text: '<img src=x onerror=alert(1)><script>evil()</script>安全内容'
+          }
+        }
+      ]
+
+      await service.adminUpdatePage('1', {
+        sectionsJson: JSON.stringify(maliciousSections)
+      })
+
+      expect(mockPageRepo.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          sectionsJson: expect.not.stringContaining('onerror')
+        })
+      )
+      expect(mockPageRepo.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          sectionsJson: expect.not.stringContaining('<script>')
+        })
+      )
+    })
   })
 
   describe('安全防护 - html-sanitizer', () => {
@@ -250,6 +303,34 @@ describe('ContentService (unit)', () => {
       expect(sanitized).not.toContain('onclick=')
       expect(sanitized).not.toContain('javascript:')
       expect(sanitized).toContain('文本')
+    })
+
+    it('剥离 onerror/onload 等内联事件属性，防止图片/SVG 等标签上的事件执行', () => {
+      const xss1 = '<img src=x onerror=alert(1)>'
+      const xss2 = '<img src="x" onerror="alert(document.cookie)">'
+      const xss3 = '<svg onload=alert(1)>'
+      const xss4 = '<div onmouseover=alert(1)>hover me</div>'
+
+      expect(sanitizeHtml(xss1)).not.toContain('onerror')
+      expect(sanitizeHtml(xss2)).not.toContain('onerror')
+      expect(sanitizeHtml(xss3)).not.toContain('onload')
+      expect(sanitizeHtml(xss4)).not.toContain('onmouseover')
+    })
+
+    it('sanitizeDeep 能够递归清洗嵌套对象与数组中的字符串', () => {
+      const complex = {
+        title: 'Safe',
+        sections: [
+          { text: '<img src=x onerror=alert(1)>段落' },
+          { subItems: ['<script>xss()</script>条目'] }
+        ]
+      }
+      const cleaned = sanitizeDeep(complex) as any
+
+      expect(cleaned.sections[0].text).not.toContain('onerror')
+      expect(cleaned.sections[0].text).toContain('段落')
+      expect(cleaned.sections[1].subItems[0]).not.toContain('<script>')
+      expect(cleaned.sections[1].subItems[0]).toContain('条目')
     })
   })
 })
