@@ -1,131 +1,51 @@
 <template>
-    <div class="admin-support-container">
-        <el-card shadow="never">
-            <template #header>
-                <div class="card-header">
-                    <h3>����������̨</h3>
-                    <el-tooltip content="�Զ������ݷ����뵼��������δ����" placement="top">
-                        <el-button type="primary" plain disabled>
-                            ������������ (��δ����)
-                        </el-button>
-                    </el-tooltip>
-                </div>
-            </template>
+  <div class="admin-support">
+    <div class="heading-row"><div><p class="eyebrow">MVP-05</p><h1>支持中心管理</h1></div><el-button :loading="loading" @click="refresh">刷新</el-button></div>
+    <el-tabs v-model="activeTab" @tab-change="refresh">
+      <el-tab-pane label="留言" name="messages">
+        <div class="toolbar"><el-input v-model="messageKeyword" clearable placeholder="搜索编号、姓名、邮箱或主题" @keyup.enter="loadMessages" /><el-select v-model="messageStatus" clearable placeholder="全部状态" @change="loadMessages"><el-option label="待处理" value="PENDING" /><el-option label="处理中" value="PROCESSING" /><el-option label="已完成" value="DONE" /></el-select><el-button type="primary" @click="loadMessages">查询</el-button></div>
+        <el-table v-loading="loading" :data="messages" stripe><el-table-column prop="code" label="编号" width="170" /><el-table-column prop="name" label="姓名" width="110" /><el-table-column prop="email" label="邮箱" min-width="190" /><el-table-column prop="subject" label="主题" min-width="180" /><el-table-column prop="status" label="状态" width="110"><template #default="{ row }"><el-tag :type="messageTag(row.status)">{{ messageText(row.status) }}</el-tag></template></el-table-column><el-table-column label="操作" width="180" fixed="right"><template #default="{ row }"><el-button link type="primary" @click="openMessage(row)">查看 / 处理</el-button></template></el-table-column></el-table>
+        <el-pagination v-model:current-page="messagePage" v-model:page-size="messagePageSize" layout="prev, pager, next" :total="messageTotal" @current-change="loadMessages" />
+      </el-tab-pane>
+      <el-tab-pane label="FAQ" name="faqs"><div class="tab-actions"><el-button type="primary" @click="openFaq()">新增 FAQ</el-button></div><el-table v-loading="loading" :data="faqs" stripe><el-table-column prop="category" label="分类" width="120" /><el-table-column prop="question" label="问题" min-width="260" /><el-table-column prop="status" label="状态" width="110" /><el-table-column label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="openFaq(row)">编辑</el-button><el-button link type="danger" @click="removeFaq(row)">删除</el-button></template></el-table-column></el-table></el-tab-pane>
+      <el-tab-pane label="下载资料" name="downloads"><div class="tab-actions"><el-button type="primary" @click="openDownload()">新增资料</el-button></div><el-table v-loading="loading" :data="downloads" stripe><el-table-column prop="title" label="标题" min-width="220" /><el-table-column prop="category" label="分类" width="110" /><el-table-column prop="visibility" label="访问级别" width="130" /><el-table-column prop="downloadCount" label="下载次数" width="100" /><el-table-column label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="openDownload(row)">编辑</el-button><el-button link type="danger" @click="removeDownload(row)">删除</el-button></template></el-table-column></el-table></el-tab-pane>
+    </el-tabs>
 
-            <!-- ɸѡ�� -->
-            <div class="filter-bar">
-                <el-select v-model="filterStatus" placeholder="��״̬ɸѡ" clearable @change="fetchTickets">
-                    <el-option label="������" value="pending" />
-                    <el-option label="������" value="processing" />
-                    <el-option label="�����" value="resolved" />
-                </el-select>
-            </div>
-
-            <el-table v-loading="loading" :data="ticketList" stripe style="width: 100%">
-                <el-table-column prop="id" label="����ID" width="100" />
-                <el-table-column prop="name" label="�ύ��" width="120" />
-                <el-table-column prop="email" label="����" width="180" />
-                <el-table-column prop="category" label="����" width="120" />
-                <el-table-column prop="message" label="��������" show-overflow-tooltip />
-                <el-table-column prop="status" label="״̬" width="110">
-                    <template #default="scope">
-                        <el-tag :type="getStatusTag(scope.row.status)">
-                            {{ formatStatus(scope.row.status) }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="����" width="160" fixed="right">
-                    <template #default="scope">
-                        <el-button v-if="scope.row.status !== 'resolved'"
-                                   size="small"
-                                   type="success"
-                                   link
-                                   @click="handleResolve(scope.row)">
-                            ���Ϊ�ѽ��
-                        </el-button>
-                        <span v-else class="text-muted">�ѽ᰸</span>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </el-card>
-    </div>
+    <el-dialog v-model="messageDialog" title="处理留言" width="560px"><el-descriptions v-if="selectedMessage" :column="1" border><el-descriptions-item label="编号">{{ selectedMessage.code }}</el-descriptions-item><el-descriptions-item label="联系人">{{ selectedMessage.name }} / {{ selectedMessage.email }}</el-descriptions-item><el-descriptions-item label="主题">{{ selectedMessage.subject }}</el-descriptions-item><el-descriptions-item label="内容">{{ selectedMessage.content }}</el-descriptions-item></el-descriptions><el-form :model="messageForm" label-position="top" class="dialog-form"><el-form-item label="状态"><el-select v-model="messageForm.status"><el-option label="处理中" value="PROCESSING" /><el-option label="已完成" value="DONE" /><el-option label="待处理" value="PENDING" /></el-select></el-form-item><el-form-item label="处理备注"><el-input v-model="messageForm.handleNote" type="textarea" /></el-form-item></el-form><template #footer><el-button @click="messageDialog = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveMessage">保存</el-button></template></el-dialog>
+    <el-dialog v-model="faqDialog" :title="faqForm.id ? '编辑 FAQ' : '新增 FAQ'" width="560px"><el-form :model="faqForm" label-position="top"><el-form-item label="问题"><el-input v-model="faqForm.question" /></el-form-item><el-form-item label="答案"><el-input v-model="faqForm.answer" type="textarea" :rows="4" /></el-form-item><el-form-item label="分类"><el-input v-model="faqForm.category" /></el-form-item><el-form-item label="状态"><el-select v-model="faqForm.status"><el-option label="已发布" value="PUBLISHED" /><el-option label="草稿" value="DRAFT" /></el-select></el-form-item></el-form><template #footer><el-button @click="faqDialog = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveFaq">保存</el-button></template></el-dialog>
+    <el-dialog v-model="downloadDialog" :title="downloadForm.id ? '编辑下载资料' : '新增下载资料'" width="560px"><el-form :model="downloadForm" label-position="top"><el-form-item label="标题"><el-input v-model="downloadForm.title" /></el-form-item><el-form-item label="分类"><el-input v-model="downloadForm.category" placeholder="manual / catalog / other" /></el-form-item><el-form-item label="文件地址"><el-input v-model="downloadForm.fileUrl" placeholder="/images/... 或外链" /></el-form-item><el-form-item label="说明"><el-input v-model="downloadForm.description" /></el-form-item><el-form-item label="访问级别"><el-select v-model="downloadForm.visibility"><el-option label="公开" value="PUBLIC" /><el-option label="登录用户" value="USER" /><el-option label="经销商" value="DEALER" /></el-select></el-form-item><el-form-item label="状态"><el-select v-model="downloadForm.status"><el-option label="已发布" value="PUBLISHED" /><el-option label="草稿" value="DRAFT" /></el-select></el-form-item></el-form><template #footer><el-button @click="downloadDialog = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveDownload">保存</el-button></template></el-dialog>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getAdminTickets, updateTicketStatus } from '@/services/support'
+import { onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { supportApi } from '../../services/support'
 
-const loading = ref(false)
-const filterStatus = ref('')
-const ticketList = ref([])
+const activeTab = ref('messages'); const loading = ref(false); const saving = ref(false)
+const messages = ref([]); const messageKeyword = ref(''); const messageStatus = ref(''); const messagePage = ref(1); const messagePageSize = ref(10); const messageTotal = ref(0)
+const faqs = ref([]); const downloads = ref([])
+const messageDialog = ref(false); const selectedMessage = ref(null); const messageForm = reactive({ status: 'PROCESSING', handleNote: '' })
+const faqDialog = ref(false); const faqForm = reactive({ id: null, question: '', answer: '', category: '', status: 'PUBLISHED', sortOrder: 0 })
+const downloadDialog = ref(false); const downloadForm = reactive({ id: null, title: '', category: 'manual', description: '', fileUrl: '', visibility: 'PUBLIC', status: 'PUBLISHED', sortOrder: 0 })
 
-const fetchTickets = async () => {
-  loading.value = true
-  try {
-    const res = await getAdminTickets({ status: filterStatus.value })
-    ticketList.value = res.data || []
-  } catch (error) {
-    ElMessage.error('��ȡ�����б�ʧ��')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleResolve = async (row) => {
-  try {
-    await updateTicketStatus(row.id, { status: 'resolved' })
-    ElMessage.success('����״̬���³ɹ�')
-    fetchTickets()
-  } catch (error) {
-    ElMessage.error(error?.response?.data?.message || '����״̬ʧ��')
-  }
-}
-
-const getStatusTag = (status) => {
-  switch (status) {
-    case 'pending': return 'danger'
-    case 'processing': return 'warning'
-    case 'resolved': return 'success'
-    default: return 'info'
-  }
-}
-
-const formatStatus = (status) => {
-  switch (status) {
-    case 'pending': return '������'
-    case 'processing': return '������'
-    case 'resolved': return '�ѽ��'
-    default: return 'δ֪'
-  }
-}
-
-onMounted(() => {
-  fetchTickets()
-})
+async function loadMessages() { loading.value = true; try { const response = await supportApi.adminMessages({ page: messagePage.value, pageSize: messagePageSize.value, keyword: messageKeyword.value || undefined, status: messageStatus.value || undefined }); messages.value = response.data?.items || []; messageTotal.value = response.data?.total || 0 } catch (error) { ElMessage.error(error.message || '留言加载失败') } finally { loading.value = false } }
+async function loadFaqs() { const response = await supportApi.adminFaqs(); faqs.value = response.data || [] }
+async function loadDownloads() { const response = await supportApi.adminDownloads(); downloads.value = response.data || [] }
+async function refresh() { if (activeTab.value === 'messages') return loadMessages(); if (activeTab.value === 'faqs') return loadFaqs(); return loadDownloads() }
+function openMessage(row) { selectedMessage.value = row; messageForm.status = row.status; messageForm.handleNote = row.handleNote || ''; messageDialog.value = true }
+async function saveMessage() { saving.value = true; try { await supportApi.updateMessageStatus(selectedMessage.value.id, messageForm); ElMessage.success('留言状态已更新'); messageDialog.value = false; await loadMessages() } catch (error) { ElMessage.error(error.message || '保存失败') } finally { saving.value = false } }
+function openFaq(row) { Object.assign(faqForm, row ? { ...row } : { id: null, question: '', answer: '', category: '', status: 'PUBLISHED', sortOrder: 0 }); faqDialog.value = true }
+async function saveFaq() { saving.value = true; try { const payload = { question: faqForm.question, answer: faqForm.answer, category: faqForm.category, status: faqForm.status, sortOrder: Number(faqForm.sortOrder) || 0 }; if (faqForm.id) await supportApi.updateFaq(faqForm.id, payload); else await supportApi.createFaq(payload); ElMessage.success('FAQ 已保存'); faqDialog.value = false; await loadFaqs() } catch (error) { ElMessage.error(error.message || '保存失败') } finally { saving.value = false } }
+async function removeFaq(row) { await ElMessageBox.confirm('确定删除这条 FAQ 吗？', '确认操作'); try { await supportApi.deleteFaq(row.id); await loadFaqs() } catch (error) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') } }
+function openDownload(row) { Object.assign(downloadForm, row ? { ...row } : { id: null, title: '', category: 'manual', description: '', fileUrl: '', visibility: 'PUBLIC', status: 'PUBLISHED', sortOrder: 0 }); downloadDialog.value = true }
+async function saveDownload() { saving.value = true; try { const payload = { title: downloadForm.title, category: downloadForm.category, description: downloadForm.description, fileUrl: downloadForm.fileUrl, visibility: downloadForm.visibility, status: downloadForm.status, sortOrder: Number(downloadForm.sortOrder) || 0 }; if (downloadForm.id) await supportApi.updateDownload(downloadForm.id, payload); else await supportApi.createDownload(payload); ElMessage.success('下载资料已保存'); downloadDialog.value = false; await loadDownloads() } catch (error) { ElMessage.error(error.message || '保存失败') } finally { saving.value = false } }
+async function removeDownload(row) { await ElMessageBox.confirm('确定删除这份资料吗？', '确认操作'); try { await supportApi.deleteDownload(row.id); await loadDownloads() } catch (error) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') } }
+function messageText(status) { return { PENDING: '待处理', PROCESSING: '处理中', DONE: '已完成' }[status] || status }; function messageTag(status) { return { PENDING: 'warning', PROCESSING: '', DONE: 'success' }[status] || 'info' }
+onMounted(loadMessages)
 </script>
 
 <style scoped>
-    .admin-support-container {
-        padding: 24px;
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-        .card-header h3 {
-            margin: 0;
-        }
-
-    .filter-bar {
-        margin-bottom: 20px;
-    }
-
-    .text-muted {
-        color: #c0c4cc;
-        font-size: 12px;
-    }
+.admin-support { min-width: 0; }.heading-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }.heading-row h1 { margin: 0; font-size: 24px; }.eyebrow { margin: 0 0 5px; color: var(--primary-color); font-size: 11px; letter-spacing: 1.5px; }.toolbar { display: grid; grid-template-columns: 1fr 160px auto; gap: 10px; margin-bottom: 16px; }.tab-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }.dialog-form { margin-top: 18px; }.el-pagination { justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 640px) { .toolbar { grid-template-columns: 1fr; } }
 </style>

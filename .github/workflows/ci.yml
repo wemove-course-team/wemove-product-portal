@@ -55,6 +55,13 @@ jobs:
           DB_PORT: 3306
           DB_USER: root
           DB_PASSWORD: wemove123
+      - name: 支持中心专项 e2e（Issue #89）
+        run: npx jest --config test/jest-e2e.json --runInBand test/support.e2e-spec.ts
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: wemove123
       - name: 构建
         run: npm run build
 

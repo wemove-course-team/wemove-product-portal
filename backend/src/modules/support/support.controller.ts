@@ -1,96 +1,52 @@
-import {
-    Controller,
-    Post,
-    Get,
-    Patch,
-    Delete,
-    Body,
-    Param,
-    Query,
-    Headers,
-    HttpCode,
-    HttpStatus,
-} from '@nestjs/common';
-import { SupportService, CreateMessageDto, CreateFaqDto } from './support.service';
-import { MessageStatus } from './support.entity';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common'
+import { CurrentUser } from '../../common/current-user.decorator'
+import { OptionalSessionGuard } from '../../common/optional-session.guard'
+import { RequestUser } from '../../common/request-user'
+import { Roles, RolesGuard } from '../../common/roles.guard'
+import { SessionGuard } from '../../common/session.guard'
+import { CreateDownloadDto, CreateFaqDto, CreateMessageDto, MessageQueryDto, UpdateDownloadDto, UpdateFaqDto, UpdateMessageStatusDto } from './support.dto'
+import { SupportService } from './support.service'
 
-@Controller('api/v1/support')
+@Controller('support')
 export class SupportController {
-    constructor(private readonly supportService: SupportService) { }
+  constructor(private readonly support: SupportService) {}
 
-    // --- 1. ¡™œµ¡Ù—‘ ---
+  @Post('messages') createMessage(@Body() body: CreateMessageDto) { return this.support.createMessage(body) }
+}
 
-    @Post('messages')
-    @HttpCode(HttpStatus.CREATED)
-    async submitMessage(@Body() body: CreateMessageDto) {
-        return await this.supportService.createMessage(body);
-    }
+/** FAQ Âíå‰∏ãËΩΩ‰ΩøÁî®ÂÆòÁΩëÊó¢ÊúâÁöÑÊ†πË∑ØÂæÑÔºåÁîµÂ≠êËØ¥Êòé‰π¶ÂÖ•Âè£‰πüÂ§çÁî®ËøôÁªÑÊé•Âè£„ÄÇ */
+@Controller()
+export class PublicSupportController {
+  constructor(private readonly support: SupportService) {}
 
-    @Get('admin/messages')
-    async getAdminMessages(
-        @Query('page') page = 1,
-        @Query('limit') limit = 10,
-        @Query('status') status?: MessageStatus,
-    ) {
-        return await this.supportService.getMessages(+page, +limit, status);
-    }
+  @Get('faqs') listFaqs(@Query('keyword') keyword?: string, @Query('category') category?: string) { return this.support.listFaqs(keyword, category) }
 
-    @Get('admin/messages/:id')
-    async getAdminMessageDetail(@Param('id') id: string) {
-        return await this.supportService.getMessageById(id);
-    }
+  @Get('downloads')
+  @UseGuards(OptionalSessionGuard)
+  listDownloads(@CurrentUser() user: RequestUser | null, @Query('category') category?: string) { return this.support.listDownloads(user, category) }
 
-    @Patch('admin/messages/:id/status')
-    async updateMessageStatus(
-        @Param('id') id: string,
-        @Body('status') status: MessageStatus,
-    ) {
-        return await this.supportService.updateMessageStatus(id, status);
-    }
+  @Get('downloads/:id/access')
+  @UseGuards(OptionalSessionGuard)
+  accessDownload(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: RequestUser | null) { return this.support.getDownloadAccess(id, user) }
+}
 
-    // --- 2. FAQ ---
+@Controller('admin/support')
+@UseGuards(SessionGuard, RolesGuard)
+@Roles('ADMIN')
+export class AdminSupportController {
+  constructor(private readonly support: SupportService) {}
 
-    @Get('faqs')
-    async getPublicFaqs(
-        @Query('category') category?: string,
-        @Query('search') search?: string,
-    ) {
-        return await this.supportService.getPublicFaqs(category, search);
-    }
+  @Get('messages') listMessages(@Query() query: MessageQueryDto) { return this.support.listMessages(query) }
+  @Get('messages/:id') getMessage(@Param('id', ParseIntPipe) id: number) { return this.support.getMessage(id) }
+  @Patch('messages/:id/status') updateMessage(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateMessageStatusDto, @CurrentUser() user: RequestUser) { return this.support.updateMessageStatus(id, body, user) }
 
-    @Post('admin/faqs')
-    @HttpCode(HttpStatus.CREATED)
-    async createFaq(@Body() body: CreateFaqDto) {
-        return await this.supportService.createFaq(body);
-    }
+  @Get('faqs') listAdminFaqs(@Query('keyword') keyword?: string, @Query('category') category?: string) { return this.support.listFaqs(keyword, category, true) }
+  @Post('faqs') createFaq(@Body() body: CreateFaqDto) { return this.support.createFaq(body) }
+  @Patch('faqs/:id') updateFaq(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateFaqDto) { return this.support.updateFaq(id, body) }
+  @Delete('faqs/:id') deleteFaq(@Param('id', ParseIntPipe) id: number) { return this.support.deleteFaq(id) }
 
-    @Patch('admin/faqs/:id')
-    async updateFaq(
-        @Param('id') id: string,
-        @Body() body: Partial<CreateFaqDto>,
-    ) {
-        return await this.supportService.updateFaq(id, body);
-    }
-
-    @Delete('admin/faqs/:id')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    async deleteFaq(@Param('id') id: string) {
-        await this.supportService.deleteFaq(id);
-    }
-
-    // --- 3. œ¬‘ÿ”ÎÀµ√˜ È ---
-
-    @Get('manuals')
-    async getPublicManuals() {
-        return await this.supportService.getPublicManuals();
-    }
-
-    @Get('manuals/:id/access')
-    async checkManualAccess(
-        @Param('id') id: string,
-        @Headers('authorization') authHeader?: string,
-    ) {
-        const isAuthenticated = Boolean(authHeader && authHeader.startsWith('Bearer '));
-        return await this.supportService.checkManualAccess(id, isAuthenticated);
-    }
+  @Get('downloads') listAdminDownloads(@Query('category') category?: string) { return this.support.listAdminDownloads(category) }
+  @Post('downloads') createDownload(@Body() body: CreateDownloadDto) { return this.support.createDownload(body) }
+  @Patch('downloads/:id') updateDownload(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateDownloadDto) { return this.support.updateDownload(id, body) }
+  @Delete('downloads/:id') deleteDownload(@Param('id', ParseIntPipe) id: number) { return this.support.deleteDownload(id) }
 }

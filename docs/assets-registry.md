@@ -1,37 +1,25 @@
-# WEMOVE ¾²Ì¬×ÊÔ´ÓëÎÄ¼şµÇ¼Ç±í (Assets Registry)
+# WeMove ç´ æç™»è®°è¡¨
 
-±¾ÎÄµµ¼ÇÂ¼ `frontend/public/images/` Ä¿Â¼ÏÂ¾­¹ıºË¶ÔµÄ¹«¹²·ÃÎÊÂ·¾¶¼°·ÖÀà¡£¹©²úÆ·¡¢ÄÚÈİÓë Banner Ä£¿éÖ±½ÓÒıÓÃ¡£
+æœ¬è¡¨è®°å½•æ”¯æŒä¸­å¿ƒå’Œå…¶ä»–é¡µé¢å¯å¤ç”¨çš„é™æ€èµ„æºã€‚Issue #89 æœ¬è½®ä¸åšæ–‡ä»¶ä¸Šä¼ ï¼Œä¸‹è½½èµ„æºçš„ `file_url` åªå¼•ç”¨ `frontend/public/` æ–‡ä»¶æˆ–ç»è¿‡æ ¸å¯¹çš„å¤–é“¾ã€‚
 
-## 1. µç×ÓÓëÊıÂë²úÆ·Àà (Electronic)
-| ×ÊÔ´Ãû³Æ | Ïà¶Ô·ÃÎÊÂ·¾¶ | À´Ô´/ÓÃÍ¾ | ·ÃÎÊ¼¶±ğ |
-| :--- | :--- | :--- | :--- |
-| µç×ÓÀàÍø¸ñÕ¹Ê¾Í¼ (Grid 0) | `/images/electronic_grid0_0_1c281559-002.png` | µç×Ó²úÆ·Ä£¿é | ¹«¿ª (Public) |
-| µç×ÓÀàÍø¸ñÕ¹Ê¾Í¼ (Grid 0-1) | `/images/electronic_grid0_1_566948c5-d12.png` | µç×Ó²úÆ·Ä£¿é | ¹«¿ª (Public) |
-| µç×ÓÀàÍø¸ñÕ¹Ê¾Í¼ (Grid 0-2) | `/images/electronic_grid0_2_d8d2bc61-702.png` | µç×Ó²úÆ·Ä£¿é | ¹«¿ª (Public) |
-| µç×ÓÀàÍø¸ñÕ¹Ê¾Í¼ (Grid 0-3) | `/images/electronic_grid0_3_df5039d9-0bc.png` | µç×Ó²úÆ·Ä£¿é | ¹«¿ª (Public) |
-| µç×ÓÀàÍø¸ñÕ¹Ê¾Í¼ (Grid 1-15 ¼¯ºÏ) | `/images/electronic_grid[1-15]_[0-3]_*.png` | µç×Ó²úÆ·¾ØÕó×ÊÔ´ (¹² 50 ÕÅ) | ¹«¿ª (Public) |
+## ç”µå­è¯´æ˜ä¹¦ä¸ä¸‹è½½èµ„æº
 
-## 2. ºËĞÄ²úÆ·ÁĞ±í (Products)
-| ×ÊÔ´Ãû³Æ | Ïà¶Ô·ÃÎÊÂ·¾¶ | À´Ô´/ÓÃÍ¾ | ·ÃÎÊ¼¶±ğ |
-| :--- | :--- | :--- | :--- |
-| ²úÆ· 14 Ö÷Í¼/¸±Í¼ | `/images/prod_14_1.jpg`, `/images/prod_14_2.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
-| ²úÆ· 15 Ö÷Í¼/¸±Í¼ | `/images/prod_15_1.jpg`, `/images/prod_15_2.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
-| ²úÆ· 16 Ö÷Í¼/¸±Í¼ | `/images/prod_16_1.jpg`, `/images/prod_16_2.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
-| ²úÆ· 17 Ö÷Í¼/¸±Í¼ | `/images/prod_17_1.jpg`, `/images/prod_17_2.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
-| ²úÆ· 18 Ö÷Í¼/¸±Í¼ | `/images/prod_18_1.jpg`, `/images/prod_18_2.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
-| ²úÆ· 19 Ö÷Í¼/¸±Í¼ | `/images/prod_19_1.jpg`, `/images/prod_19_2.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
-| ²úÆ· 20 Ö÷Í¼ | `/images/prod_20_1.jpg` | ²úÆ·ÏêÇéÕ¹Ê¾ | ¹«¿ª (Public) |
+| èµ„æº | è·¯å¾„ | ç”¨é€” | è®¿é—®çº§åˆ« |
+| --- | --- | --- | --- |
+| ç”µå­è¯´æ˜ä¹¦ç¤ºä¾‹ | `/images/electronic_grid0_0_1c281559-002.png` | `manual` ä¸‹è½½æ¼”ç¤º | PUBLIC |
+| ç»é”€å•†èµ„æ–™ç¤ºä¾‹ | `/images/electronic_grid1_0_c4ebc66c-1c4.png` | `dealer` æƒé™æ¼”ç¤º | DEALER |
 
-## 3. Ö÷ÌâÓëÌØ¶¨°å¿éËØ²Ä
-| ×ÊÔ´°å¿é | ´ú±íÂ·¾¶Ê¾Àı | ×ÊÔ´×ÜÁ¿ | ·ÃÎÊ¼¶±ğ |
-| :--- | :--- | :--- | :--- |
-| ¹«Òæ/´ÈÉÆ (Charity) | `/images/charity_grid6_0_818521ff-ad1.jpg`, `/images/charity_s0_0d9d67d1-bde.png` | 8 ÕÅ | ¹«¿ª (Public) |
-| ÃÎÏë/×¨Ìâ (Dream) | `/images/dream_grid5_0_e3486465-542.jpeg`, `/images/dream_s0_8cbf0a99-297.png` | 7 ÕÅ | ¹«¿ª (Public) |
-| ¼Ò¾ßÓë¼Ò¾Ó (Furniture) | `/images/furniture_s0_f9590908-a1a.png` ~ `furniture_s4_b7120359-b98.png` | 5 ÕÅ | ¹«¿ª (Public) |
-| Í¼ÊéÓë½èÔÄ (Library) | `/images/library_s0_f1f5d796-c1f.png` | 1 ÕÅ | ¹«¿ª (Public) |
-| STEM ½ÌÓı (STEM) | `/images/stem_grid7_0_c93bc32b-a75.jpg`, `/images/stem_s0_3eea7200-6ed.jpg` | 6 ÕÅ | ¹«¿ª (Public) |
-| Ä¾¹¤ÊµÑéÊÒ (Woodlab) | `/images/woodlab_grid3_0_13f6b934-510.png`, `/images/woodlab_s0_6337d9b4-4fa.png` | 7 ÕÅ | ¹«¿ª (Public) |
+## äº§å“å’Œæ ç›®å›¾ç‰‡
 
-## 4. ËµÃ÷ÓëÏÂÔØ½Ó¿Ú¶Ô½Ó
-* **µç×ÓËµÃ÷Êé/ÎÄ¼şÏÂÔØÂ·¾¶**£ºÄ¬ÈÏ´æ·ÅÔÚ `frontend/public/downloads/` ÏÂ£¬Í¨¹ıºó¶Ë½Ó¿Ú `/api/v1/support/downloads` ½øĞĞ¼øÈ¨ÓëÂ·ÓÉ·Ö·¢¡£
-* **·ÃÎÊÈ¨ÏŞ¹æÔò**£º±¾±í¸ñËùÁĞ×ÊÔ´¾ùÎª `Public` ¼¶±ğ£¬Ç°Ì¨¿ÉÒÔÖ±½Ó¾²Ì¬ÒıÓÃ¡£
+| èµ„æºç»„ | è·¯å¾„ç¤ºä¾‹ | ç”¨é€” | è®¿é—®çº§åˆ« |
+| --- | --- | --- | --- |
+| äº§å“å›¾ | `/images/prod_14_1.jpg`ã€`/images/prod_20_1.jpg` | äº§å“è¯¦æƒ…å’Œåˆ—è¡¨ | PUBLIC |
+| Electronic æ ç›®å›¾ | `/images/electronic_grid0_0_1c281559-002.png` | ç”µå­è¯´æ˜ä¹¦å…¥å£ | PUBLIC |
+| Furniture / WoodLab / STEM | `/images/furniture_s0_f9590908-a1a.png`ã€`/images/woodlab_s0_6337d9b4-4fa.png`ã€`/images/stem_s0_3eea7200-6ed.jpg` | æ ç›®å±•ç¤º | PUBLIC |
+| Charity / Dream / Library | `/images/charity_s0_0d9d67d1-bde.png`ã€`/images/dream_s0_8cbf0a99-297.png`ã€`/images/library_s0_f1f5d796-c1f.png` | æ ç›®å±•ç¤º | PUBLIC |
+
+## ä½¿ç”¨çº¦å®š
+
+- æ–°å¢ä¸‹è½½è®°å½•å‰å…ˆç¡®è®¤è·¯å¾„åœ¨ `frontend/public/` ä¸‹ï¼Œæˆ–ç¡®è®¤å¤–é“¾å¯è®¿é—®ã€‚
+- å…¬å¼€é¡µé¢é€šè¿‡ `/api/v1/support/downloads` è·å–åˆ—è¡¨ï¼›æ‰“å¼€èµ„æ–™å‰è°ƒç”¨ `/api/v1/support/downloads/:id/access` åšæƒé™æ ¡éªŒå¹¶è®°å½•ä¸‹è½½æ¬¡æ•°ã€‚
+- ä¸æäº¤ä¸Šä¼ ç»„ä»¶ã€multipart æ¥å£ã€ç§æœ‰å¯¹è±¡å­˜å‚¨æˆ–æœªæ ¸å¯¹çš„ä¸ªäººèµ„æ–™ã€‚
