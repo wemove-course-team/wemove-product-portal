@@ -12,18 +12,19 @@ export enum MessageStatus {
     PROCESSED = 'processed',
 }
 
-export enum ManualAccessLevel {
-    PUBLIC = 'public',
-    REGISTERED = 'registered',
+export enum ManualVisibility {
+    PUBLIC = 'PUBLIC',
+    USER = 'USER',
+    DEALER = 'DEALER',
 }
 
 @Entity('support_messages')
 export class SupportMessage {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+    @PrimaryGeneratedColumn({ type: 'bigint' })
+    id: number;
 
     @Index({ unique: true })
-    @Column({ type: 'varchar', length: 32 })
+    @Column({ name: 'ticket_no', type: 'varchar', length: 32 })
     ticketNo: string;
 
     @Column({ type: 'varchar', length: 100 })
@@ -46,17 +47,17 @@ export class SupportMessage {
     })
     status: MessageStatus;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }
 
 @Entity('support_faqs')
 export class SupportFaq {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+    @PrimaryGeneratedColumn({ type: 'bigint' })
+    id: number;
 
     @Index()
     @Column({ type: 'varchar', length: 50 })
@@ -68,23 +69,23 @@ export class SupportFaq {
     @Column({ type: 'text' })
     answer: string;
 
-    @Column({ type: 'int', default: 0 })
+    @Column({ name: 'sort_order', type: 'int', default: 0 })
     sortOrder: number;
 
-    @Column({ type: 'boolean', default: true })
+    @Column({ name: 'is_published', type: 'boolean', default: true })
     isPublished: boolean;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }
 
 @Entity('support_manuals')
 export class SupportManual {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+    @PrimaryGeneratedColumn({ type: 'bigint' })
+    id: number;
 
     @Column({ type: 'varchar', length: 255 })
     title: string;
@@ -92,25 +93,26 @@ export class SupportManual {
     @Column({ type: 'text', nullable: true })
     description: string;
 
-    @Column({ type: 'varchar', length: 500 })
+    @Column({ name: 'file_url', type: 'varchar', length: 500 })
     fileUrl: string;
 
-    @Column({ type: 'int', comment: 'File size in bytes' })
+    @Column({ name: 'file_size', type: 'int', comment: 'File size in bytes' })
     fileSize: number;
 
+    @Index()
     @Column({
         type: 'enum',
-        enum: ManualAccessLevel,
-        default: ManualAccessLevel.PUBLIC,
+        enum: ManualVisibility,
+        default: ManualVisibility.PUBLIC,
     })
-    accessLevel: ManualAccessLevel;
+    visibility: ManualVisibility;
 
-    @Column({ type: 'boolean', default: true })
+    @Column({ name: 'is_published', type: 'boolean', default: true })
     isPublished: boolean;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }

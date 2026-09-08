@@ -29,15 +29,15 @@ export class SupportController {
     @Get('admin/messages')
     async getAdminMessages(
         @Query('page') page = 1,
-        @Query('limit') limit = 10,
+        @Query('pageSize') pageSize = 10, // D3 修改：limit -> pageSize
         @Query('status') status?: MessageStatus,
     ) {
-        return await this.supportService.getMessages(+page, +limit, status);
+        return await this.supportService.getMessages(+page, +pageSize, status);
     }
 
     @Get('admin/messages/:id')
     async getAdminMessageDetail(@Param('id') id: string) {
-        return await this.supportService.getMessageById(id);
+        return await this.supportService.getMessageById(+id); // D6 修改：转为 bigint 数值 id
     }
 
     @Patch('admin/messages/:id/status')
@@ -45,7 +45,7 @@ export class SupportController {
         @Param('id') id: string,
         @Body('status') status: MessageStatus,
     ) {
-        return await this.supportService.updateMessageStatus(id, status);
+        return await this.supportService.updateMessageStatus(+id, status); // D6 修改：+id
     }
 
     // --- 2. FAQ ---
@@ -53,9 +53,9 @@ export class SupportController {
     @Get('faqs')
     async getPublicFaqs(
         @Query('category') category?: string,
-        @Query('search') search?: string,
+        @Query('keyword') keyword?: string, // D3 修改：search -> keyword
     ) {
-        return await this.supportService.getPublicFaqs(category, search);
+        return await this.supportService.getPublicFaqs(category, keyword);
     }
 
     @Post('admin/faqs')
@@ -69,20 +69,22 @@ export class SupportController {
         @Param('id') id: string,
         @Body() body: Partial<CreateFaqDto>,
     ) {
-        return await this.supportService.updateFaq(id, body);
+        return await this.supportService.updateFaq(+id, body); // D6 修改：+id
     }
 
     @Delete('admin/faqs/:id')
     @HttpCode(HttpStatus.NO_CONTENT)
     async deleteFaq(@Param('id') id: string) {
-        await this.supportService.deleteFaq(id);
+        await this.supportService.deleteFaq(+id); // D6 修改：+id
     }
 
     // --- 3. 下载与说明书 ---
 
     @Get('manuals')
-    async getPublicManuals() {
-        return await this.supportService.getPublicManuals();
+    async getPublicManuals(
+        @Headers('authorization') authHeader?: string, // 支持基于身份的 visibility 过滤
+    ) {
+        return await this.supportService.getPublicManuals(authHeader);
     }
 
     @Get('manuals/:id/access')
@@ -91,6 +93,6 @@ export class SupportController {
         @Headers('authorization') authHeader?: string,
     ) {
         const isAuthenticated = Boolean(authHeader && authHeader.startsWith('Bearer '));
-        return await this.supportService.checkManualAccess(id, isAuthenticated);
+        return await this.supportService.checkManualAccess(+id, isAuthenticated); // D6 修改：+id
     }
 }
