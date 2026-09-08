@@ -55,6 +55,11 @@ npm run start:dev
 | POST | `/auth/password-reset/confirm` | 公开 | 使用 token 重置密码 |
 | GET | `/admin/users` | ADMIN | 分页查询用户 |
 | PATCH | `/admin/users/:id/status` | ADMIN | 启用/停用用户 |
+| POST | `/dealer/applications` | 登录用户 | 提交经销商申请 |
+| GET | `/dealer/applications/mine` | 登录用户 | 查询本人申请 |
+| GET | `/dealer/portal/me` | DEALER/ADMIN | 查询经销商企业资料和申请记录 |
+| GET | `/admin/dealer/applications` | ADMIN | 分页查询经销商申请 |
+| PATCH | `/admin/dealer/applications/:id/review` | ADMIN | 通过或拒绝申请并保存备注 |
 
 写请求需要先获取 CSRF token，并通过 `X-CSRF-Token` 请求头提交。会话由 HttpOnly Cookie
 `wemove_session` 承载；角色和账号状态由服务端判断。
@@ -77,3 +82,7 @@ npm run build
   GHCR，部署编排见 `deploy/`。
 
 Identity 的找回密码流程在开发环境把一次性 token 写入后端日志，不接入邮件供应商。
+
+经销商模块使用 `sql/migrations/mvp06_dealer_application_user.sql` 增量增加申请与登录用户的绑定，
+不修改已执行的初始化脚本。`npm run test:e2e` 会在独立测试库中自动执行该迁移并验证申请、审核、
+角色升级和应用重启后的数据持久化。
