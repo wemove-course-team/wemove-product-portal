@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
     SupportMessage,
     SupportFaq,
@@ -8,21 +8,11 @@ import {
     MessageStatus,
     ManualVisibility,
 } from './support.entity';
-
-export interface CreateMessageDto {
-    name: string;
-    email: string;
-    subject: string;
-    content: string;
-}
-
-export interface CreateFaqDto {
-    category: string;
-    question: string;
-    answer: string;
-    sortOrder?: number;
-    isPublished?: boolean;
-}
+import {
+    CreateMessageDto,
+    CreateFaqDto,
+    UpdateFaqDto,
+} from './support.dto';
 
 @Injectable()
 export class SupportService {
@@ -96,7 +86,7 @@ export class SupportService {
         return await this.faqRepo.save(faq);
     }
 
-    async updateFaq(id: number, dto: Partial<CreateFaqDto>): Promise<SupportFaq> {
+    async updateFaq(id: number, dto: UpdateFaqDto): Promise<SupportFaq> {
         const faq = await this.faqRepo.findOne({ where: { id } });
         if (!faq) {
             throw new NotFoundException(`FAQ with ID ${id} not found`);
@@ -114,11 +104,14 @@ export class SupportService {
 
     // --- 3. 下载与说明书 ---
 
-    async getPublicManuals(authHeader?: string): Promise<SupportManual[]> {
-        // 简易权限判定：无 authHeader 为 PUBLIC；后续配合 MVP-01 可解析 Token 区分 USER / DEALER
+    async getPublicManuals(userRole: string = 'PUBLIC'): Promise<SupportManual[]> {
+        // 根据传入的角色（PUBLIC / USER / DEALER / ADMIN）梯度开放可访问的说明书
         const allowVisibilities = [ManualVisibility.PUBLIC];
-        if (authHeader) {
-            allowVisibilities.push(ManualVisibility.USER, ManualVisibility.DEALER);
+        if (userRole === 'USER' || userRole === 'DEALER' || userRole === 'ADMIN') {
+            allowVisibilities.push(ManualVisibility.USER);
+        }
+        if (userRole === 'DEALER' || userRole === 'ADMIN') {
+            allowVisibilities.push(ManualVisibility.DEALER);
         }
 
         return await this.manualRepo.createQueryBuilder('manual')
@@ -127,15 +120,29 @@ export class SupportService {
             .getMany();
     }
 
-    async checkManualAccess(id: number, isAuthenticated: boolean): Promise<{ allowed: boolean }> {
+    async checkManualAccess(id: number, userRole: string = 'PUBLIC'): Promise<{ allowed: boolean }> {
         const manual = await this.manualRepo.findOne({ where: { id } });
         if (!manual) {
             throw new NotFoundException(`Manual with ID ${id} not found`);
         }
 
-        if (manual.visibility !== ManualVisibility.PUBLIC && !isAuthenticated) {
-            return { allowed: false };
+        // PUBLIC 资源所有人可看
+        if (manual.visibility === ManualVisibility.PUBLIC) {
+            return { allowed: true };
         }
-        return { allowed: true };
+
+        // USER 资源需至少 USER 权限
+        if (manual.visibility === ManualVisibility.USER) {
+            const isAllowed = ['USER', 'DEALER', 'ADMIN'].includes(userRole);
+            return { allowed: isAllowed };
+        }
+
+        // DEALER 资源需 DEALER 或 ADMIN 权限
+        if (manual.visibility === ManualVisibility.DEALER) {
+            const isAllowed = ['DEALER', 'ADMIN'].includes(userRole);
+            return { allowed: isAllowed };
+        }
+
+        return { allowed: false };
     }
 }
