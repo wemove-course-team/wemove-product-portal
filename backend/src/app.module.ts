@@ -4,15 +4,19 @@ import { CommonModule } from './common/common.module'
 import { CatalogModule } from './modules/catalog/catalog.module'
 import { IdentityModule } from './modules/identity/identity.module'
 import { DealerModule } from './modules/dealer/dealer.module'
+import { ContentModule } from './modules/content/content.module'
 import { User } from './modules/identity/user.entity'
 import { PasswordResetToken } from './modules/identity/password-reset-token.entity'
 import { DealerApplication } from './modules/dealer/dealer-application.entity'
 import { DealerCompany } from './modules/dealer/dealer-company.entity'
 import { Product } from './modules/catalog/product.entity'
 import { ProductCategory } from './modules/catalog/category.entity'
+import { Article } from './modules/content/entities/article.entity'
+import { ArticleCategory } from './modules/content/entities/article-category.entity'
+import { Page } from './modules/content/entities/page.entity'
 import { HealthController } from './health.controller'
 
-/** 应用根模块，注册公共、身份和产品目录模块。 */
+/** 应用根模块，注册公共、身份、产品目录、内容和经销商模块。 */
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -24,7 +28,17 @@ import { HealthController } from './health.controller'
         username: process.env.DB_USER || process.env.DB_USERNAME || 'root',
         password: process.env.DB_PASSWORD || '',
         database: process.env.DB_NAME || process.env.DB_DATABASE || 'wemove_portal',
-        entities: [Product, ProductCategory, User, PasswordResetToken, DealerApplication, DealerCompany],
+        entities: [
+          Product,
+          ProductCategory,
+          User,
+          PasswordResetToken,
+          DealerApplication,
+          DealerCompany,
+          Article,
+          ArticleCategory,
+          Page
+        ],
         // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
         synchronize: false,
         timezone: 'Z',
@@ -34,7 +48,8 @@ import { HealthController } from './health.controller'
     CommonModule,
     IdentityModule,
     DealerModule,
-    CatalogModule
+    CatalogModule,
+    ContentModule
   ],
   controllers: [HealthController]
 })

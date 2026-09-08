@@ -1,7 +1,16 @@
 <template>
   <div class="content-page-root">
-    <!-- Dynamic Sections from Original Website Structure -->
-    <div v-if="sections && sections.length > 0" class="sections-stream">
+    <AsyncState
+      :loading="loading"
+      loading-text="正在加载栏目内容…"
+      :error="error"
+      :not-found="notFound"
+      :empty="!loading && !error && !notFound && sections.length === 0"
+      empty-text="该栏目暂无内容"
+      @retry="fetchPage"
+    >
+      <!-- Dynamic Sections from Original Website Structure -->
+      <div v-if="sections && sections.length > 0" class="sections-stream">
       <template v-for="(sec, idx) in sections" :key="idx">
         <!-- 1. COVER / BANNER -->
         <section
@@ -151,6 +160,7 @@
         </div>
       </div>
     </div>
+    </AsyncState>
 
     <!-- User Explicitly Requested: "最底下的相关实木产品与套件支持可以保留" -->
     <section class="related-support-section">
@@ -220,23 +230,54 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import AsyncState from '../components/AsyncState.vue'
+import { contentApi } from '../services/content'
 import { useProductStore } from '../stores/product'
 import { useUserStore } from '../stores/user'
-import pageSectionsData from '../data/pageSections.json'
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
 const userStore = useUserStore()
 
-const routePath = computed(() => route.path)
 const pageKey = computed(() => route.path.replace('/', '') || 'furniture')
 
+const loading = ref(false)
+const error = ref(null)
+const notFound = ref(false)
+const pageData = ref(null)
+
 const sections = computed(() => {
-  return pageSectionsData[pageKey.value] || pageSectionsData['furniture'] || []
+  return pageData.value?.sections || []
+})
+
+async function fetchPage() {
+  loading.value = true
+  error.value = null
+  notFound.value = false
+  try {
+    const res = await contentApi.getPage(pageKey.value)
+    pageData.value = res.data
+  } catch (err) {
+    if (err.status === 404 || err.code === 'NOT_FOUND_404') {
+      notFound.value = true
+    } else {
+      error.value = err
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(() => route.path, () => {
+  fetchPage()
+})
+
+onMounted(() => {
+  fetchPage()
 })
 
 const relatedProducts = computed(() => {
