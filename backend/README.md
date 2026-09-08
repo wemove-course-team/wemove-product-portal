@@ -11,13 +11,18 @@ NestJS 10 + TypeORM + MySQL 8 后端。当前主线包含平台 Identity（#85�
 # 1) 初始化基线数据库（全新数据库执行一次）
 mysql -h127.0.0.1 -uroot -p wemove_portal < sql/init_schema_and_data.sql
 
-# 2) 执行身份与产品目录增量迁移（各执行一次）
+# 2) 执行身份、产品目录、内容、经销商与运营增量迁移（各执行一次）
 mysql -h127.0.0.1 -uroot -p wemove_portal < sql/migrations/mvp01_identity_password_reset.sql
 mysql -h127.0.0.1 -uroot -p wemove_portal < sql/migrations/mvp03_catalog_incremental.sql
+mysql -h127.0.0.1 -uroot -p wemove_portal < sql/migrations/mvp04_content_tables.sql
+mysql -h127.0.0.1 -uroot -p wemove_portal < sql/migrations/mvp06_dealer_application_user.sql
+mysql -h127.0.0.1 -uroot -p wemove_portal < sql/migrations/mvp07_operation_tables.sql
 
-# 3) 导入演示账号与产品 seed
+# 3) 导入演示账号、产品、内容与运营 seed
 mysql -h127.0.0.1 -uroot -p wemove_portal < sql/seed/seed_identity_demo_accounts.sql
 mysql -h127.0.0.1 -uroot -p wemove_portal < sql/seed/seed_catalog_mvp03.sql
+mysql -h127.0.0.1 -uroot -p wemove_portal < sql/seed/seed_content_mvp04.sql
+mysql -h127.0.0.1 -uroot -p wemove_portal < sql/seed/seed_operation_mvp07.sql
 
 # 4) 启动后端（3001）
 copy .env.example .env   # 按需改数据库口令
@@ -60,6 +65,14 @@ npm run start:dev
 | GET | `/dealer/portal/me` | DEALER/ADMIN | 查询经销商企业资料和申请记录 |
 | GET | `/admin/dealer/applications` | ADMIN | 分页查询经销商申请 |
 | PATCH | `/admin/dealer/applications/:id/review` | ADMIN | 通过或拒绝申请并保存备注 |
+| GET | `/site/config` | 公开 | 站点配置白名单键（7 键，未设置为空串） |
+| GET | `/banners` | 公开 | 启用 Banner，按 sortOrder、id 稳定排序 |
+| GET/PUT | `/admin/site/config` | ADMIN | 读取/更新白名单配置；未知键、非法 URL 返回 400 |
+| GET/POST/PUT/DELETE | `/admin/banners*` | ADMIN | Banner 管理；`PUT /admin/banners/sort` 批量排序、`PUT /admin/banners/:id/status` 启停 |
+| GET | `/admin/stats/overview` | ADMIN | 后台概览：product/article/sys_user/PENDING 申请计数 |
+
+运营域接口契约细节见 `docs/operation-contract.md`（归属 #91，模块目录
+`src/modules/operation/`）。
 
 写请求需要先获取 CSRF token，并通过 `X-CSRF-Token` 请求头提交。会话由 HttpOnly Cookie
 `wemove_session` 承载；角色和账号状态由服务端判断。
