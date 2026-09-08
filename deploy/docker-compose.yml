@@ -92,6 +92,8 @@ services:
       - no-new-privileges:true
     networks:
       - internal
+      # edge 网络只承载前端发布端口；数据库和后端仍仅位于 internal 网络。
+      - edge
 
 volumes:
   mysql-data:
@@ -99,3 +101,4 @@ volumes:
 networks:
   internal:
     internal: true
+  edge:
