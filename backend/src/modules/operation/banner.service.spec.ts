@@ -190,6 +190,16 @@ describe('BannerService（单元）', () => {
     expect((repo as any).update).not.toHaveBeenCalled()
   })
 
+  it('adminSort：重复 id 返回 400 且不进入事务', async () => {
+    const repo = createRepoMock([row({ id: 1 }), row({ id: 2 })])
+    const service = new BannerService(repo as any)
+
+    await expect(
+      service.adminSort([{ id: 1, sortOrder: 5 }, { id: 1, sortOrder: 6 }])
+    ).rejects.toThrow(BadRequestException)
+    expect((repo as any).manager.transaction).not.toHaveBeenCalled()
+  })
+
   /** 为 repo mock 挂载事务型 manager：回调内经 manager.update 写入，回调抛错则整体回滚。 */
   function attachTransactionManager(
     repo: ReturnType<typeof createRepoMock>,

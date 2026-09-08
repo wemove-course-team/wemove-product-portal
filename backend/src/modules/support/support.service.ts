@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { createHash } from 'crypto'
 import { DataSource, Repository } from 'typeorm'
 import { RequestUser } from '../../common/request-user'
 import { DownloadVisibility, FaqStatus, MessageStatus, SupportDownload, SupportFaq, SupportMessage } from './support.entity'
@@ -19,30 +20,50 @@ export class SupportService {
     const email = input.email.trim().toLowerCase()
     const subject = input.subject.trim()
     const now = new Date()
-    const recent = await this.messages.createQueryBuilder('message')
-      .where('message.email = :email', { email })
-      .andWhere('message.subject = :subject', { subject })
-      .andWhere('message.createdAt >= :since', { since: new Date(now.getTime() - 60_000) })
-      .getOne()
-    if (recent) throw new BadRequestException({ code: 'VALIDATION_400', message: '相同主题的留言请勿重复提交，请稍后再试' })
-
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(SupportMessage)
       const day = now.toISOString().slice(0, 10).replaceAll('-', '')
       const prefix = `MSG-${day}-`
-      const latest = await repo.createQueryBuilder('message')
-        .where('message.code LIKE :prefix', { prefix: `${prefix}%` })
-        .orderBy('message.id', 'DESC')
-        .setLock('pessimistic_write')
-        .getOne()
-      const previous = latest ? Number(latest.code.slice(-4)) : 0
-      const message = repo.create({
-        code: `${prefix}${String(previous + 1).padStart(4, '0')}`,
-        name: input.name.trim(), email, phone: input.phone?.trim() || null,
-        subject, content: input.content.trim(), status: MessageStatus.PENDING,
-        handleNote: null, handledBy: null, handledAt: null
-      })
-      return this.messageSummary(await repo.save(message))
+      // MySQL advisory lock 将同一天的编号生成和防重复检查串行化，覆盖并发双击与网络重试。
+      const lockName = `wemove-contact-${createHash('sha256').update(day).digest('hex').slice(0, 32)}`
+      const lockRows: Array<{ acquired: number | string }> = await manager.query(
+        'SELECT GET_LOCK(?, 5) AS acquired',
+        [lockName]
+      )
+      if (Number(lockRows[0]?.acquired) !== 1) {
+        throw new ConflictException({ code: 'CONFLICT_409', message: '留言提交繁忙，请稍后重试' })
+      }
+
+      try {
+        const recent = await repo.createQueryBuilder('message')
+          .where('message.email = :email', { email })
+          .andWhere('message.subject = :subject', { subject })
+          .andWhere('message.createdAt >= :since', { since: new Date(now.getTime() - 60_000) })
+          .getOne()
+        if (recent) {
+          throw new BadRequestException({
+            code: 'VALIDATION_400',
+            message: '相同主题的留言请勿重复提交，请稍后再试'
+          })
+        }
+
+        const latest = await repo.createQueryBuilder('message')
+          .where('message.code LIKE :prefix', { prefix: `${prefix}%` })
+          .orderBy('message.id', 'DESC')
+          .setLock('pessimistic_write')
+          .getOne()
+        const previous = latest ? Number(latest.code.slice(-4)) : 0
+        const message = repo.create({
+          code: `${prefix}${String(previous + 1).padStart(4, '0')}`,
+          name: input.name.trim(), email, phone: input.phone?.trim() || null,
+          subject, content: input.content.trim(), status: MessageStatus.PENDING,
+          handleNote: null, handledBy: null, handledAt: null
+        })
+        return this.messageSummary(await repo.save(message))
+      } finally {
+        // GET_LOCK 是连接级锁，不随事务提交自动释放。
+        await manager.query('SELECT RELEASE_LOCK(?)', [lockName]).catch(() => undefined)
+      }
     })
   }
 

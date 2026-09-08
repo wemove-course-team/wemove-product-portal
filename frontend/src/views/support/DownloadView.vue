@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { supportApi } from '../../services/support'
@@ -28,7 +28,7 @@ const route = useRoute()
 const items = ref([])
 const loading = ref(false)
 const downloading = ref(null)
-const title = props.pageTitle
+const title = computed(() => props.pageTitle)
 
 async function load() {
   loading.value = true
@@ -41,14 +41,29 @@ async function load() {
 
 async function download(item) {
   downloading.value = item.id
+  // 用户点击时先同步创建窗口，避免接口返回后再 window.open 被浏览器拦截。
+  const target = window.open('', '_blank')
   try {
     const response = await supportApi.accessDownload(item.id)
-    window.open(response.data.fileUrl, '_blank', 'noopener,noreferrer')
-  } catch (error) { ElMessage.error(error.message || '当前账号无法访问该资料') } finally { downloading.value = null }
+    if (target) {
+      target.opener = null
+      target.location.replace(response.data.fileUrl)
+    } else {
+      window.location.assign(response.data.fileUrl)
+    }
+  } catch (error) {
+    target?.close()
+    ElMessage.error(error.message || '当前账号无法访问该资料')
+  } finally { downloading.value = null }
 }
 
 function visibilityText(value) { return { PUBLIC: '公开', USER: '登录可见', DEALER: '经销商可见' }[value] || value }
-onMounted(load)
+
+watch(
+  [() => props.category, () => route.query.category],
+  load,
+  { immediate: true }
+)
 </script>
 
 <style scoped>

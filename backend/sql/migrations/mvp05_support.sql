@@ -50,12 +50,22 @@ CREATE TABLE IF NOT EXISTS `download_resource` (
   KEY `idx_download_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公开下载资源';
 
-INSERT INTO `faq` (`question`, `answer`, `category`, `sort_order`, `status`) VALUES
-('如何查看产品资料？', '在下载中心可以查看公开的电子说明书和产品资料。', '购买', 1, 'PUBLISHED'),
-('如何申请成为经销商？', '登录后打开“成为经销商”，提交企业资料，审核通过后即可查看经销商门户。', '合作', 2, 'PUBLISHED'),
-('提交留言后多久会处理？', '工作日通常会在一个工作日内处理，请保留留言编号以便查询。', '售后', 3, 'PUBLISHED');
+INSERT INTO `faq` (`question`, `answer`, `category`, `sort_order`, `status`)
+SELECT '如何查看产品资料？', '在下载中心可以查看公开的电子说明书和产品资料。', '购买', 1, 'PUBLISHED'
+WHERE NOT EXISTS (SELECT 1 FROM `faq` WHERE `question` = '如何查看产品资料？');
+INSERT INTO `faq` (`question`, `answer`, `category`, `sort_order`, `status`)
+SELECT '如何申请成为经销商？', '登录后打开“成为经销商”，提交企业资料，审核通过后即可查看经销商门户。', '合作', 2, 'PUBLISHED'
+WHERE NOT EXISTS (SELECT 1 FROM `faq` WHERE `question` = '如何申请成为经销商？');
+INSERT INTO `faq` (`question`, `answer`, `category`, `sort_order`, `status`)
+SELECT '提交留言后多久会处理？', '工作日通常会在一个工作日内处理，请保留留言编号以便查询。', '售后', 3, 'PUBLISHED'
+WHERE NOT EXISTS (SELECT 1 FROM `faq` WHERE `question` = '提交留言后多久会处理？');
 
-INSERT INTO `download_resource` (`title`, `category`, `description`, `file_url`, `cover_image`, `visibility`, `sort_order`, `status`) VALUES
-('WeMove 电子说明书示例', 'manual', '公开电子说明书资源示例。', '/images/electronic_grid0_0_1c281559-002.png', '/images/electronic_grid0_0_1c281559-002.png', 'PUBLIC', 1, 'PUBLISHED'),
-('会员资料包', 'catalog', '登录后可访问。', '/images/electronic_grid1_0_c4ebc66c-1c4.png', '/images/electronic_grid1_0_c4ebc66c-1c4.png', 'USER', 2, 'PUBLISHED'),
-('经销商资料包', 'dealer', '登录并通过经销商审核后可访问。', '/images/electronic_grid2_0_635fbdee-fe3.png', '/images/electronic_grid2_0_635fbdee-fe3.png', 'DEALER', 3, 'PUBLISHED');
+INSERT INTO `download_resource` (`title`, `category`, `description`, `file_url`, `cover_image`, `visibility`, `sort_order`, `status`)
+SELECT 'WeMove 电子说明书示例', 'manual', '公开电子说明书资源示例。', '/images/electronic_grid0_0_1c281559-002.png', '/images/electronic_grid0_0_1c281559-002.png', 'PUBLIC', 1, 'PUBLISHED'
+WHERE NOT EXISTS (SELECT 1 FROM `download_resource` WHERE `title` = 'WeMove 电子说明书示例');
+INSERT INTO `download_resource` (`title`, `category`, `description`, `file_url`, `cover_image`, `visibility`, `sort_order`, `status`)
+SELECT '会员资料包', 'catalog', '登录后可访问。', '/images/electronic_grid1_0_c4ebc66c-1c4.png', '/images/electronic_grid1_0_c4ebc66c-1c4.png', 'USER', 2, 'PUBLISHED'
+WHERE NOT EXISTS (SELECT 1 FROM `download_resource` WHERE `title` = '会员资料包');
+INSERT INTO `download_resource` (`title`, `category`, `description`, `file_url`, `cover_image`, `visibility`, `sort_order`, `status`)
+SELECT '经销商资料包', 'dealer', '登录并通过经销商审核后可访问。', '/images/electronic_grid2_0_635fbdee-fe3.png', '/images/electronic_grid2_0_635fbdee-fe3.png', 'DEALER', 3, 'PUBLISHED'
+WHERE NOT EXISTS (SELECT 1 FROM `download_resource` WHERE `title` = '经销商资料包');

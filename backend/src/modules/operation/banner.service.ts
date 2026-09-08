@@ -115,6 +115,13 @@ export class BannerService {
       }
     }
     const ids = items.map((item) => String(Number(item.id)))
+    if (new Set(ids).size !== ids.length) {
+      throw new BadRequestException({
+        code: 'VALIDATION_400',
+        message: '请检查输入内容',
+        errors: [{ field: 'items', message: '同一个 Banner 不能重复排序' }]
+      })
+    }
     const found = await this.repo.find({ where: { id: In(ids) } })
     const foundIds = new Set(found.map((row) => String(row.id)))
     const missing = ids.filter((id) => !foundIds.has(id))

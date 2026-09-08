@@ -183,6 +183,12 @@ const routes = [
         meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
+        path: 'operation',
+        name: 'AdminOperation',
+        component: () => import('../views/admin/AdminOperationView.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
         // #87 MVP-03：产品/分类管理列表（含分类管理 Tab）
         path: 'products',
         name: 'AdminProducts',
@@ -222,8 +228,8 @@ const routes = [
       {
         path: 'users',
         name: 'AdminUsers',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '用户查询与启停用', ownerTask: '#85 MVP-01' }
+        component: () => import('../views/admin/AdminUsers.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       }
     ]
   },

@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Length, Min, Validate } from 'class-validator'
+import { IsInt, IsOptional, IsString, Length, Matches, Min, Validate } from 'class-validator'
 import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -26,6 +26,7 @@ export class UpdateBannerDto implements Partial<CreateBannerDto> {
   @IsOptional()
   @IsString()
   @Length(1, 128)
+  @Matches(/\S/, { message: '标题不能为空' })
   title?: string
 
   @IsOptional()

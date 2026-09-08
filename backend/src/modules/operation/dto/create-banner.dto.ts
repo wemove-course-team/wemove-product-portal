@@ -1,10 +1,11 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Length, Min } from 'class-validator'
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Min } from 'class-validator'
 
 /** POST /admin/banners 请求体。URL 合法性（相对路径 / http(s)）由服务层校验。 */
 export class CreateBannerDto {
   @IsString()
   @IsNotEmpty()
   @Length(1, 128)
+  @Matches(/\S/, { message: '标题不能为空' })
   title!: string
 
   @IsString()

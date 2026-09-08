@@ -325,7 +325,7 @@ describe('Operation 站点配置 / Banner / 概览 (e2e)', () => {
       expect(forbidden.status).toBe(403)
     })
 
-    it('管理员获取真实统计（seed 基线非零），且不含 pendingMessages', async () => {
+    it('管理员获取真实统计（seed 基线非零，含待处理留言）', async () => {
       const admin = await loginAs(app, 'admin')
       const res = await admin.get('/api/v1/admin/stats/overview')
 
@@ -334,16 +334,19 @@ describe('Operation 站点配置 / Banner / 概览 (e2e)', () => {
         productCount: expect.any(Number),
         articleCount: expect.any(Number),
         userCount: expect.any(Number),
-        pendingApplications: expect.any(Number)
+        pendingApplications: expect.any(Number),
+        pendingMessages: expect.any(Number)
       })
       expect(res.body.data.productCount).toBeGreaterThan(0)
       expect(res.body.data.userCount).toBeGreaterThanOrEqual(3)
-      expect(res.body.data).not.toHaveProperty('pendingMessages')
-
       // 与数据库真实 COUNT 对账
       const ds = app.get(DataSource)
       const [{ cnt: productCnt }] = await ds.query('SELECT COUNT(*) AS cnt FROM `product`')
+      const [{ cnt: pendingMessageCnt }] = await ds.query(
+        "SELECT COUNT(*) AS cnt FROM `contact_message` WHERE `status` = 'PENDING'"
+      )
       expect(res.body.data.productCount).toBe(Number(productCnt))
+      expect(res.body.data.pendingMessages).toBe(Number(pendingMessageCnt))
     })
   })
 

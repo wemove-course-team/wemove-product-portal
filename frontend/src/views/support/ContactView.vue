@@ -6,6 +6,12 @@
       <p>留下你的问题或合作需求，我们会尽快与您联系。</p>
     </section>
 
+    <div v-if="hasContact" class="contact-strip">
+      <a v-if="siteStore.config.contactPhone" :href="`tel:${siteStore.config.contactPhone}`"><strong>电话</strong><span>{{ siteStore.config.contactPhone }}</span></a>
+      <a v-if="siteStore.config.contactEmail" :href="`mailto:${siteStore.config.contactEmail}`"><strong>邮箱</strong><span>{{ siteStore.config.contactEmail }}</span></a>
+      <div v-if="siteStore.config.address"><strong>地址</strong><span>{{ siteStore.config.address }}</span></div>
+    </div>
+
     <el-card class="support-card" shadow="never">
       <el-alert v-if="submitted" type="success" :closable="false" class="result-alert">
         留言已提交，编号为 <strong>{{ submitted.code }}</strong>，请保留编号以便后续查询。
@@ -29,14 +35,17 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { supportApi } from '../../services/support'
+import { useSiteStore } from '../../stores/site'
 
 const formRef = ref(null)
+const siteStore = useSiteStore()
 const submitting = ref(false)
 const submitted = ref(null)
 const form = reactive({ name: '', email: '', phone: '', subject: '', content: '' })
+const hasContact = computed(() => Boolean(siteStore.config.contactPhone || siteStore.config.contactEmail || siteStore.config.address))
 const rules = {
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }, { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] }],
@@ -45,7 +54,7 @@ const rules = {
 }
 
 async function submit() {
-  if (!(await formRef.value?.validate())) return
+  if (!(await formRef.value?.validate().catch(() => false))) return
   submitting.value = true
   try {
     const response = await supportApi.submitMessage({ ...form })
@@ -61,6 +70,10 @@ async function submit() {
 function reset() {
   formRef.value?.resetFields()
 }
+
+onMounted(() => {
+  siteStore.loadPublic().catch(() => undefined)
+})
 </script>
 
 <style scoped>
@@ -70,9 +83,13 @@ function reset() {
 .page-heading h1 { margin: 0 0 10px; font-size: 32px; color: var(--text-color); }
 .page-heading p:last-child { margin: 0; color: var(--text-muted); }
 .support-card { border: 1px solid var(--border-color); }
+.contact-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.contact-strip > * { display: grid; gap: 3px; padding: 14px 16px; background: var(--bg-light); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.contact-strip strong { font-size: 12px; color: var(--text-light); }
+.contact-strip span { color: var(--text-color); font-size: 14px; word-break: break-word; }
 .result-alert { margin-bottom: 24px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
 .form-actions { display: flex; align-items: center; gap: 12px; }
 .secondary-link { color: var(--primary-color); font-size: 14px; text-decoration: none; margin-left: auto; }
-@media (max-width: 640px) { .support-page { padding: 32px 16px 56px; } .form-grid { grid-template-columns: 1fr; } .secondary-link { margin-left: 0; } }
+@media (max-width: 640px) { .support-page { padding: 32px 16px 56px; } .form-grid, .contact-strip { grid-template-columns: 1fr; } .secondary-link { margin-left: 0; } }
 </style>

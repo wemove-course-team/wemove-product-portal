@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import type { Response } from 'superagent'
+import { DataSource } from 'typeorm'
 import { AppModule } from '../src/app.module'
 import { configureApp } from '../src/app-setup'
 import { setupTestDatabase } from './setup-db'
@@ -76,6 +77,30 @@ describe('Support API (e2e)', () => {
     const duplicate = await user.post('/api/v1/support/messages', input)
     expect(duplicate.status).toBe(400)
     expect(duplicate.body.code).toBe('VALIDATION_400')
+  })
+
+  it('并发提交相同留言时只保存一条', async () => {
+    const server = request(app.getHttpServer())
+    const csrf = await server.get('/api/v1/auth/csrf').expect(200)
+    const input = {
+      name: '并发测试',
+      email: `concurrent-${Date.now()}@example.com`,
+      subject: `并发留言-${Date.now()}`,
+      content: '两条同时到达的相同留言只能保存一条。'
+    }
+    const send = () => server.post('/api/v1/support/messages')
+      .set('Cookie', cookies(csrf))
+      .set('X-CSRF-Token', csrf.body.data.csrfToken)
+      .send(input)
+
+    const responses = await Promise.all([send(), send()])
+    expect(responses.map((response) => response.status).sort()).toEqual([201, 400])
+
+    const rows = await app.get(DataSource).query(
+      'SELECT COUNT(*) AS cnt FROM contact_message WHERE email = ? AND subject = ?',
+      [input.email, input.subject]
+    )
+    expect(Number(rows[0].cnt)).toBe(1)
   })
 
   it('拒绝空白留言字段和非法下载地址', async () => {

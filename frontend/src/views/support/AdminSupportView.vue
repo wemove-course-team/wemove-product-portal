@@ -21,6 +21,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { supportApi } from '../../services/support'
+import { messageStatusOptions as buildMessageStatusOptions } from '../../utils/operation'
 
 const activeTab = ref('messages'); const loading = ref(false); const saving = ref(false)
 const messages = ref([]); const messageKeyword = ref(''); const messageStatus = ref(''); const messagePage = ref(1); const messagePageSize = ref(10); const messageTotal = ref(0)
@@ -31,17 +32,17 @@ const faqDialog = ref(false); const faqForm = reactive({ id: null, question: '',
 const downloadDialog = ref(false); const downloadForm = reactive({ id: null, title: '', category: 'manual', description: '', fileUrl: '', visibility: 'PUBLIC', status: 'PUBLISHED', sortOrder: 0 })
 
 async function loadMessages() { loading.value = true; try { const response = await supportApi.adminMessages({ page: messagePage.value, pageSize: messagePageSize.value, keyword: messageKeyword.value || undefined, status: messageStatus.value || undefined }); messages.value = response.data?.items || []; messageTotal.value = response.data?.total || 0 } catch (error) { ElMessage.error(error.message || '留言加载失败') } finally { loading.value = false } }
-async function loadFaqs() { const response = await supportApi.adminFaqs(); faqs.value = response.data || [] }
-async function loadDownloads() { const response = await supportApi.adminDownloads(); downloads.value = response.data || [] }
+async function loadFaqs() { loading.value = true; try { const response = await supportApi.adminFaqs(); faqs.value = response.data || [] } catch (error) { ElMessage.error(error.message || 'FAQ 加载失败') } finally { loading.value = false } }
+async function loadDownloads() { loading.value = true; try { const response = await supportApi.adminDownloads(); downloads.value = response.data || [] } catch (error) { ElMessage.error(error.message || '下载资料加载失败') } finally { loading.value = false } }
 async function refresh() { if (activeTab.value === 'messages') return loadMessages(); if (activeTab.value === 'faqs') return loadFaqs(); return loadDownloads() }
-function openMessage(row) { selectedMessage.value = row; messageForm.status = row.status; messageForm.handleNote = row.handleNote || ''; messageStatusOptions.value = { PENDING: [{ label: '处理中', value: 'PROCESSING' }], PROCESSING: [{ label: '已完成', value: 'DONE' }], DONE: [{ label: '已完成', value: 'DONE' }] }[row.status] || []; messageStatusOptions.value.unshift({ label: messageText(row.status), value: row.status }); messageDialog.value = true }
+function openMessage(row) { selectedMessage.value = row; messageForm.status = row.status; messageForm.handleNote = row.handleNote || ''; messageStatusOptions.value = buildMessageStatusOptions(row.status); messageDialog.value = true }
 async function saveMessage() { saving.value = true; try { await supportApi.updateMessageStatus(selectedMessage.value.id, messageForm); ElMessage.success('留言状态已更新'); messageDialog.value = false; await loadMessages() } catch (error) { ElMessage.error(error.message || '保存失败') } finally { saving.value = false } }
 function openFaq(row) { Object.assign(faqForm, row ? { ...row } : { id: null, question: '', answer: '', category: '', status: 'PUBLISHED', sortOrder: 0 }); faqDialog.value = true }
 async function saveFaq() { saving.value = true; try { const payload = { question: faqForm.question, answer: faqForm.answer, category: faqForm.category, status: faqForm.status, sortOrder: Number(faqForm.sortOrder) || 0 }; if (faqForm.id) await supportApi.updateFaq(faqForm.id, payload); else await supportApi.createFaq(payload); ElMessage.success('FAQ 已保存'); faqDialog.value = false; await loadFaqs() } catch (error) { ElMessage.error(error.message || '保存失败') } finally { saving.value = false } }
-async function removeFaq(row) { await ElMessageBox.confirm('确定删除这条 FAQ 吗？', '确认操作'); try { await supportApi.deleteFaq(row.id); await loadFaqs() } catch (error) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') } }
+async function removeFaq(row) { try { await ElMessageBox.confirm('确定删除这条 FAQ 吗？', '确认操作'); await supportApi.deleteFaq(row.id); await loadFaqs() } catch (error) { if (error !== 'cancel' && error !== 'close') ElMessage.error(error.message || '删除失败') } }
 function openDownload(row) { Object.assign(downloadForm, row ? { ...row } : { id: null, title: '', category: 'manual', description: '', fileUrl: '', visibility: 'PUBLIC', status: 'PUBLISHED', sortOrder: 0 }); downloadDialog.value = true }
 async function saveDownload() { saving.value = true; try { const payload = { title: downloadForm.title, category: downloadForm.category, description: downloadForm.description, fileUrl: downloadForm.fileUrl, visibility: downloadForm.visibility, status: downloadForm.status, sortOrder: Number(downloadForm.sortOrder) || 0 }; if (downloadForm.id) await supportApi.updateDownload(downloadForm.id, payload); else await supportApi.createDownload(payload); ElMessage.success('下载资料已保存'); downloadDialog.value = false; await loadDownloads() } catch (error) { ElMessage.error(error.message || '保存失败') } finally { saving.value = false } }
-async function removeDownload(row) { await ElMessageBox.confirm('确定删除这份资料吗？', '确认操作'); try { await supportApi.deleteDownload(row.id); await loadDownloads() } catch (error) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') } }
+async function removeDownload(row) { try { await ElMessageBox.confirm('确定删除这份资料吗？', '确认操作'); await supportApi.deleteDownload(row.id); await loadDownloads() } catch (error) { if (error !== 'cancel' && error !== 'close') ElMessage.error(error.message || '删除失败') } }
 function messageText(status) { return { PENDING: '待处理', PROCESSING: '处理中', DONE: '已完成' }[status] || status }; function messageTag(status) { return { PENDING: 'warning', PROCESSING: '', DONE: 'success' }[status] || 'info' }
 onMounted(loadMessages)
 </script>

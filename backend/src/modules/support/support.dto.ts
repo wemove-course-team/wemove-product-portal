@@ -86,6 +86,7 @@ export class CreateFaqDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(0)
   sortOrder?: number
 
   @IsOptional()
@@ -113,6 +114,7 @@ export class UpdateFaqDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(0)
   sortOrder?: number
 
   @IsOptional()
@@ -141,13 +143,13 @@ export class CreateDownloadDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  @Matches(/^(\/(?!\/)|https?:\/\/[^\s]+$)/, { message: '文件地址必须是站内路径或 http(s) 地址' })
+  @Matches(/^(?:\/(?!\/)[^\s\\]*|https?:\/\/[^\s\\]+)$/i, { message: '文件地址必须是站内路径或 http(s) 地址' })
   fileUrl!: string
 
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  @Matches(/^(\/(?!\/)|https?:\/\/[^\s]+$)/, { message: '封面地址必须是站内路径或 http(s) 地址' })
+  @Matches(/^(?:\/(?!\/)[^\s\\]*|https?:\/\/[^\s\\]+)$/i, { message: '封面地址必须是站内路径或 http(s) 地址' })
   coverImage?: string
 
   @IsOptional()
@@ -157,6 +159,7 @@ export class CreateDownloadDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(0)
   sortOrder?: number
 
   @IsOptional()
@@ -174,6 +177,7 @@ export class UpdateDownloadDto {
   @IsOptional()
   @IsString()
   @MaxLength(64)
+  @Matches(/\S/, { message: '分类不能为空' })
   category?: string
 
   @IsOptional()
@@ -184,13 +188,13 @@ export class UpdateDownloadDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  @Matches(/^(\/(?!\/)|https?:\/\/[^\s]+$)/, { message: '文件地址必须是站内路径或 http(s) 地址' })
+  @Matches(/^(?:\/(?!\/)[^\s\\]*|https?:\/\/[^\s\\]+)$/i, { message: '文件地址必须是站内路径或 http(s) 地址' })
   fileUrl?: string
 
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  @Matches(/^(\/(?!\/)|https?:\/\/[^\s]+$)/, { message: '封面地址必须是站内路径或 http(s) 地址' })
+  @Matches(/^(?:\/(?!\/)[^\s\\]*|https?:\/\/[^\s\\]+)$/i, { message: '封面地址必须是站内路径或 http(s) 地址' })
   coverImage?: string
 
   @IsOptional()
@@ -200,6 +204,7 @@ export class UpdateDownloadDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(0)
   sortOrder?: number
 
   @IsOptional()

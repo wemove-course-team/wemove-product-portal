@@ -85,7 +85,8 @@ message:"未知的配置键，仅允许白名单键"}]`，且不做任何部分�
 
 ```json
 { "code": 0, "message": "ok", "data": {
-  "productCount": 5, "articleCount": 3, "userCount": 8, "pendingApplications": 1 },
+  "productCount": 5, "articleCount": 3, "userCount": 8,
+  "pendingApplications": 1, "pendingMessages": 2 },
   "requestId": "..." }
 ```
 
@@ -97,20 +98,18 @@ message:"未知的配置键，仅允许白名单键"}]`，且不做任何部分�
 | `articleCount` | `COUNT(*) FROM article` |
 | `userCount` | `COUNT(*) FROM sys_user` |
 | `pendingApplications` | `COUNT(*) FROM dealer_application WHERE status='PENDING'` |
+| `pendingMessages` | `COUNT(*) FROM contact_message WHERE status='PENDING'` |
 
-**⚠️ `pendingMessages`（留言待处理数）本轮不提供、不冻结。**
-它依赖 Support 模块真实合入（PR #103，含：SupportModule 注册进 AppModule、实体接
-TypeORM、AdminSupportController 挂 SessionGuard+RolesGuard+@Roles('ADMIN')、
-`support_messages` 真实 SQL 增量迁移、真实 MySQL e2e）。上述条件全部满足前，
-任何实现/展示都属伪造，后台概览不得出现该字段。
+Support 模块已与 Operation 集成，`pendingMessages` 为正式冻结字段；后台概览不得使用
+前端常量或模拟数据代替上述 COUNT 结果。
 
 ## 4. 数据库
 
 - 迁移：`backend/sql/migrations/mvp07_operation_tables.sql`
   （`site_config`、`banner` 两表，`CREATE TABLE IF NOT EXISTS`，可重复执行）
 - Seed：`backend/sql/seed/seed_operation_mvp07.sql`（默认配置 + 2 条演示 Banner，幂等）
-- 测试库初始化顺序见 `backend/test/setup-db.ts`，与 `deploy/docker-compose.yml`
-  新数据卷初始化一致。
+- 测试库初始化顺序为 MVP01/03/04/05/06/07，再执行 catalog/content/operation seed，
+  与 `deploy/docker-compose.yml` 新数据卷初始化一致。
 
 ## 5. 错误与权限速查
 
