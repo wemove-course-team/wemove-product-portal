@@ -6,6 +6,7 @@ import { IdentityModule } from './modules/identity/identity.module'
 import { DealerModule } from './modules/dealer/dealer.module'
 import { ContentModule } from './modules/content/content.module'
 import { SupportModule } from './modules/support/support.module'
+import { OperationModule } from './modules/operation/operation.module'
 import { User } from './modules/identity/user.entity'
 import { PasswordResetToken } from './modules/identity/password-reset-token.entity'
 import { DealerApplication } from './modules/dealer/dealer-application.entity'
@@ -16,9 +17,11 @@ import { Article } from './modules/content/entities/article.entity'
 import { ArticleCategory } from './modules/content/entities/article-category.entity'
 import { Page } from './modules/content/entities/page.entity'
 import { SupportMessage, SupportFaq, SupportDownload } from './modules/support/support.entity'
+import { SiteConfig } from './modules/operation/site-config.entity'
+import { Banner } from './modules/operation/banner.entity'
 import { HealthController } from './health.controller'
 
-/** 应用根模块，注册公共、身份、产品目录、内容和经销商模块。 */
+/** 应用根模块，注册身份、产品、内容、经销商、支持与运营模块。 */
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -42,7 +45,9 @@ import { HealthController } from './health.controller'
           Page,
           SupportMessage,
           SupportFaq,
-          SupportDownload
+          SupportDownload,
+          SiteConfig,
+          Banner
         ],
         // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
         synchronize: false,
@@ -55,7 +60,8 @@ import { HealthController } from './health.controller'
     DealerModule,
     CatalogModule,
     ContentModule,
-    SupportModule
+    SupportModule,
+    OperationModule
   ],
   controllers: [HealthController]
 })
