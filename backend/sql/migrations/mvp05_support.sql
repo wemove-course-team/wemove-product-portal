@@ -4,6 +4,7 @@ USE `wemove_portal`;
 CREATE TABLE IF NOT EXISTS `contact_message` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `code` VARCHAR(32) NOT NULL COMMENT 'MSG-YYYYMMDD-NNNN',
+  `dedupe_key` CHAR(64) NOT NULL,
   `name` VARCHAR(64) NOT NULL,
   `email` VARCHAR(128) NOT NULL,
   `phone` VARCHAR(32) DEFAULT NULL,
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `contact_message` (
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_contact_message_code` (`code`),
+  UNIQUE KEY `uk_contact_message_dedupe_key` (`dedupe_key`),
   KEY `idx_contact_message_email_subject` (`email`, `subject`),
   KEY `idx_contact_message_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联系表单留言';

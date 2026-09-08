@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DataSource, Repository } from 'typeorm'
+import { createHash } from 'crypto'
 import { RequestUser } from '../../common/request-user'
 import { DownloadVisibility, FaqStatus, MessageStatus, SupportDownload, SupportFaq, SupportMessage } from './support.entity'
 import { CreateDownloadDto, CreateFaqDto, CreateMessageDto, MessageQueryDto, UpdateDownloadDto, UpdateFaqDto, UpdateMessageStatusDto } from './support.dto'
@@ -18,15 +19,20 @@ export class SupportService {
   async createMessage(input: CreateMessageDto) {
     const email = input.email.trim().toLowerCase()
     const subject = input.subject.trim()
+    const dedupeKey = createHash('sha256').update(`${email}\n${subject}`).digest('hex')
     const now = new Date()
-    const recent = await this.messages.createQueryBuilder('message')
-      .where('message.email = :email', { email })
-      .andWhere('message.subject = :subject', { subject })
-      .andWhere('message.createdAt >= :since', { since: new Date(now.getTime() - 60_000) })
-      .getOne()
-    if (recent) throw new BadRequestException({ code: 'VALIDATION_400', message: '相同主题的留言请勿重复提交，请稍后再试' })
-
     return this.dataSource.transaction(async (manager) => {
+      // MySQL named lock 将同一邮箱和主题的检查、写入串行化，避免并发双提交。
+      const lockKey = `support:${email}:${subject}`.slice(0, 64)
+      const lockRows = await manager.query('SELECT GET_LOCK(?, 10) AS acquired', [lockKey])
+      if (Number(lockRows[0]?.acquired) !== 1) throw new ConflictException({ code: 'CONFLICT_409', message: '留言正在处理中，请稍后重试' })
+      try {
+        const recent = await manager.getRepository(SupportMessage).createQueryBuilder('message')
+          .where('message.email = :email', { email })
+          .andWhere('message.subject = :subject', { subject })
+          .andWhere('message.createdAt >= :since', { since: new Date(now.getTime() - 60_000) })
+          .getOne()
+        if (recent) throw new BadRequestException({ code: 'VALIDATION_400', message: '相同主题的留言请勿重复提交，请稍后再试' })
       const repo = manager.getRepository(SupportMessage)
       const day = now.toISOString().slice(0, 10).replaceAll('-', '')
       const prefix = `MSG-${day}-`
@@ -38,11 +44,22 @@ export class SupportService {
       const previous = latest ? Number(latest.code.slice(-4)) : 0
       const message = repo.create({
         code: `${prefix}${String(previous + 1).padStart(4, '0')}`,
+        dedupeKey,
         name: input.name.trim(), email, phone: input.phone?.trim() || null,
         subject, content: input.content.trim(), status: MessageStatus.PENDING,
         handleNote: null, handledBy: null, handledAt: null
       })
-      return this.messageSummary(await repo.save(message))
+        try {
+          return this.messageSummary(await repo.save(message))
+        } catch (error) {
+          if ((error as { code?: string })?.code === 'ER_DUP_ENTRY') {
+            throw new BadRequestException({ code: 'VALIDATION_400', message: '相同主题的留言请勿重复提交，请稍后再试' })
+          }
+          throw error
+        }
+      } finally {
+        await manager.query('SELECT RELEASE_LOCK(?)', [lockKey])
+      }
     })
   }
 

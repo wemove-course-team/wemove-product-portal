@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { supportApi } from '../../services/support'
@@ -28,7 +28,7 @@ const route = useRoute()
 const items = ref([])
 const loading = ref(false)
 const downloading = ref(null)
-const title = props.pageTitle
+const title = computed(() => props.pageTitle)
 
 async function load() {
   loading.value = true
@@ -49,6 +49,7 @@ async function download(item) {
 
 function visibilityText(value) { return { PUBLIC: '公开', USER: '登录可见', DEALER: '经销商可见' }[value] || value }
 onMounted(load)
+watch(() => [props.category, props.pageTitle, route.query.category], load)
 </script>
 
 <style scoped>

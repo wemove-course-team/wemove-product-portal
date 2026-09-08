@@ -94,6 +94,14 @@ describe('Support API (e2e)', () => {
     expect(invalidUrl.body.code).toBe('VALIDATION_400')
   })
 
+  it('并发提交相同邮箱和主题只保存一条留言', async () => {
+    const user = await login(app, 'demo_user')
+    const input = { name: '并发测试', email: 'concurrent-e2e@example.com', subject: `并发主题-${Date.now()}`, content: '用于验证并发幂等的留言内容。' }
+    const results = await Promise.all([user.post('/api/v1/support/messages', input), user.post('/api/v1/support/messages', input)])
+    expect(results.filter((response) => response.status === 201)).toHaveLength(1)
+    expect(results.filter((response) => response.status === 400)).toHaveLength(1)
+  })
+
   it('普通用户不能访问管理员留言，管理员可以处理状态', async () => {
     const user = await login(app, 'demo_user')
     const forbidden = await user.get('/api/v1/admin/support/messages')

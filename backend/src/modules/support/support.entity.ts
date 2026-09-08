@@ -27,6 +27,10 @@ export class SupportMessage {
   @Column({ length: 32 })
   code!: string
 
+  @Index({ unique: true })
+  @Column({ name: 'dedupe_key', type: 'char', length: 64 })
+  dedupeKey!: string
+
   @Column({ length: 64 })
   name!: string
 

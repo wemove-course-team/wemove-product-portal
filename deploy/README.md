@@ -27,7 +27,7 @@
    docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
    ```
 
-新数据卷首次启动时，MySQL 会自动按“基线 → Identity → MVP03 → MVP04 → MVP05 → seed”顺序初始化。已有数据卷不会重新执行初始化脚本，后续数据库变更必须使用新的增量迁移。
+新数据卷首次启动时，MySQL 会自动按“基线 → Identity → MVP03 → MVP04 → MVP05 → MVP06 → MVP07 → 各域 seed”顺序初始化。已有数据卷不会重新执行初始化脚本，后续数据库变更必须使用新的增量迁移。
 
 已有数据卷升级到 MVP05 时，先备份数据库，再执行支持中心增量脚本：
 
@@ -37,6 +37,15 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql
 ```
 
 如果容器是旧版本创建的，还需要把迁移文件挂载到容器后执行；生产环境应先在备份恢复的副本上演练，并确认三张表不存在后再执行。迁移脚本只创建 `contact_message`、`faq`、`download_resource`，不会删除既有业务表。
+
+已有数据卷升级 MVP06 时，执行：
+
+```bash
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/migrations/mvp06_dealer_application_user.sql'
+```
+
+MVP07 的增量迁移由后续部署 PR 挂载到同一 `migrations` 目录，并按编号在 MVP06 之后执行。
 
 课程验收环境如需演示账号，可在首次启动完成后手动导入：
 
