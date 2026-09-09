@@ -1,5 +1,6 @@
 -- MVP-05 支持中心增量表。文件资源只引用 public 目录或外链，不做上传。
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `contact_message` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,

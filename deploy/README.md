@@ -48,6 +48,15 @@ Compose 已将 MVP04/05/06/07 脚本挂载到 `/opt/wemove/migrations/`。生产
 备份恢复的副本上演练，再依次执行尚未应用的版本；MVP01/03/06 含 ALTER，不能重复执行。
 MVP05 使用 `CREATE TABLE IF NOT EXISTS` 且默认 FAQ/下载数据为幂等写入，可安全重放。
 
+如果旧数据卷中的中文显示为 `æƒŸæœ¨` 一类乱码，执行一次 UTF-8 修复脚本：
+
+```bash
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
+  'mysql --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/migrations/mvp07_utf8_repair.sql'
+```
+
+该脚本只转换包含典型 latin1/cp1252 乱码字符的历史字段，正常中文和后续用户数据保持不变。
+
 课程验收环境如需演示账号，可在首次启动完成后手动导入：
 
 ```bash
@@ -103,6 +112,8 @@ docker-compose --env-file deploy/.env \
 ```
 
 生产部署永远只使用 `deploy/docker-compose.yml` 单文件，`IMAGE_TAG` 指向已验证 SHA。
+本地 override 额外把 MySQL 映射到 `127.0.0.1:${WEMOVE_MYSQL_PORT:-3306}`，便于在宿主机
+运行 `backend/npm run test:e2e`；生产 Compose 不开放数据库端口。
 
 ## 备份与恢复
 

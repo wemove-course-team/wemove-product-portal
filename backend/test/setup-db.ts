@@ -30,7 +30,8 @@ export async function setupTestDatabase(): Promise<string> {
     join(sqlDir, 'seed', 'seed_catalog_mvp03.sql'),
     join(sqlDir, 'seed', 'seed_identity_demo_accounts.sql'),
     join(sqlDir, 'seed', 'seed_content_mvp04.sql'),
-    join(sqlDir, 'seed', 'seed_operation_mvp07.sql')
+    join(sqlDir, 'seed', 'seed_operation_mvp07.sql'),
+    join(sqlDir, 'migrations', 'mvp07_utf8_repair.sql')
   ]
 
   try {

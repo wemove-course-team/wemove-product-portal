@@ -12,6 +12,7 @@
 -- ========================================================
 
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ---------- 益智玩具（category_id=1）：同步前端旧假数据，消灭 localStorage 假数据 ----------
 INSERT INTO `product`

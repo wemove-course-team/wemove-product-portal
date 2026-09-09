@@ -12,6 +12,10 @@
 # - 数据库结构仍由 init_schema_and_data.sql + migrations + seed 初始化，
 #   与生产一致；本地已有的旧数据卷不会自动补执行新迁移，需按 README 手动应用。
 services:
+  mysql:
+    # 仅本地 override 暴露回环地址，供 npm run test:e2e 连接；生产 Compose 不开放数据库端口。
+    ports:
+      - "127.0.0.1:${WEMOVE_MYSQL_PORT:-3306}:3306"
   backend:
     image: wemove-backend:local
     build:

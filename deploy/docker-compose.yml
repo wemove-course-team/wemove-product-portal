@@ -24,6 +24,7 @@ services:
       - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/080-catalog-seed.sql:ro
       - ../backend/sql/seed/seed_content_mvp04.sql:/docker-entrypoint-initdb.d/090-content-seed.sql:ro
       - ../backend/sql/seed/seed_operation_mvp07.sql:/docker-entrypoint-initdb.d/100-operation-seed.sql:ro
+      - ../backend/sql/migrations/mvp07_utf8_repair.sql:/docker-entrypoint-initdb.d/110-utf8-repair.sql:ro
       # 已知口令的演示账号只挂载、不自动导入；需要时按 deploy/README 手动执行。
       - ../backend/sql/seed/seed_identity_demo_accounts.sql:/opt/wemove/seed/identity-demo.sql:ro
       # 旧数据卷升级用：MVP-07 运营 seed（幂等，不覆盖已有配置/Banner），按 README 手动导入。
@@ -33,6 +34,7 @@ services:
       - ../backend/sql/migrations/mvp05_support.sql:/opt/wemove/migrations/mvp05_support.sql:ro
       - ../backend/sql/migrations/mvp06_dealer_application_user.sql:/opt/wemove/migrations/mvp06_dealer_application_user.sql:ro
       - ../backend/sql/migrations/mvp07_operation_tables.sql:/opt/wemove/migrations/mvp07_operation_tables.sql:ro
+      - ../backend/sql/migrations/mvp07_utf8_repair.sql:/opt/wemove/migrations/mvp07_utf8_repair.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s

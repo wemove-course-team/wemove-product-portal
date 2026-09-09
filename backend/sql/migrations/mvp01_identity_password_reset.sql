@@ -1,5 +1,6 @@
 -- MVP-01 Identity incremental migration. Do not modify init_schema_and_data.sql.
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE `password_reset_token` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
