@@ -1,6 +1,8 @@
 # WEMOVE 后端镜像（多阶段：构建 → 精简运行时）
 # 构建：docker build -t ghcr.io/wemove-course-team/wemove-backend:latest ./backend
 FROM node:20-alpine AS build
+# sqlite3 无 musl 预编译二进制，npm ci 需要本地编译工具链
+RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
