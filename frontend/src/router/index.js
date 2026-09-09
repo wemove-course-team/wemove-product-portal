@@ -84,7 +84,8 @@ const routes = [
   {
     path: '/electronic',
     name: 'Electronic',
-    component: () => import('../views/ContentPage.vue'),
+    component: () => import('../views/support/DownloadView.vue'),
+    props: { category: 'manual', pageTitle: '电子说明书' },
     meta: { zone: 'public' }
   },
   // 新闻动态列表与详情（#88 MVP-04）
@@ -110,20 +111,20 @@ const routes = [
   {
     path: '/support',
     name: 'Support',
-    component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-    meta: { zone: 'public', featureTitle: '联系我们', ownerTask: '#89 MVP-05' }
+    component: () => import('../views/support/ContactView.vue'),
+    meta: { zone: 'public' }
   },
   {
     path: '/faq',
     name: 'Faq',
-    component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-    meta: { zone: 'public', featureTitle: '常见问题 FAQ', ownerTask: '#89 MVP-05' }
+    component: () => import('../views/support/FaqView.vue'),
+    meta: { zone: 'public' }
   },
   {
     path: '/downloads',
     name: 'Downloads',
-    component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-    meta: { zone: 'public', featureTitle: '下载中心', ownerTask: '#89 MVP-05' }
+    component: () => import('../views/support/DownloadView.vue'),
+    meta: { zone: 'public' }
   },
 
   // 决策 D9：订单/购物车本轮不启用，路由与入口一并关闭（CartView.vue 文件保留）
@@ -182,6 +183,12 @@ const routes = [
         meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
+        path: 'operation',
+        name: 'AdminOperation',
+        component: () => import('../views/admin/AdminOperationView.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
         // #87 MVP-03：产品/分类管理列表（含分类管理 Tab）
         path: 'products',
         name: 'AdminProducts',
@@ -209,8 +216,8 @@ const routes = [
       {
         path: 'support',
         name: 'AdminSupport',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '留言 / FAQ / 下载管理', ownerTask: '#89 MVP-05' }
+        component: () => import('../views/support/AdminSupportView.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {
         path: 'dealers',
@@ -221,8 +228,8 @@ const routes = [
       {
         path: 'users',
         name: 'AdminUsers',
-        component: () => import('../views/placeholder/FeaturePlaceholderView.vue'),
-        meta: { zone: 'admin', roles: ['ADMIN'], featureTitle: '用户查询与启停用', ownerTask: '#85 MVP-01' }
+        component: () => import('../views/admin/AdminUsers.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
       }
     ]
   },

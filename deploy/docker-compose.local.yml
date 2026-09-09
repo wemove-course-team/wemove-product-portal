@@ -1,0 +1,22 @@
+# 本地验证 override（仅供本地构建/联调，禁止用于生产）。
+#
+# 用法（需本机 Docker daemon 可用）：
+#   cp deploy/.env.example deploy/.env   # 填写真实口令
+#   docker-compose --env-file deploy/.env \
+#     -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml up -d --build
+#
+# 说明：
+# - 生产部署永远使用 deploy/docker-compose.yml 单文件，IMAGE_TAG 指向 CD 发布的
+#   已验证完整 Git SHA（见 deploy/README.md）；本文件把镜像替换为本地构建，
+#   仅用于在合并前验证未发布代码的容器行为。
+# - 数据库结构仍由 init_schema_and_data.sql + migrations + seed 初始化，
+#   与生产一致；本地已有的旧数据卷不会自动补执行新迁移，需按 README 手动应用。
+services:
+  backend:
+    image: wemove-backend:local
+    build:
+      context: ../backend
+  frontend:
+    image: wemove-frontend:local
+    build:
+      context: ../frontend

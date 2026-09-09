@@ -1,7 +1,21 @@
 <template>
   <div class="home-container">
-    <!-- 1. 品牌主张：场景化首屏 Hero -->
-    <section class="hero-section">
+    <!-- 1. 后台可维护的首页 Banner；无启用项时保留品牌主张兜底。 -->
+    <section v-if="siteStore.banners.length" class="hero-carousel-section">
+      <el-carousel :interval="5600" :autoplay="siteStore.banners.length > 1" arrow="always" height="540px">
+        <el-carousel-item v-for="banner in siteStore.banners" :key="banner.id">
+          <a :href="banner.linkUrl || '/products'" class="hero-banner" :style="heroBannerStyle(banner)">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <div class="hero-tag">{{ siteStore.siteName }}</div>
+              <h1 class="hero-title">{{ banner.title }}</h1>
+              <span class="btn-primary">了解更多 <el-icon><Right /></el-icon></span>
+            </div>
+          </a>
+        </el-carousel-item>
+      </el-carousel>
+    </section>
+    <section v-else class="hero-section">
       <div class="hero-overlay"></div>
       <div class="hero-content">
         <div class="hero-tag">WEMOVE SPORTS & LIVING</div>
@@ -21,6 +35,15 @@
         </div>
       </div>
     </section>
+
+    <el-alert
+      v-if="siteStore.error"
+      class="site-data-error"
+      type="warning"
+      :closable="false"
+      show-icon
+      title="站点配置或首页横幅暂时无法加载，当前显示基础品牌内容"
+    />
 
     <!-- 2. 业务分类：三大黄金业务直通卡片（1秒建立业务认知） -->
     <section class="business-section">
@@ -228,6 +251,7 @@
 import { ref, onMounted } from 'vue'
 import AsyncState from '../components/AsyncState.vue'
 import { homeApi } from '../services/home'
+import { useSiteStore } from '../stores/site'
 
 /**
  * 官网首页（#86 首页外壳）：品牌主张 / 业务分类 / 精选产品 / 经销商入口 / 品牌价值 / 最新动态。
@@ -237,6 +261,7 @@ import { homeApi } from '../services/home'
  * - 决策 D9：加购入口未实现，全部以「查看详情」引导到产品页。
  */
 const featuredLoading = ref(false)
+const siteStore = useSiteStore()
 const featuredError = ref(null)
 const featuredProducts = ref([])
 
@@ -277,7 +302,13 @@ function formatDate(value) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+function heroBannerStyle(banner) {
+  const safeUrl = String(banner?.imageUrl || '').replace(/["'\\\n\r]/g, '')
+  return { backgroundImage: `url("${safeUrl}")` }
+}
+
 onMounted(() => {
+  siteStore.loadPublic().catch(() => undefined)
   loadFeatured()
   loadNews()
 })
@@ -286,6 +317,27 @@ onMounted(() => {
 <style scoped>
 .home-container {
   width: 100%;
+}
+
+.hero-carousel-section {
+  min-height: 540px;
+  background: var(--bg-light);
+}
+
+.hero-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 540px;
+  padding: 88px 24px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.site-data-error {
+  max-width: 1180px;
+  margin: 18px auto 0;
 }
 
 /* 1. Hero */

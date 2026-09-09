@@ -1,167 +1,95 @@
 <template>
-    <div class="contact-container">
-        <el-row :gutter="24">
-            <!-- ×ó²à£ºÌá½»¹¤µ¥ -->
-            <el-col :xs="24" :md="16">
-                <el-card class="box-card" shadow="never">
-                    <template #header>
-                        <div class="card-header">
-                            <h3>Ìá½»¼¼ÊõÖ§³Ö¹¤µ¥</h3>
-                        </div>
-                    </template>
+  <div class="support-page">
+    <section class="page-heading">
+      <p class="eyebrow">SUPPORT</p>
+      <h1>è”ç³»æˆ‘ä»¬</h1>
+      <p>ç•™ä¸‹ä½ çš„é—®é¢˜æˆ–åˆä½œéœ€æ±‚ï¼Œæˆ‘ä»¬ä¼šå°½å¿«ä¸æ‚¨è”ç³»ã€‚</p>
+    </section>
 
-                    <el-form ref="formRef"
-                             :model="form"
-                             :rules="rules"
-                             label-width="100px"
-                             status-icon>
-                        <el-form-item label="ĞÕÃû" prop="name">
-                            <el-input v-model="form.name" placeholder="ÇëÊäÈëÄúµÄĞÕÃû" />
-                        </el-form-item>
-
-                        <el-form-item label="ÁªÏµÓÊÏä" prop="email">
-                            <el-input v-model="form.email" placeholder="ÇëÊäÈëÓĞĞ§µÄµç×ÓÓÊÏä" />
-                        </el-form-item>
-
-                        <el-form-item label="ÎÊÌâ·ÖÀà" prop="category">
-                            <el-select v-model="form.category" placeholder="ÇëÑ¡ÔñÎÊÌâÀàĞÍ" style="width: 100%">
-                                <el-option label="ÕËºÅÓëÈ¨ÏŞ" value="account" />
-                                <el-option label="ÏµÍ³ Bug ·´À¡" value="bug" />
-                                <el-option label="¹¦ÄÜ½¨Òé" value="feature" />
-                                <el-option label="ÆäËû" value="other" />
-                            </el-select>
-                        </el-form-item>
-
-                        <el-form-item label="ÏêÏ¸ÃèÊö" prop="message">
-                            <el-input v-model="form.message"
-                                      type="textarea"
-                                      :rows="5"
-                                      placeholder="ÇëÏêÏ¸ÃèÊöÄúÓöµ½µÄÎÊÌâ»ò½¨Òé..." />
-                        </el-form-item>
-
-                        <el-form-item>
-                            <el-button type="primary" :loading="submitting" @click="handleSubmit(formRef)">
-                                Ìá½»¹¤µ¥
-                            </el-button>
-                            <el-button @click="resetForm(formRef)">ÖØÖÃ</el-button>
-                        </el-form-item>
-                    </el-form>
-                </el-card>
-            </el-col>
-
-            <!-- ÓÒ²à£ºÆäËûÖ§³ÖÍ¨µÀ -->
-            <el-col :xs="24" :md="8">
-                <el-card class="box-card" shadow="never">
-                    <template #header>
-                        <div class="card-header">
-                            <h3>ÆäËûÖ§³Ö·½Ê½</h3>
-                        </div>
-                    </template>
-
-                    <div class="support-channels">
-                        <div class="channel-item disabled">
-                            <div class="channel-info">
-                                <h4>ÔÚÏß¼´Ê±¿Í·ş</h4>
-                                <p>Ò»¶ÔÒ»ÊµÊ±½â´ğÏµÍ³Ê¹ÓÃÒÉÎÊ</p>
-                            </div>
-                            <el-tag type="info" size="small">ÔİÎ´¿ª·Å</el-tag>
-                        </div>
-
-                        <el-divider />
-
-                        <div class="channel-item disabled">
-                            <div class="channel-info">
-                                <h4>µç»°¼¼Êõ×¨Ïß</h4>
-                                <p>¹¤×÷ÈÕ 9:00 - 18:00</p>
-                            </div>
-                            <el-tag type="info" size="small">ÔİÎ´¿ª·Å</el-tag>
-                        </div>
-                    </div>
-                </el-card>
-            </el-col>
-        </el-row>
+    <div v-if="hasContact" class="contact-strip">
+      <a v-if="siteStore.config.contactPhone" :href="`tel:${siteStore.config.contactPhone}`"><strong>ç”µè¯</strong><span>{{ siteStore.config.contactPhone }}</span></a>
+      <a v-if="siteStore.config.contactEmail" :href="`mailto:${siteStore.config.contactEmail}`"><strong>é‚®ç®±</strong><span>{{ siteStore.config.contactEmail }}</span></a>
+      <div v-if="siteStore.config.address"><strong>åœ°å€</strong><span>{{ siteStore.config.address }}</span></div>
     </div>
+
+    <el-card class="support-card" shadow="never">
+      <el-alert v-if="submitted" type="success" :closable="false" class="result-alert">
+        ç•™è¨€å·²æäº¤ï¼Œç¼–å·ä¸º <strong>{{ submitted.code }}</strong>ï¼Œè¯·ä¿ç•™ç¼–å·ä»¥ä¾¿åç»­æŸ¥è¯¢ã€‚
+      </el-alert>
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="submit">
+        <div class="form-grid">
+          <el-form-item label="å§“å" prop="name"><el-input v-model="form.name" placeholder="è¯·è¾“å…¥å§“å" /></el-form-item>
+          <el-form-item label="é‚®ç®±" prop="email"><el-input v-model="form.email" placeholder="name@example.com" /></el-form-item>
+          <el-form-item label="ç”µè¯" prop="phone"><el-input v-model="form.phone" placeholder="å¯é€‰" /></el-form-item>
+          <el-form-item label="ä¸»é¢˜" prop="subject"><el-input v-model="form.subject" placeholder="ä¾‹å¦‚ï¼šäº§å“å’¨è¯¢" /></el-form-item>
+        </div>
+        <el-form-item label="ç•™è¨€å†…å®¹" prop="content"><el-input v-model="form.content" type="textarea" :rows="7" maxlength="5000" show-word-limit placeholder="è¯·æè¿°ä½ çš„é—®é¢˜æˆ–éœ€æ±‚" /></el-form-item>
+        <div class="form-actions">
+          <el-button type="primary" :loading="submitting" @click="submit">æäº¤ç•™è¨€</el-button>
+          <el-button @click="reset">æ¸…ç©º</el-button>
+          <router-link to="/faq" class="secondary-link">å…ˆçœ‹çœ‹å¸¸è§é—®é¢˜</router-link>
+        </div>
+      </el-form>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { submitSupportTicket } from '@/services/support'
+import { supportApi } from '../../services/support'
+import { useSiteStore } from '../../stores/site'
 
 const formRef = ref(null)
+const siteStore = useSiteStore()
 const submitting = ref(false)
-
-const form = reactive({
-  name: '',
-  email: '',
-  category: '',
-  message: ''
-})
-
-const rules = reactive({
-  name: [
-    { required: true, message: 'ÇëÊäÈëÄúµÄĞÕÃû', trigger: 'blur' }
-  ],
-  email: [
-    { required: true, message: 'ÇëÊäÈëÁªÏµÓÊÏä', trigger: 'blur' },
-    { type: 'email', message: 'ÇëÊäÈë¸ñÊ½ÕıÈ·µÄµç×ÓÓÊÏä', trigger: ['blur', 'change'] }
-  ],
-  category: [
-    { required: true, message: 'ÇëÑ¡ÔñÎÊÌâ·ÖÀà', trigger: 'change' }
-  ],
-  message: [
-    { required: true, message: 'ÇëÊäÈëÏêÏ¸ÃèÊöÄÚÈİ', trigger: 'blur' },
-    { min: 10, message: 'ÃèÊöÄÚÈİ²»µÃÉÙÓÚ 10 ¸ö×Ö·û', trigger: 'blur' }
-  ]
-})
-
-const handleSubmit = async (formEl) => {
-  if (!formEl) return
-  await formEl.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        await submitSupportTicket({ ...form })
-        ElMessage.success('¹¤µ¥Ìá½»³É¹¦£¬ÎÒÃÇ»á¾¡¿ì´¦Àí£¡')
-        resetForm(formEl)
-      } catch (error) {
-        ElMessage.error(error?.response?.data?.message || 'Ìá½»Ê§°Ü£¬ÇëÉÔºóÖØÊÔ')
-      } finally {
-        submitting.value = false
-      }
-    }
-  })
+const submitted = ref(null)
+const form = reactive({ name: '', email: '', phone: '', subject: '', content: '' })
+const hasContact = computed(() => Boolean(siteStore.config.contactPhone || siteStore.config.contactEmail || siteStore.config.address))
+const rules = {
+  name: [{ required: true, message: 'è¯·è¾“å…¥å§“å', trigger: 'blur' }],
+  email: [{ required: true, message: 'è¯·è¾“å…¥é‚®ç®±', trigger: 'blur' }, { type: 'email', message: 'é‚®ç®±æ ¼å¼ä¸æ­£ç¡®', trigger: ['blur', 'change'] }],
+  subject: [{ required: true, message: 'è¯·è¾“å…¥ä¸»é¢˜', trigger: 'blur' }],
+  content: [{ required: true, message: 'è¯·è¾“å…¥ç•™è¨€å†…å®¹', trigger: 'blur' }, { min: 10, message: 'ç•™è¨€è‡³å°‘ 10 ä¸ªå­—ç¬¦', trigger: 'blur' }]
 }
 
-const resetForm = (formEl) => {
-  if (!formEl) return
-  formEl.resetFields()
+async function submit() {
+  if (!(await formRef.value?.validate().catch(() => false))) return
+  submitting.value = true
+  try {
+    const response = await supportApi.submitMessage({ ...form })
+    submitted.value = response.data
+    reset()
+  } catch (error) {
+    ElMessage.error(error.message || 'ç•™è¨€æäº¤å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•')
+  } finally {
+    submitting.value = false
+  }
 }
+
+function reset() {
+  formRef.value?.resetFields()
+}
+
+onMounted(() => {
+  siteStore.loadPublic().catch(() => undefined)
+})
 </script>
 
 <style scoped>
-    .contact-container {
-        padding: 24px;
-    }
-
-    .channel-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-        .channel-item.disabled {
-            opacity: 0.6;
-        }
-
-    .channel-info h4 {
-        margin: 0 0 6px 0;
-        font-size: 15px;
-    }
-
-    .channel-info p {
-        margin: 0;
-        font-size: 12px;
-        color: #909399;
-    }
+.support-page { max-width: 960px; margin: 0 auto; padding: 56px 24px 80px; }
+.page-heading { margin-bottom: 28px; }
+.eyebrow { margin: 0 0 8px; color: var(--primary-color); font-size: 12px; letter-spacing: 2px; }
+.page-heading h1 { margin: 0 0 10px; font-size: 32px; color: var(--text-color); }
+.page-heading p:last-child { margin: 0; color: var(--text-muted); }
+.support-card { border: 1px solid var(--border-color); }
+.contact-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.contact-strip > * { display: grid; gap: 3px; padding: 14px 16px; background: var(--bg-light); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.contact-strip strong { font-size: 12px; color: var(--text-light); }
+.contact-strip span { color: var(--text-color); font-size: 14px; word-break: break-word; }
+.result-alert { margin-bottom: 24px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.form-actions { display: flex; align-items: center; gap: 12px; }
+.secondary-link { color: var(--primary-color); font-size: 14px; text-decoration: none; margin-left: auto; }
+@media (max-width: 640px) { .support-page { padding: 32px 16px 56px; } .form-grid, .contact-strip { grid-template-columns: 1fr; } .secondary-link { margin-left: 0; } }
 </style>

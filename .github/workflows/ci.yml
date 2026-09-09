@@ -76,6 +76,8 @@ jobs:
         run: npm ci
       - name: 生产依赖安全审计（阻断 high/critical）
         run: npm audit --omit=dev --audit-level=high
+      - name: 前端单元测试
+        run: npm test
       - name: 构建
         run: npm run build
 
@@ -92,6 +94,8 @@ jobs:
         with:
           context: ./backend
           push: false
+          load: true
+          tags: wemove-backend:local
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
       - name: 验证前端镜像
@@ -99,5 +103,43 @@ jobs:
         with:
           context: ./frontend
           push: false
+          load: true
+          tags: wemove-frontend:local
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
+      - name: Compose 新卷启动与持久化冒烟
+        env:
+          COMPOSE_PROJECT_NAME: wemove-ci-${{ github.run_id }}
+          WEMOVE_HTTP_PORT: 18080
+        run: |
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
+            up -d --no-build --wait --wait-timeout 240
+          curl --fail --retry 5 --retry-delay 2 http://127.0.0.1:18080/healthz
+          curl --fail --retry 5 --retry-delay 2 http://127.0.0.1:18080/api/v1/health
+          curl --fail http://127.0.0.1:18080/api/v1/site/config
+          curl --fail http://127.0.0.1:18080/api/v1/faqs
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
+            exec -T mysql sh -c \
+            'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal -e "UPDATE site_config SET config_value=\"CI-PERSISTENCE\" WHERE config_key=\"siteName\""'
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml restart mysql
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
+            up -d --no-build --wait --wait-timeout 180
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
+            exec -T mysql sh -c \
+            'mysql -N -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal -e "SELECT config_value FROM site_config WHERE config_key=\"siteName\""' \
+            | grep -Fx 'CI-PERSISTENCE'
+      - name: Compose 失败日志
+        if: failure()
+        env:
+          COMPOSE_PROJECT_NAME: wemove-ci-${{ github.run_id }}
+        run: docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml logs --no-color --tail 200
+      - name: 清理 Compose
+        if: always()
+        env:
+          COMPOSE_PROJECT_NAME: wemove-ci-${{ github.run_id }}
+        run: docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml down -v --remove-orphans

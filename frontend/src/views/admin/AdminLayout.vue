@@ -52,8 +52,8 @@
         <div class="sidebar-note">
           <p class="note-title">接入说明</p>
           <p class="note-text">
-            后台外壳与路由由 #86 维护；产品、内容、支持、经销商、用户管理页面
-            分别由 #87 / #88 / #89 / #90 / #85 交付后挂载到对应子路由。
+            产品、内容、支持、经销商、用户与站点运营均已接入真实 API；
+            数据修改后可在对应前台页面刷新验证。
           </p>
         </div>
       </aside>
@@ -88,11 +88,12 @@ const sidebarOpen = ref(false)
 
 const menuItems = [
   { path: '/admin', label: '概览', icon: '📊', pending: false },
+  { path: '/admin/operation', label: '站点运营', icon: '🧭', pending: false },
   { path: '/admin/products', label: '产品与分类', icon: '🧸', pending: false },
   { path: '/admin/content', label: '内容与栏目', icon: '📝', pending: false },
-  { path: '/admin/support', label: '留言 / FAQ / 下载', icon: '💬', pending: true },
+  { path: '/admin/support', label: '留言 / FAQ / 下载', icon: '💬', pending: false },
   { path: '/admin/dealers', label: '经销商审核', icon: '🤝', pending: false },
-  { path: '/admin/users', label: '用户管理', icon: '👥', pending: true }
+  { path: '/admin/users', label: '用户管理', icon: '👥', pending: false }
 ]
 
 const roleText = computed(() => {

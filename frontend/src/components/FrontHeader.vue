@@ -3,9 +3,9 @@
     <div class="header-bar">
       <!-- Brand Logo -->
       <router-link to="/" class="header-logo">
-        <img src="/logo.svg" alt="WeMove Logo" />
+        <img :src="siteStore.logoUrl" :alt="`${siteStore.siteName} Logo`" />
         <div class="brand-text">
-          <span class="brand-name">WeMove 惟木匠心</span>
+          <span class="brand-name">{{ siteStore.siteName }}</span>
           <span class="brand-sub">SPORTS & LIVING</span>
         </div>
       </router-link>
@@ -137,6 +137,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
+import { useSiteStore } from '../stores/site'
 import SearchModal from './SearchModal.vue'
 
 /**
@@ -148,6 +149,7 @@ import SearchModal from './SearchModal.vue'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const siteStore = useSiteStore()
 
 const showDrop = ref(false)
 const isScrolled = ref(false)
@@ -165,6 +167,7 @@ function handleScroll() {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  siteStore.loadPublic().catch(() => undefined)
 })
 
 onUnmounted(() => {

@@ -41,5 +41,15 @@ export const authApi = {
   /** 修改当前用户密码。 */
   changePassword({ oldPassword, newPassword }) {
     return http.put('/users/me/password', { oldPassword, newPassword })
+  },
+
+  /** 管理员分页查询用户。 */
+  adminUsers(params = {}) {
+    return http.get('/admin/users', { params })
+  },
+
+  /** 管理员启用或停用账号。 */
+  updateUserStatus(id, status) {
+    return http.patch(`/admin/users/${encodeURIComponent(id)}/status`, { status })
   }
 }
