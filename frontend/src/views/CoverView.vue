@@ -75,11 +75,11 @@ function enterHome() {
       duration: 0.65,
       ease: 'power3.inOut',
       onComplete: () => {
-        router.push('/home')
+        router.push('/home').catch(() => {})
       }
     })
   } else {
-    router.push('/home')
+    router.push('/home').catch(() => {})
   }
 }
 
@@ -142,8 +142,14 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (coverPageRef.value) {
+    gsap.killTweensOf(coverPageRef.value)
+    const content = coverPageRef.value.querySelector('.cover-content')
+    if (content) gsap.killTweensOf(content)
+  }
   if (removeWheelListener) removeWheelListener()
   if (removePointerListener) removePointerListener()
+  isTransitioning = false
 })
 </script>
 

@@ -31,7 +31,12 @@
               </div>
 
               <h1 class="hero-title" ref="heroTitleRef">
-                {{ currentBanner?.title ? currentBanner.title : '惟木匠心 · 传承自然与造物之美' }}
+                <span
+                  v-for="(ch, idx) in titleChars"
+                  :key="idx"
+                  class="char"
+                  :style="ch === ' ' ? 'display: inline;' : 'display: inline-block;'"
+                >{{ ch }}</span>
               </h1>
 
               <p class="hero-subtitle" ref="heroSubtitleRef">
@@ -314,7 +319,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import gsap from 'gsap'
-import SplitType from 'split-type'
 import AsyncState from '../components/AsyncState.vue'
 import { homeApi } from '../services/home'
 import { useSiteStore } from '../stores/site'
@@ -349,8 +353,6 @@ const heroSubtitleRef = ref(null)
 const heroCtaGroupRef = ref(null)
 const heroBannerControlsRef = ref(null)
 
-let splitTitleInstance = null
-let splitSubInstance = null
 let textEntranceTl = null
 
 // 默认双展品（儿童实木保龄球套装 / 极简弧形摇摆平衡板），护航首屏即刻展示与自动轮播
@@ -385,6 +387,14 @@ const currentBanner = computed(() => {
     return effectiveBanners.value[activeBannerIndex.value % effectiveBanners.value.length]
   }
   return defaultBanners[0]
+})
+
+const currentTitleText = computed(() => {
+  return currentBanner.value?.title ? currentBanner.value.title : '惟木匠心 · 传承自然与造物之美'
+})
+
+const titleChars = computed(() => {
+  return currentTitleText.value.split('')
 })
 
 const currentHeroImage = computed(() => {
@@ -513,25 +523,6 @@ function playLeftContentEntrance() {
     textEntranceTl = null
   }
 
-  // 针对当前 DOM 重新拆分字符
-  try {
-    if (splitTitleInstance) splitTitleInstance.revert()
-    if (heroTitleRef.value) {
-      splitTitleInstance = new SplitType(heroTitleRef.value, { types: 'chars' })
-    }
-  } catch (e) {
-    console.warn('SplitType title warning:', e)
-  }
-
-  try {
-    if (splitSubInstance) splitSubInstance.revert()
-    if (heroSubtitleRef.value) {
-      splitSubInstance = new SplitType(heroSubtitleRef.value, { types: 'chars' })
-    }
-  } catch (e) {
-    console.warn('SplitType subtitle warning:', e)
-  }
-
   // 延迟半秒后逐字错峰入场 (delay: 0.5s)
   textEntranceTl = gsap.timeline({ delay: 0.5 })
 
@@ -545,9 +536,10 @@ function playLeftContentEntrance() {
   }
 
   // 2. 主标题逐字错峰榫卯咬合入场：儿童实木保龄球套装 / 惟木匠心
-  if (splitTitleInstance && splitTitleInstance.chars && splitTitleInstance.chars.length > 0) {
+  const chars = heroTitleRef.value ? heroTitleRef.value.querySelectorAll('.char') : []
+  if (chars.length > 0) {
     textEntranceTl.fromTo(
-      splitTitleInstance.chars,
+      chars,
       {
         opacity: 0,
         y: 35,
@@ -573,24 +565,8 @@ function playLeftContentEntrance() {
     )
   }
 
-  // 3. 副标逐字错峰流水入场：专为家庭与教育机构打造的天然实木运动益智游戏...
-  if (splitSubInstance && splitSubInstance.chars && splitSubInstance.chars.length > 0) {
-    textEntranceTl.fromTo(
-      splitSubInstance.chars,
-      {
-        opacity: 0,
-        y: 16
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        stagger: 0.012,
-        ease: 'power2.out'
-      },
-      '-=0.35'
-    )
-  } else if (heroSubtitleRef.value) {
+  // 3. 副标流水优雅入场
+  if (heroSubtitleRef.value) {
     textEntranceTl.fromTo(
       heroSubtitleRef.value,
       { opacity: 0, y: 18 },
@@ -681,11 +657,11 @@ function handleWheelToCover(e) {
           duration: 0.35,
           ease: 'power2.out',
           onComplete: () => {
-            router.push('/cover')
+            router.push('/cover').catch(() => {})
           }
         })
       } else {
-        router.push('/cover')
+        router.push('/cover').catch(() => {})
       }
     }
   } else {
@@ -706,7 +682,7 @@ function handleTouchEndToCover(e) {
     if (diffY > 60) {
       if (isNavigatingToCover) return
       isNavigatingToCover = true
-      router.push('/cover')
+      router.push('/cover').catch(() => {})
     }
   }
 }
@@ -743,9 +719,14 @@ onUnmounted(() => {
   if (wheelResetTimer) clearTimeout(wheelResetTimer)
   if (bannerTimer) clearInterval(bannerTimer)
   if (cleanupPointerListener) cleanupPointerListener()
-  if (textEntranceTl) textEntranceTl.kill()
-  if (splitTitleInstance) splitTitleInstance.revert()
-  if (splitSubInstance) splitSubInstance.revert()
+  if (textEntranceTl) {
+    textEntranceTl.kill()
+    textEntranceTl = null
+  }
+  if (heroSectionRef.value) {
+    gsap.killTweensOf(heroSectionRef.value)
+  }
+  isNavigatingToCover = false
 })
 </script>
 
