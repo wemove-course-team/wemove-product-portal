@@ -6,8 +6,8 @@
       </router-link>
 
       <nav class="footer-nav">
+        <router-link to="/cover">品牌封面</router-link>
         <router-link to="/home">品牌首页</router-link>
-        <router-link to="/cover">画册封面</router-link>
         <router-link to="/products">益智玩具</router-link>
         <router-link to="/furniture">家具定制</router-link>
         <router-link to="/woodlab">中试打样</router-link>

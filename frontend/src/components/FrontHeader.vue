@@ -12,11 +12,11 @@
 
       <!-- Central Main Navigation -->
       <nav class="header-nav">
-        <router-link to="/home" class="hn-link">首页</router-link>
-        <router-link to="/cover" class="hn-link cover-nav-link" title="查看全屏画册级封面">
+        <router-link to="/cover" class="hn-link cover-nav-link" title="查看全屏品牌封面">
           <span class="nav-sparkle">✦</span>
-          <span>画册封面</span>
+          <span>品牌封面</span>
         </router-link>
+        <router-link to="/home" class="hn-link">首页</router-link>
         <router-link to="/products" class="hn-link">玩具品类</router-link>
         <router-link to="/furniture" class="hn-link">家具定制</router-link>
         <router-link to="/woodlab" class="hn-link">中试打样</router-link>
@@ -106,8 +106,8 @@
     <!-- Mobile Drawer Nav -->
     <el-drawer v-model="mobileMenuOpen" title="网站导航" direction="ltr" size="280px" append-to-body>
       <div class="mobile-nav-links">
+        <router-link to="/cover" class="m-link" @click="mobileMenuOpen = false">✦ 品牌封面</router-link>
         <router-link to="/home" class="m-link" @click="mobileMenuOpen = false">首页</router-link>
-        <router-link to="/cover" class="m-link" @click="mobileMenuOpen = false">✦ 品牌画册封面</router-link>
         <router-link to="/products" class="m-link" @click="mobileMenuOpen = false">玩具品类</router-link>
         <router-link to="/furniture" class="m-link" @click="mobileMenuOpen = false">家具定制</router-link>
         <router-link to="/woodlab" class="m-link" @click="mobileMenuOpen = false">中试打样</router-link>

@@ -49,10 +49,10 @@
                 </router-link>
               </div>
 
-              <!-- 轮播控制器：当后台有 Banner 时展示精致切换药丸 -->
-              <div v-if="siteStore.banners.length > 1" class="hero-banner-controls" ref="heroBannerControlsRef">
+              <!-- 轮播控制器：精选产品切换药丸 -->
+              <div v-if="effectiveBanners.length > 1" class="hero-banner-controls" ref="heroBannerControlsRef">
                 <button
-                  v-for="(b, idx) in siteStore.banners"
+                  v-for="(b, idx) in effectiveBanners"
                   :key="b.id"
                   type="button"
                   class="banner-pill"
@@ -353,15 +353,38 @@ let splitTitleInstance = null
 let splitSubInstance = null
 let textEntranceTl = null
 
+// 默认双展品（儿童实木保龄球套装 / 极简弧形摇摆平衡板），护航首屏即刻展示与自动轮播
+const defaultBanners = [
+  {
+    id: 1,
+    title: '儿童实木保龄球套装',
+    imageUrl: '/images/prod_20_1.jpg',
+    linkUrl: '/products'
+  },
+  {
+    id: 2,
+    title: '极简弧形摇摆平衡板',
+    imageUrl: '/images/prod_19_1.jpg',
+    linkUrl: '/products'
+  }
+]
+
 // Banner 与展品轮播控制
 const activeBannerIndex = ref(0)
 let bannerTimer = null
 
-const currentBanner = computed(() => {
-  if (siteStore.banners && siteStore.banners.length > 0) {
-    return siteStore.banners[activeBannerIndex.value % siteStore.banners.length]
+const effectiveBanners = computed(() => {
+  if (siteStore.banners && siteStore.banners.length > 1) {
+    return siteStore.banners
   }
-  return null
+  return defaultBanners
+})
+
+const currentBanner = computed(() => {
+  if (effectiveBanners.value && effectiveBanners.value.length > 0) {
+    return effectiveBanners.value[activeBannerIndex.value % effectiveBanners.value.length]
+  }
+  return defaultBanners[0]
 })
 
 const currentHeroImage = computed(() => {
@@ -370,9 +393,9 @@ const currentHeroImage = computed(() => {
 
 function startBannerAutoPlay() {
   if (bannerTimer) clearInterval(bannerTimer)
-  if (siteStore.banners && siteStore.banners.length > 1) {
+  if (effectiveBanners.value && effectiveBanners.value.length > 1) {
     bannerTimer = setInterval(() => {
-      activeBannerIndex.value = (activeBannerIndex.value + 1) % siteStore.banners.length
+      activeBannerIndex.value = (activeBannerIndex.value + 1) % effectiveBanners.value.length
       nextTick(() => {
         playLeftContentEntrance()
       })
@@ -632,7 +655,69 @@ function formatDate(value) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// 向上滚动返回品牌封面控制
+let isNavigatingToCover = false
+let topWheelAccumulator = 0
+let wheelResetTimer = null
+
+function handleWheelToCover(e) {
+  // 仅在页面最顶部（window.scrollY <= 2）时，继续向上滚动滚轮触发平滑返回品牌封面
+  if (window.scrollY <= 2 && e.deltaY < -20) {
+    topWheelAccumulator += Math.abs(e.deltaY)
+    if (wheelResetTimer) clearTimeout(wheelResetTimer)
+    wheelResetTimer = setTimeout(() => {
+      topWheelAccumulator = 0
+    }, 300)
+
+    if (topWheelAccumulator > 30) {
+      if (isNavigatingToCover) return
+      isNavigatingToCover = true
+
+      // 优雅下拉幕布动效，平滑过渡至封面
+      if (heroSectionRef.value) {
+        gsap.to(heroSectionRef.value, {
+          y: 60,
+          opacity: 0.85,
+          duration: 0.35,
+          ease: 'power2.out',
+          onComplete: () => {
+            router.push('/cover')
+          }
+        })
+      } else {
+        router.push('/cover')
+      }
+    }
+  } else {
+    topWheelAccumulator = 0
+  }
+}
+
+let touchStartY = 0
+function handleTouchStartToCover(e) {
+  if (e.touches && e.touches.length > 0) {
+    touchStartY = e.touches[0].clientY
+  }
+}
+
+function handleTouchEndToCover(e) {
+  if (window.scrollY <= 2 && e.changedTouches && e.changedTouches.length > 0) {
+    const diffY = e.changedTouches[0].clientY - touchStartY
+    if (diffY > 60) {
+      if (isNavigatingToCover) return
+      isNavigatingToCover = true
+      router.push('/cover')
+    }
+  }
+}
+
 onMounted(() => {
+  // 首屏立即启动默认双展品轮播与顶部上滑手势
+  startBannerAutoPlay()
+  window.addEventListener('wheel', handleWheelToCover, { passive: true })
+  window.addEventListener('touchstart', handleTouchStartToCover, { passive: true })
+  window.addEventListener('touchend', handleTouchEndToCover, { passive: true })
+
   siteStore.loadPublic()
     .then(() => {
       startBannerAutoPlay()
@@ -652,6 +737,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('wheel', handleWheelToCover)
+  window.removeEventListener('touchstart', handleTouchStartToCover)
+  window.removeEventListener('touchend', handleTouchEndToCover)
+  if (wheelResetTimer) clearTimeout(wheelResetTimer)
   if (bannerTimer) clearInterval(bannerTimer)
   if (cleanupPointerListener) cleanupPointerListener()
   if (textEntranceTl) textEntranceTl.kill()

@@ -43,7 +43,7 @@ export class SupportMessage {
   @Column({ type: 'text' })
   content!: string
 
-  @Column({ type: 'enum', enum: MessageStatus, default: MessageStatus.PENDING })
+  @Column({ type: 'varchar', length: 32, default: MessageStatus.PENDING })
   status!: MessageStatus
 
   @Column({ name: 'handle_note', type: 'varchar', length: 255, nullable: true })
@@ -78,7 +78,7 @@ export class SupportFaq {
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number
 
-  @Column({ type: 'enum', enum: FaqStatus, default: FaqStatus.PUBLISHED })
+  @Column({ type: 'varchar', length: 32, default: FaqStatus.PUBLISHED })
   status!: FaqStatus
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
@@ -106,13 +106,13 @@ export class SupportDownload {
   @Column({ name: 'cover_image', type: 'varchar', length: 255, nullable: true })
   coverImage!: string | null
 
-  @Column({ type: 'enum', enum: DownloadVisibility, default: DownloadVisibility.PUBLIC })
+  @Column({ type: 'varchar', length: 32, default: DownloadVisibility.PUBLIC })
   visibility!: DownloadVisibility
 
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number
 
-  @Column({ type: 'enum', enum: FaqStatus, default: FaqStatus.PUBLISHED })
+  @Column({ type: 'varchar', length: 32, default: FaqStatus.PUBLISHED })
   status!: FaqStatus
 
   @Column({ name: 'download_count', type: 'int', default: 0 })

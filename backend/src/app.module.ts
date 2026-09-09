@@ -17,6 +17,7 @@ import { Article } from './modules/content/entities/article.entity'
 import { ArticleCategory } from './modules/content/entities/article-category.entity'
 import { Page } from './modules/content/entities/page.entity'
 import { SupportMessage, SupportFaq, SupportDownload } from './modules/support/support.entity'
+import * as path from 'path'
 import { SiteConfig } from './modules/operation/site-config.entity'
 import { Banner } from './modules/operation/banner.entity'
 import { HealthController } from './health.controller'
@@ -25,15 +26,10 @@ import { HealthController } from './health.controller'
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      // 延迟到 Nest 初始化时读取环境变量，确保 e2e 可在应用启动前注入独立测试库配置。
-      useFactory: () => ({
-        type: 'mysql' as const,
-        host: process.env.DB_HOST || '127.0.0.1',
-        port: Number(process.env.DB_PORT || 3306),
-        username: process.env.DB_USER || process.env.DB_USERNAME || 'root',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || process.env.DB_DATABASE || 'wemove_portal',
-        entities: [
+      // 延迟到 Nest 初始化时读取环境变量，支持 SQLite（无本地 MySQL 时自动降级）与 MySQL
+      useFactory: () => {
+        const useSqlite = process.env.DB_TYPE === 'sqlite' || !process.env.DB_HOST || process.env.DB_TYPE !== 'mysql'
+        const entities = [
           Product,
           ProductCategory,
           User,
@@ -48,12 +44,29 @@ import { HealthController } from './health.controller'
           SupportDownload,
           SiteConfig,
           Banner
-        ],
-        // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
-        synchronize: false,
-        timezone: 'Z',
-        charset: 'utf8mb4_unicode_ci'
-      })
+        ]
+        if (useSqlite) {
+          return {
+            type: 'sqlite' as const,
+            database: process.env.DB_DATABASE || path.resolve(process.cwd(), 'wemove.sqlite'),
+            entities,
+            synchronize: false
+          }
+        }
+        return {
+          type: 'mysql' as const,
+          host: process.env.DB_HOST || '127.0.0.1',
+          port: Number(process.env.DB_PORT || 3306),
+          username: process.env.DB_USER || process.env.DB_USERNAME || 'root',
+          password: process.env.DB_PASSWORD || '',
+          database: process.env.DB_NAME || process.env.DB_DATABASE || 'wemove_portal',
+          entities,
+          // 数据库结构由 SQL 迁移维护，禁止启动时自动改表。
+          synchronize: false,
+          timezone: 'Z',
+          charset: 'utf8mb4_unicode_ci'
+        }
+      }
     }),
     CommonModule,
     IdentityModule,

@@ -2,9 +2,17 @@ import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { configureApp } from './app-setup'
+import { ensureSqliteDatabase } from './database/sqlite-init'
+import * as path from 'path'
 
 /** 生产入口：装配细节见 app-setup.ts（与 e2e 测试共用，保证行为一致） */
 async function bootstrap() {
+  const useSqlite = process.env.DB_TYPE === 'sqlite' || !process.env.DB_HOST || process.env.DB_TYPE !== 'mysql'
+  if (useSqlite) {
+    const dbPath = process.env.DB_DATABASE || path.resolve(process.cwd(), 'wemove.sqlite')
+    await ensureSqliteDatabase(dbPath)
+  }
+
   const app = await NestFactory.create(AppModule)
   configureApp(app)
 
