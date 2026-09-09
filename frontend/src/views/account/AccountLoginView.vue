@@ -59,36 +59,6 @@
         <router-link :to="{ name: 'AccountResetPassword' }">忘记密码？</router-link>
         <router-link to="/dealers/apply">申请成为经销商</router-link>
       </div>
-
-      <!-- 开发预览：仅开发构建可见，用于界面联调，不代表真实权限 -->
-      <template v-if="IS_DEV">
-        <el-divider>开发预览（不产生真实权限）</el-divider>
-        <div class="preview-tip">
-          预览各身份的界面样式。生产构建不存在此区域，权限一律以服务端会话为准。
-        </div>
-        <div class="preview-cards">
-          <div
-            v-for="role in previewRoles"
-            :key="role.key"
-            class="preview-card"
-            :class="{ active: userStore.currentRole === role.key }"
-            @click="applyPreview(role.key)"
-          >
-            <div class="preview-name">{{ role.name }}</div>
-            <div class="preview-desc">{{ role.desc }}</div>
-          </div>
-        </div>
-        <el-button
-          v-if="userStore.isPreviewActive"
-          link
-          type="primary"
-          size="small"
-          class="preview-clear"
-          @click="applyPreview(null)"
-        >
-          退出预览，恢复真实会话
-        </el-button>
-      </template>
     </div>
   </div>
 </template>
@@ -102,7 +72,6 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
-import { IS_DEV } from '../../config/env'
 
 const route = useRoute()
 const router = useRouter()
@@ -111,12 +80,6 @@ const userStore = useUserStore()
 const form = reactive({ identifier: '', password: '' })
 const submitting = ref(false)
 const formError = ref(null)
-
-const previewRoles = [
-  { key: 'USER', name: '普通买家', desc: '零售浏览与下单界面' },
-  { key: 'DEALER', name: '认证经销商', desc: '经销商工作台界面预览' },
-  { key: 'ADMIN', name: '平台管理员', desc: '运营后台界面预览' }
-]
 
 function fieldError(name) {
   const errs = formError.value?.fieldErrors?.[name]
@@ -140,13 +103,6 @@ async function handleLogin() {
     type: 'error',
     message: error?.message || '登录失败，请稍后重试',
     fieldErrors: error?.fieldErrors || null
-  }
-}
-
-function applyPreview(roleKey) {
-  userStore.switchRole(roleKey)
-  if (route.query.redirect && userStore.isPreviewActive) {
-    router.push(String(route.query.redirect))
   }
 }
 </script>
@@ -202,52 +158,5 @@ function applyPreview(roleKey) {
 .login-links a {
   color: var(--primary-color);
   font-weight: 600;
-}
-
-.preview-tip {
-  font-size: 12px;
-  color: var(--text-light);
-  margin-bottom: 12px;
-}
-
-.preview-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.preview-card {
-  border: 1.5px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 10px 8px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.preview-card:hover {
-  border-color: var(--primary-color);
-}
-
-.preview-card.active {
-  border-color: var(--primary-color);
-  background: var(--primary-light);
-}
-
-.preview-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.preview-desc {
-  font-size: 11px;
-  color: var(--text-light);
-  margin-top: 2px;
-}
-
-.preview-clear {
-  margin-top: 10px;
-  width: 100%;
 }
 </style>

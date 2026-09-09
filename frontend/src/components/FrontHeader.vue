@@ -2,7 +2,7 @@
   <header class="site-header" :class="{ 'is-scrolled': isScrolled }">
     <div class="header-bar">
       <!-- Brand Logo -->
-      <router-link to="/" class="header-logo">
+      <router-link to="/home" class="header-logo">
         <img :src="siteStore.logoUrl" :alt="`${siteStore.siteName} Logo`" />
         <div class="brand-text">
           <span class="brand-name">{{ siteStore.siteName }}</span>
@@ -12,7 +12,11 @@
 
       <!-- Central Main Navigation -->
       <nav class="header-nav">
-        <router-link to="/" class="hn-link">首页</router-link>
+        <router-link to="/cover" class="hn-link cover-nav-link" title="查看全屏品牌封面">
+          <span class="nav-sparkle">✦</span>
+          <span>品牌封面</span>
+        </router-link>
+        <router-link to="/home" class="hn-link">首页</router-link>
         <router-link to="/products" class="hn-link">玩具品类</router-link>
         <router-link to="/furniture" class="hn-link">家具定制</router-link>
         <router-link to="/woodlab" class="hn-link">中试打样</router-link>
@@ -27,16 +31,16 @@
           <transition name="el-zoom-in-top">
             <div v-show="showDrop" class="hn-drop">
               <router-link to="/stem" class="hn-drop-link" @click="showDrop = false">
-                🌱 STEM教育
+                STEM教育
               </router-link>
               <router-link to="/library" class="hn-drop-link" @click="showDrop = false">
-                📚 科研研发
+                科研研发
               </router-link>
               <router-link to="/charity" class="hn-drop-link" @click="showDrop = false">
-                🤝 公益项目
+                公益项目
               </router-link>
               <router-link to="/dream" class="hn-drop-link" @click="showDrop = false">
-                ✨ 匠心筑梦
+                匠心筑梦
               </router-link>
             </div>
           </transition>
@@ -102,7 +106,8 @@
     <!-- Mobile Drawer Nav -->
     <el-drawer v-model="mobileMenuOpen" title="网站导航" direction="ltr" size="280px" append-to-body>
       <div class="mobile-nav-links">
-        <router-link to="/" class="m-link" @click="mobileMenuOpen = false">首页</router-link>
+        <router-link to="/cover" class="m-link" @click="mobileMenuOpen = false">✦ 品牌封面</router-link>
+        <router-link to="/home" class="m-link" @click="mobileMenuOpen = false">首页</router-link>
         <router-link to="/products" class="m-link" @click="mobileMenuOpen = false">玩具品类</router-link>
         <router-link to="/furniture" class="m-link" @click="mobileMenuOpen = false">家具定制</router-link>
         <router-link to="/woodlab" class="m-link" @click="mobileMenuOpen = false">中试打样</router-link>
@@ -179,7 +184,7 @@ function openSearch() {
 }
 
 function goLogin() {
-  router.push({ path: '/login', query: route.path === '/' ? {} : { redirect: route.fullPath } })
+  router.push({ path: '/login', query: ['/', '/home', '/cover'].includes(route.path) ? {} : { redirect: route.fullPath } })
 }
 
 function handleUserCommand(cmd) {
@@ -201,7 +206,7 @@ async function handleLogout() {
   } else {
     ElMessage.error(error?.message || '退出失败，请稍后重试')
   }
-  router.push('/')
+  router.push('/home')
 }
 
 function mobileLogout() {
@@ -255,5 +260,20 @@ function mobileLogout() {
   font-size: 14px;
   color: var(--text-muted);
   padding: 6px 12px 6px 24px;
+}
+
+.cover-nav-link {
+  color: #A67C52;
+  font-weight: 600;
+  gap: 5px;
+}
+
+.cover-nav-link:hover {
+  color: #8C6641;
+}
+
+.nav-sparkle {
+  color: #C86446;
+  font-size: 11px;
 }
 </style>

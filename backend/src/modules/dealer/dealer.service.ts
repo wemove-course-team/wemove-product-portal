@@ -17,6 +17,8 @@ export class DealerService {
   ) {}
 
   async create(user: User, input: CreateDealerApplicationDto) {
+    // SQLite 不支持悲观行锁（e2e 演示路径），MySQL 下保留锁串行化并发申请
+    const canLock = (this.dataSource?.options as any)?.type !== 'sqlite'
     return this.dataSource.transaction(async (manager) => {
       const userRepo = manager.getRepository(User)
       const applicationRepo = manager.getRepository(DealerApplication)
@@ -25,7 +27,7 @@ export class DealerService {
       // 锁住用户行，串行化同一用户的并发申请检查。
       const lockedUser = await userRepo.findOne({
         where: { id: userId },
-        lock: { mode: 'pessimistic_write' }
+        ...(canLock ? { lock: { mode: 'pessimistic_write' as const } } : {})
       })
       if (!lockedUser) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '用户不存在' })
 
@@ -80,13 +82,14 @@ export class DealerService {
   }
 
   async review(id: string, input: ReviewDealerApplicationDto) {
+    const canLock = (this.dataSource?.options as any)?.type !== 'sqlite'
     return this.dataSource.transaction(async (manager) => {
       const applicationRepo = manager.getRepository(DealerApplication)
       const companyRepo = manager.getRepository(DealerCompany)
       const userRepo = manager.getRepository(User)
       const application = await applicationRepo.findOne({
         where: { id },
-        lock: { mode: 'pessimistic_write' }
+        ...(canLock ? { lock: { mode: 'pessimistic_write' as const } } : {})
       })
 
       if (!application) {

@@ -434,9 +434,9 @@ const compareTableData = computed(() => {
 
 <style scoped>
 .page-header {
-  background: var(--bg-light);
-  border-bottom: 1px solid var(--border-color);
-  padding: 40px 24px;
+  background: #F5EFE6;
+  border-bottom: 1px solid rgba(166, 124, 82, 0.12);
+  padding: 44px 24px;
 }
 
 .header-inner {
@@ -445,15 +445,17 @@ const compareTableData = computed(() => {
 }
 
 .page-title {
-  font-size: 30px;
+  font-family: var(--font-serif);
+  font-size: 32px;
   font-weight: 700;
-  color: var(--text-color);
+  color: #1F1E1B;
   margin-bottom: 8px;
+  letter-spacing: -0.01em;
 }
 
 .page-subtitle {
   font-size: 15px;
-  color: var(--text-muted);
+  color: rgba(31, 30, 27, 0.65);
 }
 
 .workshop-body {
@@ -474,16 +476,19 @@ const compareTableData = computed(() => {
 
 .filter-group {
   margin-bottom: 24px;
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(166, 124, 82, 0.12);
+  border-radius: 18px;
+  padding: 20px 18px;
+  box-shadow: 0 4px 16px rgba(166, 124, 82, 0.04);
 }
 
 .filter-heading {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-color);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: #1F1E1B;
   margin-bottom: 12px;
 }
 
@@ -499,22 +504,22 @@ const compareTableData = computed(() => {
   background: transparent;
   text-align: left;
   font-family: inherit;
-  font-size: 13px;
-  color: var(--text-muted);
-  padding: 6px 10px;
-  border-radius: 6px;
+  font-size: 13.5px;
+  color: rgba(31, 30, 27, 0.7);
+  padding: 8px 12px;
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .filter-radio-item:hover {
-  background: var(--bg-light);
-  color: var(--text-color);
+  background: #FAF7F2;
+  color: #1F1E1B;
 }
 
 .filter-radio-item.active {
-  background: var(--primary-light);
-  color: var(--primary-color);
+  background: #C86446;
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -574,18 +579,21 @@ const compareTableData = computed(() => {
 }
 
 .product-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(166, 124, 82, 0.12);
+  border-radius: 20px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.25s ease;
+  box-shadow: 0 4px 18px rgba(166, 124, 82, 0.05);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
 }
 
 .product-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-border);
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(166, 124, 82, 0.12);
+  border-color: rgba(166, 124, 82, 0.25);
 }
 
 .product-thumb {

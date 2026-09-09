@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import CoverView from '../views/CoverView.vue'
 import HomeView from '../views/HomeView.vue'
 import { useUserStore } from '../stores/user'
 
@@ -17,8 +18,22 @@ import { useUserStore } from '../stores/user'
 
 const routes = [
   // ---------------------------------- 公开区 ----------------------------------
+  // 品牌画册级独立全屏封面（无 Header / 无 Footer，纯净全屏沉浸画幅）
   {
     path: '/',
+    name: 'Cover',
+    component: CoverView,
+    meta: { zone: 'public', hideHeader: true, hideFooter: true }
+  },
+  {
+    path: '/cover',
+    name: 'CoverDirect',
+    component: CoverView,
+    meta: { zone: 'public', hideHeader: true, hideFooter: true }
+  },
+  // 官网门户首页（自然文档流排版，无黑条，优雅磨砂悬浮顶栏）
+  {
+    path: '/home',
     name: 'Home',
     component: HomeView,
     meta: { zone: 'public' }
@@ -84,8 +99,7 @@ const routes = [
   {
     path: '/electronic',
     name: 'Electronic',
-    component: () => import('../views/support/DownloadView.vue'),
-    props: { category: 'manual', pageTitle: '电子说明书' },
+    component: () => import('../views/ContentPage.vue'),
     meta: { zone: 'public' }
   },
   // 新闻动态列表与详情（#88 MVP-04）

@@ -1,12 +1,13 @@
 <template>
   <footer class="site-footer">
     <div class="footer-content">
-      <router-link to="/" class="footer-logo">
+      <router-link to="/home" class="footer-logo">
         {{ siteStore.siteName }}
       </router-link>
 
       <nav class="footer-nav">
-        <router-link to="/">品牌首页</router-link>
+        <router-link to="/cover">品牌封面</router-link>
+        <router-link to="/home">品牌首页</router-link>
         <router-link to="/products">益智玩具</router-link>
         <router-link to="/furniture">家具定制</router-link>
         <router-link to="/woodlab">中试打样</router-link>

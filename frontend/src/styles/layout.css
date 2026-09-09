@@ -2,34 +2,49 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: var(--bg-color);
   overflow-x: clip;
 }
 
-/* Header —— 磨砂玻璃顶栏（ Airbnb 式：干净画布 + 细发丝线 + 药丸导航） */
+/* Header —— 悬浮胶囊导航（Galaxy UI 极简磨砂胶囊） */
 .site-header {
   position: sticky;
-  top: 0;
+  top: 14px;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-color);
-  transition: box-shadow 0.35s ease;
+  padding: 0 16px;
+  margin-bottom: 8px;
+  background: transparent;
+  transition: transform 0.3s ease;
 }
 
-.site-header.is-scrolled {
-  box-shadow: 0 4px 20px rgba(61, 50, 38, 0.08);
+/* 独立全屏画册封面页样式 */
+.site-root.is-cover-page {
+  background: #141311;
+  overflow: hidden;
 }
 
 .header-bar {
-  max-width: 1280px;
+  max-width: 1240px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 70px;
-  padding: 0 28px;
+  height: 64px;
+  padding: 0 24px;
   gap: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(166, 124, 82, 0.14);
+  border-radius: var(--radius-full);
+  box-shadow: 0 6px 24px rgba(61, 50, 38, 0.06);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.site-header.is-scrolled .header-bar {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 32px rgba(61, 50, 38, 0.12);
+  border-color: rgba(166, 124, 82, 0.2);
 }
 
 /* Logo */

@@ -52,11 +52,14 @@ export class SupportService {
         })
       }
 
-      const latest = await repo.createQueryBuilder('message')
+      // SQLite 不支持悲观行锁，仅 MySQL 下加锁生成流水号
+      let queryBuilder = repo.createQueryBuilder('message')
         .where('message.code LIKE :prefix', { prefix: `${prefix}%` })
         .orderBy('message.id', 'DESC')
-        .setLock('pessimistic_write')
-        .getOne()
+      if ((this.dataSource?.options as any)?.type !== 'sqlite') {
+        queryBuilder = queryBuilder.setLock('pessimistic_write')
+      }
+      const latest = await queryBuilder.getOne()
       const previous = latest ? Number(latest.code.slice(-4)) : 0
       const message = repo.create({
         code: `${prefix}${String(previous + 1).padStart(4, '0')}`,

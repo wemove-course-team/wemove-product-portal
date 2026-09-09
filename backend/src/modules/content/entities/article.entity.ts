@@ -33,7 +33,7 @@ export class Article {
   @Column({ type: 'varchar', length: 500, nullable: true })
   summary: string | null
 
-  @Column({ type: 'mediumtext', nullable: true })
+  @Column({ type: 'text', nullable: true })
   content: string | null
 
   @Column({

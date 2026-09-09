@@ -11,7 +11,20 @@
     >
       <!-- Dynamic Sections from Original Website Structure -->
       <div v-if="sections && sections.length > 0" class="sections-stream">
-      <template v-for="(sec, idx) in sections" :key="idx">
+        <!-- Optional Document Header for pages without Cover, e.g. 电子说明书 -->
+        <section v-if="pageKey === 'electronic'" class="doc-page-header">
+          <div class="section-container" style="max-width: 960px; text-align: center;">
+            <div class="doc-badge">
+              <span class="badge-sparkle">✦</span>
+              <span>WEMOVE MANUAL</span>
+              <span class="badge-sparkle">✦</span>
+            </div>
+            <h1 class="doc-title">{{ pageData?.title || '产品电子说明书' }}</h1>
+            <p class="doc-subtitle">官方实木积木轨道结构图解与拼装指南 · 支持文末直接下载完整 PDF 手册</p>
+          </div>
+        </section>
+
+        <template v-for="(sec, idx) in sections" :key="idx">
         <!-- 1. COVER / BANNER -->
         <section
           v-if="sec.type === 'Cover'"
@@ -58,23 +71,32 @@
           </div>
         </section>
 
-        <!-- 3. IMAGE GRID (多图精美画廊) -->
-        <section v-else-if="sec.type === 'ImageGrid'" class="sec-image-grid">
+        <!-- 3. IMAGE GRID (多图精美画廊 / 电子说明书页面) -->
+        <section
+          v-else-if="sec.type === 'ImageGrid'"
+          class="sec-image-grid"
+          :class="{ 'is-single-col': (sec.config?.columns || 3) === 1 }"
+        >
           <div class="section-container">
             <div
               class="img-grid-wrap"
+              :class="`cols-${sec.config?.columns || 3}`"
               :style="{
-                gridTemplateColumns: `repeat(${sec.config.columns || 3}, 1fr)`,
-                gap: (sec.config.gap || 16) + 'px'
+                gridTemplateColumns: `repeat(${sec.config?.columns || 3}, 1fr)`,
+                gap: (sec.config?.gap || 16) + 'px'
               }"
             >
               <div
                 v-for="(imgItem, imgIdx) in sec.config.images"
                 :key="imgIdx"
                 class="img-card"
-                :style="{ borderRadius: (sec.config.borderRadius || 10) + 'px' }"
+                :style="{ borderRadius: (sec.config?.borderRadius || 10) + 'px' }"
               >
-                <img :src="getImageUrl(imgItem)" alt="画廊实拍" />
+                <img
+                  :src="getImageUrl(imgItem)"
+                  :alt="sec.title || '说明书与画廊实拍'"
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
@@ -146,7 +168,7 @@
     </div>
 
     <!-- Special Furniture Appointment Callout (if on /furniture) -->
-    <div v-if="routePath === '/furniture'" class="furniture-cta-section">
+    <div v-if="route.path === '/furniture'" class="furniture-cta-section">
       <div class="section-container">
         <div class="furniture-cta-card">
           <div class="cta-info">
@@ -237,6 +259,17 @@ import { contentApi } from '../services/content'
 import { formatSafeText } from '../utils/text'
 import { useProductStore } from '../stores/product'
 import { useUserStore } from '../stores/user'
+import defaultPageSections from '../data/pageSections.json'
+
+const PAGE_TITLES = {
+  furniture: '原木家具',
+  woodlab: '中试打样',
+  stem: 'STEM教育',
+  library: '科研研发',
+  charity: '公益项目',
+  dream: '匠心筑梦',
+  electronic: '电子制作'
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -262,7 +295,14 @@ async function fetchPage() {
     const res = await contentApi.getPage(pageKey.value)
     pageData.value = res.data
   } catch (err) {
-    if (err.status === 404 || err.code === 'NOT_FOUND_404') {
+    if (defaultPageSections && defaultPageSections[pageKey.value]) {
+      pageData.value = {
+        slug: pageKey.value,
+        title: PAGE_TITLES[pageKey.value] || '',
+        sections: defaultPageSections[pageKey.value]
+      }
+      notFound.value = false
+    } else if (err.status === 404 || err.code === 'NOT_FOUND_404') {
       notFound.value = true
     } else {
       error.value = err
@@ -376,6 +416,7 @@ function submitAppointment() {
   font-weight: 700;
   margin-bottom: 12px;
   letter-spacing: 1px;
+  color: #ffffff;
 }
 
 .cover-subtitle {
@@ -443,33 +484,103 @@ function submitAppointment() {
   margin-top: 24px;
 }
 
-/* 3. IMAGE GRID (画廊) */
+/* 3. IMAGE GRID (画廊与说明书图解) */
 .sec-image-grid {
-  padding: 40px 0 60px;
+  padding: 30px 0 40px;
+}
+
+.sec-image-grid.is-single-col {
+  padding: 10px 0;
 }
 
 .img-grid-wrap {
   display: grid;
+  width: 100%;
+}
+
+.img-grid-wrap.cols-1 {
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .img-card {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  background: #f7f7f7;
+  background: #ffffff;
+  border-radius: 10px;
 }
 
-.img-card img {
+.sec-image-grid.is-single-col .img-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* 多列画廊网格图片：保持整齐卡片高度与微交互 */
+.img-grid-wrap:not(.cols-1) .img-card img {
   width: 100%;
-  height: 100%;
-  min-height: 240px;
-  max-height: 320px;
+  height: 280px;
   object-fit: cover;
   display: block;
   transition: transform 0.35s ease;
 }
 
-.img-card:hover img {
-  transform: scale(1.04);
+.img-grid-wrap:not(.cols-1) .img-card:hover img {
+  transform: scale(1.03);
+}
+
+/* 单列模式（如电子说明书全幅图解）：100% 完整显示整张图，绝对不裁剪任何上下边缘！ */
+.img-grid-wrap.cols-1 .img-card img,
+.sec-image-grid.is-single-col .img-card img {
+  width: 100%;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  display: block;
+  transition: none !important;
+}
+
+.img-grid-wrap.cols-1 .img-card:hover img,
+.sec-image-grid.is-single-col .img-card:hover img {
+  transform: none !important;
+}
+
+/* 说明书文档顶部排版 */
+.doc-page-header {
+  padding: 42px 24px 24px;
+  text-align: center;
+}
+
+.doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  background: rgba(166, 124, 82, 0.08);
+  border: 1px solid rgba(166, 124, 82, 0.2);
+  border-radius: 9999px;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #a67c52;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+
+.doc-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #2c2520;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+  font-family: var(--font-serif, "Noto Serif SC", serif);
+}
+
+.doc-subtitle {
+  font-size: 15px;
+  color: #796e65;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
 /* 4. HEADING */

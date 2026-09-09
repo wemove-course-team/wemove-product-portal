@@ -26,7 +26,7 @@ export class Page {
 
   @Column({
     name: 'sections_json',
-    type: 'mediumtext',
+    type: 'text',
     nullable: true,
     comment: '页面分块内容 JSON（结构沿用前端 pageSections.json）'
   })

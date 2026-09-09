@@ -91,7 +91,7 @@ export class DealerWorkspaceService {
          VALUES (?, ?, ?, 'SUBMITTED', ?, ?)`,
         [quoteNo, context.companyId, Number(user.id), input.requestedDeliveryDate || null, input.notes?.trim() || null]
       )
-      const quoteId = Number(result.insertId)
+      const quoteId = this.insertIdOf(result)
       for (const item of input.items) {
         const product = products.get(item.productId)!
         await manager.query(
@@ -209,7 +209,7 @@ export class DealerWorkspaceService {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [context.companyId, input.label.trim(), input.recipientName.trim(), input.phone.trim(), input.province.trim(), input.city.trim(), input.district.trim(), input.detailAddress.trim(), input.addressType, input.isDefault ? 1 : 0]
       )
-      const rows = await manager.query('SELECT * FROM dealer_address WHERE id = ? LIMIT 1', [result.insertId])
+      const rows = await manager.query('SELECT * FROM dealer_address WHERE id = ? LIMIT 1', [this.insertIdOf(result)])
       return this.addressDto(rows[0])
     })
   }
@@ -234,7 +234,12 @@ export class DealerWorkspaceService {
   async decideQuote(quoteNo: string, input: AdminQuoteDecisionDto) {
     if (input.action === 'QUOTED') this.assertNotPast(input.validUntil, '报价有效期')
     return this.dataSource.transaction(async (manager) => {
-      const rows = await manager.query('SELECT id, status FROM dealer_quote WHERE quote_no = ? FOR UPDATE', [quoteNo])
+      // SQLite 不支持 SELECT ... FOR UPDATE，只有 MySQL/PostgreSQL 需要显式行锁
+      const lockClause = (this.dataSource?.options as any)?.type === 'sqlite' ? '' : ' FOR UPDATE'
+      const rows = await manager.query(
+        `SELECT id, status FROM dealer_quote WHERE quote_no = ?${lockClause}`,
+        [quoteNo]
+      )
       const quote = rows[0]
       if (!quote) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '报价单不存在' })
       if (quote.status !== 'SUBMITTED') throw new ConflictException({ code: 'CONFLICT_409', message: '只有已提交的报价请求可以回复' })
@@ -398,6 +403,12 @@ export class DealerWorkspaceService {
     if (!value) return
     const today = new Date().toISOString().slice(0, 10)
     if (value < today) throw new BadRequestException({ code: 'VALIDATION_400', message: `${label}不能早于今天` })
+  }
+
+  /** MySQL 返回 insertId，SQLite 的 INSERT 直接返回 lastID 数字，统一取自增主键。 */
+  private insertIdOf(result: any): number {
+    if (typeof result === 'number') return result
+    return Number(result?.insertId ?? result?.lastID ?? result?.lastId ?? 0)
   }
 
   private number(prefix: 'QUO' | 'ORD') {

@@ -1,37 +1,105 @@
 <template>
   <div class="home-container">
-    <!-- 1. 后台可维护的首页 Banner；无启用项时保留品牌主张兜底。 -->
-    <section v-if="siteStore.banners.length" class="hero-carousel-section">
-      <el-carousel :interval="5600" :autoplay="siteStore.banners.length > 1" arrow="always" height="540px">
-        <el-carousel-item v-for="banner in siteStore.banners" :key="banner.id">
-          <a :href="banner.linkUrl || '/products'" class="hero-banner" :style="heroBannerStyle(banner)">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-              <div class="hero-tag">{{ siteStore.siteName }}</div>
-              <h1 class="hero-title">{{ banner.title }}</h1>
-              <span class="btn-primary">了解更多 <el-icon><Right /></el-icon></span>
+    <!-- 1. 核心 Hero 舞台：品牌主张 / 轮播切换 / 底层环境弥散光晕视差 -->
+    <section class="hero-section" ref="heroSectionRef">
+          <!-- 底层高清实木大图视差背景 (清晰无重度模糊，随鼠标大范围平滑移动) -->
+          <div class="hero-ambient-glow">
+            <div class="ambient-img-wrapper" ref="ambientGlowRef">
+              <transition name="ambient-fade">
+                <img
+                  :key="currentHeroImage"
+                  :src="currentHeroImage"
+                  class="ambient-img"
+                  alt=""
+                  aria-hidden="true"
+                />
+              </transition>
             </div>
-          </a>
-        </el-carousel-item>
-      </el-carousel>
-    </section>
-    <section v-else class="hero-section">
-      <div class="hero-overlay"></div>
-      <div class="hero-content">
-        <div class="hero-tag">WEMOVE SPORTS & LIVING</div>
-        <h1 class="hero-title">惟木匠心 · 传承自然与造物之美</h1>
-        <p class="hero-subtitle">
-          专为家庭与教育机构打造的天然实木运动益智游戏、榫卯积木与全屋实木定制
-        </p>
-        <div class="hero-cta-group">
-          <router-link to="/products" class="btn-primary">
-            <span>探索玩具系列</span>
-            <el-icon><Right /></el-icon>
-          </router-link>
-          <router-link to="/dealers/apply" class="btn-outline">
-            <span>经销商与大宗采购</span>
-            <el-icon><Tickets /></el-icon>
-          </router-link>
+          </div>
+
+          <!-- 视差背景网格层 -->
+          <div class="hero-bg-wrapper">
+            <div class="hero-bg-mesh"></div>
+          </div>
+
+          <div class="hero-stage-container">
+            <!-- 左侧：品牌叙事与 Banner 导流 -->
+            <div class="hero-left-content" ref="heroLeftContentRef">
+              <div class="hero-tag-badge" ref="heroTagBadgeRef">
+                <span class="tag-sparkle">✦</span>
+                <span>{{ currentBanner?.title ? 'FEATURED ARTISAN PIECE' : 'WEMOVE SPORTS & CRAFT' }}</span>
+              </div>
+
+              <h1 class="hero-title" ref="heroTitleRef">
+                <span
+                  v-for="(ch, idx) in titleChars"
+                  :key="idx"
+                  class="char"
+                  :style="ch === ' ' ? 'display: inline;' : 'display: inline-block;'"
+                >{{ ch }}</span>
+              </h1>
+
+              <p class="hero-subtitle" ref="heroSubtitleRef">
+                专为家庭与教育机构打造的天然实木运动益智游戏、榫卯积木与全屋实木定制。融汇物理力学探索与手工温润触感，让每一件天然木作陪伴成长。
+              </p>
+
+              <div class="hero-cta-group" ref="heroCtaGroupRef">
+                <router-link :to="currentBanner?.linkUrl || '/products'" class="btn-primary hero-btn">
+                  <span>探索玩具系列</span>
+                  <el-icon><Right /></el-icon>
+                </router-link>
+                <router-link to="/dealers/apply" class="btn-outline hero-btn">
+                  <span>经销商与商务合作</span>
+                  <el-icon><Tickets /></el-icon>
+                </router-link>
+              </div>
+
+              <!-- 轮播控制器：精选产品切换药丸 -->
+              <div v-if="effectiveBanners.length > 1" class="hero-banner-controls" ref="heroBannerControlsRef">
+                <button
+                  v-for="(b, idx) in effectiveBanners"
+                  :key="b.id"
+                  type="button"
+                  class="banner-pill"
+                  :class="{ 'is-active': activeBannerIndex === idx }"
+                  @click="selectBanner(idx)"
+                >
+                  <span class="pill-num">0{{ idx + 1 }}</span>
+                  <span class="pill-title">{{ b.title }}</span>
+                </button>
+              </div>
+            </div>
+
+        <!-- 右侧：扎实克制的实木展品画板 -->
+        <div class="hero-right-stage" ref="heroStageRef">
+          <!-- 核心展品画板 (稳重微浮动，取消夸张 3D Tilt) -->
+          <div
+            class="hero-art-card"
+            ref="heroCardRef"
+            @click="navigateToHeroTarget"
+            title="点击查看详情"
+          >
+            <div class="art-card-inner">
+              <img
+                :src="currentHeroImage"
+                :alt="currentBanner?.title || 'WEMOVE 实木玩具'"
+                class="art-card-img"
+              />
+              <div class="art-card-shine"></div>
+            </div>
+
+            <!-- 浮动微标 1 (限制在 ±8px 以内微浮动) -->
+            <div class="floating-badge badge-top" ref="badgeTopRef">
+              <span class="badge-icon">★</span>
+              <span class="badge-text">2026 匠心力作</span>
+            </div>
+
+            <!-- 浮动微标 2 (限制在 ±8px 以内微浮动) -->
+            <div class="floating-badge badge-bottom" ref="badgeBottomRef">
+              <span class="badge-icon">📐</span>
+              <span class="badge-text">精工榫卯 · 0甲醛环保</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -248,26 +316,289 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import gsap from 'gsap'
 import AsyncState from '../components/AsyncState.vue'
 import { homeApi } from '../services/home'
 import { useSiteStore } from '../stores/site'
 
 /**
- * 官网首页（#86 首页外壳）：品牌主张 / 业务分类 / 精选产品 / 经销商入口 / 品牌价值 / 最新动态。
- * - 精选产品与最新动态走真实公开接口（契约见 services/home.js），
- *   loading / error / empty 状态由 AsyncState 呈现，接口失败不回退本地假数据；
- * - 经销商价格等敏感字段不在公开 DTO 中，卡片只展示公开指导价；
- * - 决策 D9：加购入口未实现，全部以「查看详情」引导到产品页。
+ * 官网门户首页：品牌主张 / 展品轮播与微视差 / 业务分类 / 精选产品 / 经销商入口 / 品牌价值 / 最新动态。
  */
-const featuredLoading = ref(false)
+const router = useRouter()
 const siteStore = useSiteStore()
+
+const featuredLoading = ref(false)
 const featuredError = ref(null)
 const featuredProducts = ref([])
 
 const newsLoading = ref(false)
 const newsError = ref(null)
 const newsList = ref([])
+
+// Hero 舞台 DOM 引用
+const heroSectionRef = ref(null)
+const heroStageRef = ref(null)
+const heroCardRef = ref(null)
+const ambientGlowRef = ref(null)
+const badgeTopRef = ref(null)
+const badgeBottomRef = ref(null)
+
+// 左侧品牌叙事 DOM 引用
+const heroLeftContentRef = ref(null)
+const heroTagBadgeRef = ref(null)
+const heroTitleRef = ref(null)
+const heroSubtitleRef = ref(null)
+const heroCtaGroupRef = ref(null)
+const heroBannerControlsRef = ref(null)
+
+let textEntranceTl = null
+
+// 默认双展品（儿童实木保龄球套装 / 极简弧形摇摆平衡板），护航首屏即刻展示与自动轮播
+const defaultBanners = [
+  {
+    id: 1,
+    title: '儿童实木保龄球套装',
+    imageUrl: '/images/prod_20_1.jpg',
+    linkUrl: '/products'
+  },
+  {
+    id: 2,
+    title: '极简弧形摇摆平衡板',
+    imageUrl: '/images/prod_19_1.jpg',
+    linkUrl: '/products'
+  }
+]
+
+// Banner 与展品轮播控制
+const activeBannerIndex = ref(0)
+let bannerTimer = null
+
+const effectiveBanners = computed(() => {
+  // 后台只要配置了任意有效 Banner（含单个）都优先使用，空数组才回退默认展品；
+  // 自动轮播只在多于一张时启动（见 startBannerTimer）。
+  if (siteStore.banners && siteStore.banners.length > 0) {
+    return siteStore.banners
+  }
+  return defaultBanners
+})
+
+const currentBanner = computed(() => {
+  if (effectiveBanners.value && effectiveBanners.value.length > 0) {
+    return effectiveBanners.value[activeBannerIndex.value % effectiveBanners.value.length]
+  }
+  return defaultBanners[0]
+})
+
+const currentTitleText = computed(() => {
+  return currentBanner.value?.title ? currentBanner.value.title : '惟木匠心 · 传承自然与造物之美'
+})
+
+const titleChars = computed(() => {
+  return currentTitleText.value.split('')
+})
+
+const currentHeroImage = computed(() => {
+  return currentBanner.value?.imageUrl || '/images/prod_20_1.jpg'
+})
+
+function startBannerAutoPlay() {
+  if (bannerTimer) clearInterval(bannerTimer)
+  if (effectiveBanners.value && effectiveBanners.value.length > 1) {
+    bannerTimer = setInterval(() => {
+      activeBannerIndex.value = (activeBannerIndex.value + 1) % effectiveBanners.value.length
+      nextTick(() => {
+        playLeftContentEntrance()
+      })
+    }, 6000)
+  }
+}
+
+function selectBanner(idx) {
+  activeBannerIndex.value = idx
+  startBannerAutoPlay()
+  nextTick(() => {
+    playLeftContentEntrance()
+  })
+}
+
+function navigateToHeroTarget() {
+  const url = currentBanner.value?.linkUrl || '/products'
+  if (url.startsWith('/')) {
+    router.push(url)
+  } else {
+    window.location.href = url
+  }
+}
+
+let cleanupPointerListener = null
+
+/**
+ * 双重指针驱动交互（纯原生高性能 DOM 驱动）：
+ * 1. 底层大图视差：随全屏鼠标平滑位移（折半克制幅度：X: ±65px, Y: ±38px）。
+ * 2. 商品高清图模块 3D 倾斜：实时计算相对坐标与 rotateX/rotateY（折半幅度：maxTilt = 6deg）。
+ */
+function initPointerMovement() {
+  const maxTilt = 6
+
+  // 1. 全局鼠标移动：驱动底层大图与浮动徽标
+  const handleGlobalMouseMove = (e) => {
+    const glow = ambientGlowRef.value
+    if (glow) {
+      const normX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2)
+      const normY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2)
+      glow.style.transform = `translate3d(${(normX * 65).toFixed(1)}px, ${(normY * 38).toFixed(1)}px, 0)`
+    }
+
+    const bTop = badgeTopRef.value
+    const bBottom = badgeBottomRef.value
+    if (bTop || bBottom) {
+      const normX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2)
+      const normY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2)
+      if (bTop) {
+        bTop.style.transform = `translateZ(28px) translate3d(${(normX * 8).toFixed(1)}px, ${(normY * 6).toFixed(1)}px, 0)`
+      }
+      if (bBottom) {
+        bBottom.style.transform = `translateZ(28px) translate3d(${(normX * 6).toFixed(1)}px, ${(normY * 4).toFixed(1)}px, 0)`
+      }
+    }
+  }
+
+  const handleGlobalMouseLeave = () => {
+    const glow = ambientGlowRef.value
+    if (glow) {
+      glow.style.transform = 'translate3d(0px, 0px, 0px)'
+    }
+    const bTop = badgeTopRef.value
+    const bBottom = badgeBottomRef.value
+    if (bTop) bTop.style.transform = 'translateZ(28px) translate3d(0, 0, 0)'
+    if (bBottom) bBottom.style.transform = 'translateZ(28px) translate3d(0, 0, 0)'
+  }
+
+  // 2. 商品高清图模块 3D 倾斜（参考图二规范实现）：
+  const handleCardMouseMove = (e) => {
+    const card = heroCardRef.value
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const xPos = (e.clientX - rect.left) / rect.width
+    const yPos = (e.clientY - rect.top) / rect.height
+
+    const tiltX = ((yPos - 0.5) * -maxTilt).toFixed(2)
+    const tiltY = ((xPos - 0.5) * -maxTilt).toFixed(2)
+
+    card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`
+  }
+
+  const handleCardMouseLeave = () => {
+    const card = heroCardRef.value
+    if (!card) return
+    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)'
+  }
+
+  window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
+  document.addEventListener('mouseleave', handleGlobalMouseLeave)
+
+  const card = heroCardRef.value
+  if (card) {
+    card.addEventListener('mousemove', handleCardMouseMove, { passive: true })
+    card.addEventListener('mouseleave', handleCardMouseLeave)
+  }
+
+  cleanupPointerListener = () => {
+    window.removeEventListener('mousemove', handleGlobalMouseMove)
+    document.removeEventListener('mouseleave', handleGlobalMouseLeave)
+    if (card) {
+      card.removeEventListener('mousemove', handleCardMouseMove)
+      card.removeEventListener('mouseleave', handleCardMouseLeave)
+    }
+  }
+}
+
+/**
+ * 左侧叙事文本延迟半秒逐字错峰入场（OpenAI 风格流光错峰）
+ * 包含：✦ FEATURED ARTISAN PIECE、主标题、副标描述、CTA 按钮、01/02 药丸指示器
+ */
+function playLeftContentEntrance() {
+  if (textEntranceTl) {
+    textEntranceTl.kill()
+    textEntranceTl = null
+  }
+
+  // 延迟半秒后逐字错峰入场 (delay: 0.5s)
+  textEntranceTl = gsap.timeline({ delay: 0.5 })
+
+  // 1. 顶部小标：✦ FEATURED ARTISAN PIECE
+  if (heroTagBadgeRef.value) {
+    textEntranceTl.fromTo(
+      heroTagBadgeRef.value,
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
+    )
+  }
+
+  // 2. 主标题逐字错峰榫卯咬合入场：儿童实木保龄球套装 / 惟木匠心
+  const chars = heroTitleRef.value ? heroTitleRef.value.querySelectorAll('.char') : []
+  if (chars.length > 0) {
+    textEntranceTl.fromTo(
+      chars,
+      {
+        opacity: 0,
+        y: 35,
+        rotateX: -25,
+        transformOrigin: '0% 50% -40px'
+      },
+      {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        duration: 0.65,
+        stagger: 0.038,
+        ease: 'power3.out'
+      },
+      '-=0.25'
+    )
+  } else if (heroTitleRef.value) {
+    textEntranceTl.fromTo(
+      heroTitleRef.value,
+      { opacity: 0, y: 22 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
+      '-=0.25'
+    )
+  }
+
+  // 3. 副标流水优雅入场
+  if (heroSubtitleRef.value) {
+    textEntranceTl.fromTo(
+      heroSubtitleRef.value,
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' },
+      '-=0.35'
+    )
+  }
+
+  // 4. CTA 按钮组入场：[探索玩具系列] [经销商与商务合作]
+  const ctaButtons = heroCtaGroupRef.value ? heroCtaGroupRef.value.querySelectorAll('.hero-btn') : []
+  if (ctaButtons.length > 0) {
+    textEntranceTl.fromTo(
+      ctaButtons,
+      { opacity: 0, y: 24, scale: 0.94 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.12, ease: 'back.out(1.4)' },
+      '-=0.25'
+    )
+  }
+
+  // 5. 轮播指示药丸入场：01儿童实木保龄球套装 02极简弧形摇摆平衡板
+  const pills = heroBannerControlsRef.value ? heroBannerControlsRef.value.querySelectorAll('.banner-pill') : []
+  if (pills.length > 0) {
+    textEntranceTl.fromTo(
+      pills,
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: 'power2.out' },
+      '-=0.2'
+    )
+  }
+}
 
 async function loadFeatured() {
   featuredLoading.value = true
@@ -302,15 +633,102 @@ function formatDate(value) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function heroBannerStyle(banner) {
-  const safeUrl = String(banner?.imageUrl || '').replace(/["'\\\n\r]/g, '')
-  return { backgroundImage: `url("${safeUrl}")` }
+// 向上滚动返回品牌封面控制
+let isNavigatingToCover = false
+let topWheelAccumulator = 0
+let wheelResetTimer = null
+
+function handleWheelToCover(e) {
+  // 仅在页面最顶部（window.scrollY <= 2）时，继续向上滚动滚轮触发平滑返回品牌封面
+  if (window.scrollY <= 2 && e.deltaY < -20) {
+    topWheelAccumulator += Math.abs(e.deltaY)
+    if (wheelResetTimer) clearTimeout(wheelResetTimer)
+    wheelResetTimer = setTimeout(() => {
+      topWheelAccumulator = 0
+    }, 300)
+
+    if (topWheelAccumulator > 30) {
+      if (isNavigatingToCover) return
+      isNavigatingToCover = true
+
+      // 优雅下拉幕布动效，平滑过渡至封面
+      if (heroSectionRef.value) {
+        gsap.to(heroSectionRef.value, {
+          y: 60,
+          opacity: 0.85,
+          duration: 0.35,
+          ease: 'power2.out',
+          onComplete: () => {
+            router.push('/cover').catch(() => {})
+          }
+        })
+      } else {
+        router.push('/cover').catch(() => {})
+      }
+    }
+  } else {
+    topWheelAccumulator = 0
+  }
+}
+
+let touchStartY = 0
+function handleTouchStartToCover(e) {
+  if (e.touches && e.touches.length > 0) {
+    touchStartY = e.touches[0].clientY
+  }
+}
+
+function handleTouchEndToCover(e) {
+  if (window.scrollY <= 2 && e.changedTouches && e.changedTouches.length > 0) {
+    const diffY = e.changedTouches[0].clientY - touchStartY
+    if (diffY > 60) {
+      if (isNavigatingToCover) return
+      isNavigatingToCover = true
+      router.push('/cover').catch(() => {})
+    }
+  }
 }
 
 onMounted(() => {
-  siteStore.loadPublic().catch(() => undefined)
+  // 首屏立即启动默认双展品轮播与顶部上滑手势
+  startBannerAutoPlay()
+  window.addEventListener('wheel', handleWheelToCover, { passive: true })
+  window.addEventListener('touchstart', handleTouchStartToCover, { passive: true })
+  window.addEventListener('touchend', handleTouchEndToCover, { passive: true })
+
+  siteStore.loadPublic()
+    .then(() => {
+      startBannerAutoPlay()
+      nextTick(() => {
+        playLeftContentEntrance()
+      })
+    })
+    .catch(() => undefined)
+
   loadFeatured()
   loadNews()
+
+  nextTick(() => {
+    initPointerMovement()
+    playLeftContentEntrance()
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('wheel', handleWheelToCover)
+  window.removeEventListener('touchstart', handleTouchStartToCover)
+  window.removeEventListener('touchend', handleTouchEndToCover)
+  if (wheelResetTimer) clearTimeout(wheelResetTimer)
+  if (bannerTimer) clearInterval(bannerTimer)
+  if (cleanupPointerListener) cleanupPointerListener()
+  if (textEntranceTl) {
+    textEntranceTl.kill()
+    textEntranceTl = null
+  }
+  if (heroSectionRef.value) {
+    gsap.killTweensOf(heroSectionRef.value)
+  }
+  isNavigatingToCover = false
 })
 </script>
 
@@ -319,85 +737,380 @@ onMounted(() => {
   width: 100%;
 }
 
-.hero-carousel-section {
-  min-height: 540px;
-  background: var(--bg-light);
+/* 标题字符立体咬合与副标流水错峰入场 */
+:deep(.hero-title .char) {
+  display: inline-block;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
 }
 
-.hero-banner {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: 540px;
-  padding: 88px 24px;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+:deep(.hero-subtitle .char) {
+  display: inline-block;
+  will-change: transform, opacity;
 }
 
-.site-data-error {
-  max-width: 1180px;
-  margin: 18px auto 0;
+.hero-tag-badge,
+.hero-title,
+.hero-subtitle,
+.hero-cta-group,
+.hero-banner-controls {
+  opacity: 1; /* 基础可见，杜绝未触发空白 */
+  will-change: transform, opacity;
 }
 
-/* 1. Hero */
+/* 1. Hero 舞台 */
 .hero-section {
   position: relative;
-  min-height: 540px;
+  min-height: 600px;
   display: flex;
   align-items: center;
-  background: url('/images/prod_20_1.jpg') center/cover no-repeat;
-  padding: 88px 24px;
+  padding: 56px 24px 76px;
+  overflow: hidden;
+  background: var(--bg-body, #FAF7F2);
 }
 
-.hero-overlay {
+/* 底层环境高清大图视差背景 (Ambient Parallax) - 彻底去除模糊，高清质感呈现，大幅放大位移空间 */
+.hero-ambient-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0.02) 100%);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.82;
+  mask-image: linear-gradient(to right, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.52) 36%, rgba(0,0,0,0.92) 80%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.52) 36%, rgba(0,0,0,0.92) 80%);
 }
 
-.hero-content {
+.ambient-img-wrapper {
+  position: absolute;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  will-change: transform;
+  transform-origin: center center;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ambient-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: blur(10px) saturate(130%) brightness(1.02); /* 比上次 18px 更低更清晰，兼具柔和自然光晕与器物辨识度 */
+  transform: scale(1.15);
+}
+
+.ambient-fade-enter-active,
+.ambient-fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+
+.ambient-fade-enter-from,
+.ambient-fade-leave-to {
+  opacity: 0;
+}
+
+.hero-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-bg-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(166, 124, 82, 0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.45;
+}
+
+.hero-stage-container {
   position: relative;
   z-index: 2;
-  max-width: 680px;
+  max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 50px;
+  align-items: center;
 }
 
-.hero-tag {
-  display: inline-block;
-  font-size: 13px;
+.hero-left-content {
+  max-width: 640px;
+}
+
+.hero-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--accent-color);
-  letter-spacing: 2.5px;
-  margin-bottom: 14px;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  color: #A67C52;
+  letter-spacing: 2px;
+  margin-bottom: 22px;
+  background: rgba(166, 124, 82, 0.08);
+  border: 1px solid rgba(166, 124, 82, 0.18);
+  padding: 6px 16px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.tag-sparkle {
+  font-size: 13px;
+  color: #C86446;
 }
 
 .hero-title {
-  font-size: clamp(30px, 4.5vw, 44px);
-  font-weight: 600;
-  color: var(--text-color);
-  line-height: 1.22;
-  margin-bottom: 18px;
-  letter-spacing: -0.02em;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.85);
+  font-family: var(--font-serif);
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  color: #1F1E1B;
+  line-height: 1.25;
+  margin-bottom: 22px;
+  letter-spacing: 0.015em;
+  transition: opacity 0.3s ease;
 }
 
 .hero-subtitle {
-  font-size: 17px;
-  color: var(--text-muted);
-  line-height: 1.65;
-  margin-bottom: 34px;
-  font-weight: 500;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
-  max-width: 560px;
+  font-size: 16px;
+  color: rgba(31, 30, 27, 0.72);
+  line-height: 1.8;
+  margin-bottom: 48px; /* 增加呼吸留白，端庄素雅 */
+  font-weight: 400;
 }
 
 .hero-cta-group {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #C86446;
+  color: #ffffff;
+  padding: 12px 28px;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(200, 100, 70, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background: #b05337;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(200, 100, 70, 0.35);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(31, 30, 27, 0.2);
+  color: #1F1E1B;
+  padding: 12px 28px;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-outline:hover {
+  background: #ffffff;
+  border-color: #1F1E1B;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(61, 50, 38, 0.08);
+}
+
+.hero-banner-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.banner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(166, 124, 82, 0.2);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: rgba(31, 30, 27, 0.65);
+  transition: all 0.25s ease;
+}
+
+.banner-pill:hover {
+  background: #ffffff;
+  color: #1F1E1B;
+  border-color: #C86446;
+}
+
+.banner-pill.is-active {
+  background: #C86446;
+  border-color: #C86446;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(200, 100, 70, 0.28);
+}
+
+.pill-num {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+/* 右侧 3D 展品画板 */
+.hero-right-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  perspective: 1000px; /* 3D 透视视距，赋予指针倾斜真实立体深度 */
+}
+
+.hero-art-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 4 / 3.3;
+  border-radius: 28px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(166, 124, 82, 0.22);
+  box-shadow: 0 20px 50px -12px rgba(61, 45, 30, 0.16),
+              0 8px 20px -8px rgba(166, 124, 82, 0.08);
+  cursor: pointer;
+  will-change: transform;
+  transform-style: preserve-3d; /* 保留子元素真实 3D 空间 */
+  transition: transform 0.12s ease-out, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.hero-art-card:hover {
+  border-color: #C86446;
+  box-shadow: 0 28px 65px -12px rgba(200, 100, 70, 0.28),
+              0 12px 24px -8px rgba(166, 124, 82, 0.12);
+}
+
+.art-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #f0ebe4;
+  transform-style: preserve-3d;
+}
+
+.art-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+  transform: translateZ(8px);
+}
+
+.hero-art-card:hover .art-card-img {
+  transform: scale(1.025) translateZ(14px);
+}
+
+.art-card-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, transparent 55%);
+  pointer-events: none;
+  transform: translateZ(18px);
+}
+
+/* 浮动微标 (3D 真实悬浮) */
+.floating-badge {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(166, 124, 82, 0.2);
+  box-shadow: 0 10px 24px rgba(61, 45, 30, 0.12);
+  pointer-events: none;
+  transform: translateZ(28px); /* 3D 浮出画板表面 */
+  transition: box-shadow 0.3s ease;
+  will-change: transform;
+}
+
+.badge-top {
+  top: -14px;
+  left: -14px;
+}
+
+.badge-bottom {
+  bottom: -14px;
+  right: -14px;
+}
+
+.badge-icon {
+  font-size: 15px;
+  color: #C86446;
+}
+
+.badge-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F1E1B;
+}
+
+@media (max-width: 991px) {
+  .hero-stage-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .hero-left-content {
+    max-width: 100%;
+    text-align: center;
+  }
+  .hero-tag-badge {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-cta-group {
+    justify-content: center;
+  }
+  .hero-banner-controls {
+    justify-content: center;
+  }
+  .badge-top {
+    left: 0;
+  }
+  .badge-bottom {
+    right: 0;
+  }
 }
 
 /* Section Common */
@@ -409,7 +1122,7 @@ onMounted(() => {
 
 /* 2. Business Cards */
 .business-section {
-  margin-top: -40px;
+  margin-top: -36px;
   position: relative;
   z-index: 10;
   margin-bottom: 60px;
@@ -422,33 +1135,36 @@ onMounted(() => {
 }
 
 .biz-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 28px 24px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(166, 124, 82, 0.14);
+  border-radius: 22px;
+  padding: 30px 26px;
   display: flex;
   gap: 18px;
   align-items: flex-start;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 8px 30px rgba(166, 124, 82, 0.06);
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
 }
 
 .biz-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-border);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(166, 124, 82, 0.14);
+  border-color: #C86446;
 }
 
 .biz-icon {
-  font-size: 30px;
-  background: var(--bg-light);
-  width: 56px;
-  height: 56px;
+  font-size: 32px;
+  background: #FAF7F2;
+  border: 1px solid rgba(166, 124, 82, 0.12);
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 18px;
   flex-shrink: 0;
   transition: transform 0.3s ease;
 }
@@ -458,29 +1174,38 @@ onMounted(() => {
 }
 
 .biz-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--text-color);
-  margin-bottom: 6px;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: #1F1E1B;
+  margin-bottom: 8px;
 }
 
 .biz-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
+  font-size: 13.5px;
+  color: rgba(31, 30, 27, 0.68);
+  line-height: 1.6;
   margin-bottom: 12px;
 }
 
 .biz-link {
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: #C86446;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.2s ease;
+}
+
+.biz-card:hover .biz-link {
+  transform: translateX(3px);
 }
 
 /* 3. Featured Products */
 .featured-products-section {
-  padding: 40px 0 70px;
-  background: #ffffff;
+  padding: 40px 0 80px;
+  background: transparent;
 }
 
 .section-header {
@@ -500,21 +1225,26 @@ onMounted(() => {
 }
 
 .section-title {
-  font-size: 26px;
-  font-weight: 600;
-  color: var(--text-color);
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: #1F1E1B;
+  letter-spacing: -0.01em;
 }
 
 .view-all-link {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted);
-  transition: color 0.2s;
+  color: #A67C52;
+  transition: color 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .view-all-link:hover {
-  color: var(--primary-color);
+  color: #C86446;
+  transform: translateX(2px);
 }
 
 .products-grid {
@@ -524,20 +1254,21 @@ onMounted(() => {
 }
 
 .product-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(166, 124, 82, 0.12);
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 8px 30px rgba(166, 124, 82, 0.06);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-border);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(166, 124, 82, 0.14);
 }
 
 .product-badge {
@@ -545,18 +1276,19 @@ onMounted(() => {
   top: 12px;
   left: 12px;
   z-index: 2;
-  background: var(--text-color);
+  background: #1F1E1B;
   color: #ffffff;
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
 }
 
 .product-thumb {
   width: 100%;
   height: 240px;
-  background: #f7f7f7;
+  background: #F5EFE6;
   overflow: hidden;
   cursor: pointer;
 }
@@ -582,7 +1314,7 @@ onMounted(() => {
 }
 
 .product-body {
-  padding: 20px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -592,27 +1324,30 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--text-light);
+  color: rgba(31, 30, 27, 0.5);
   margin-bottom: 6px;
+  font-family: monospace;
 }
 
 .product-name {
+  font-family: var(--font-serif);
   font-size: 17px;
-  font-weight: 600;
-  color: var(--text-color);
+  font-weight: 700;
+  color: #1F1E1B;
   margin-bottom: 8px;
   cursor: pointer;
   line-height: 1.35;
+  transition: color 0.2s;
 }
 
 .product-name:hover {
-  color: var(--primary-color);
+  color: #C86446;
 }
 
 .product-summary {
   font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
+  color: rgba(31, 30, 27, 0.68);
+  line-height: 1.55;
   margin-bottom: 18px;
   flex: 1;
   display: -webkit-box;
@@ -625,7 +1360,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(166, 124, 82, 0.1);
   padding-top: 14px;
 }
 
@@ -638,28 +1373,28 @@ onMounted(() => {
 .price-main .currency {
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent-color);
+  color: #C86446;
 }
 
 .price-main .amount {
   font-size: 22px;
   font-weight: 700;
-  color: var(--accent-color);
+  color: #C86446;
 }
 
 .detail-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
+  background: #FAF7F2;
+  border: 1px solid rgba(166, 124, 82, 0.16);
+  color: #1F1E1B;
   font-size: 13px;
-  font-weight: 500;
-  padding: 7px 16px;
-  border-radius: var(--radius-full);
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 9999px;
   text-decoration: none;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .detail-link::after {
@@ -673,26 +1408,28 @@ onMounted(() => {
 }
 
 .detail-link:hover {
-  background: var(--primary-color);
+  background: #C86446;
   color: #ffffff;
-  border-color: var(--primary-color);
+  border-color: #C86446;
 }
 
 /* 4. Dealer Banner */
 .dealer-banner-section {
-  padding: 30px 0 70px;
+  padding: 30px 0 80px;
+  background: transparent;
 }
 
 .dealer-banner-card {
-  background: linear-gradient(135deg, #FAF8F5 0%, #F1ECE3 100%);
-  border: 1px solid var(--primary-border);
-  border-radius: var(--radius-xl);
-  padding: 48px 40px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(166, 124, 82, 0.16);
+  border-radius: 28px;
+  padding: 48px 44px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 40px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 12px 40px rgba(166, 124, 82, 0.08);
 }
 
 .dealer-banner-text {
@@ -709,16 +1446,17 @@ onMounted(() => {
 }
 
 .dealer-title {
-  font-size: 26px;
-  font-weight: 600;
-  color: var(--text-color);
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: #1F1E1B;
   margin-bottom: 12px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .dealer-desc {
   font-size: 15px;
-  color: var(--text-muted);
+  color: rgba(31, 30, 27, 0.7);
   line-height: 1.6;
   margin-bottom: 20px;
 }
@@ -729,7 +1467,7 @@ onMounted(() => {
   gap: 16px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-color);
+  color: #A67C52;
 }
 
 .dealer-banner-action {
@@ -741,17 +1479,27 @@ onMounted(() => {
 }
 
 .dealer-btn {
-  padding: 14px 30px;
+  padding: 14px 32px;
   font-size: 16px;
+  background: #C86446;
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(200, 100, 70, 0.25);
+  transition: all 0.3s ease;
+}
+
+.dealer-btn:hover {
+  background: #b05337;
+  box-shadow: 0 12px 30px rgba(200, 100, 70, 0.35);
+  transform: translateY(-2px);
 }
 
 .dealer-contact-tip {
   font-size: 12px;
-  color: var(--text-light);
+  color: rgba(31, 30, 27, 0.5);
 }
 
 .dealer-contact-tip a {
-  color: var(--accent-color);
+  color: #A67C52;
   font-weight: 600;
 }
 
@@ -763,42 +1511,55 @@ onMounted(() => {
 /* 5. Values */
 .values-section {
   padding: 60px 0 80px;
-  border-top: 1px solid var(--border-color);
-  background: #ffffff;
+  border-top: 1px solid rgba(166, 124, 82, 0.1);
+  background: transparent;
 }
 
 .values-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
+  gap: 24px;
 }
 
 .value-item {
   text-align: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(166, 124, 82, 0.1);
+  border-radius: 22px;
+  padding: 32px 20px;
+  box-shadow: 0 6px 20px rgba(166, 124, 82, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.value-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(166, 124, 82, 0.1);
 }
 
 .value-icon {
   font-size: 36px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .value-item h4 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-color);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: #1F1E1B;
   margin-bottom: 8px;
 }
 
 .value-item p {
   font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
+  color: rgba(31, 30, 27, 0.65);
+  line-height: 1.55;
 }
 
 /* 6. News */
 .news-section {
-  padding: 0 0 80px;
-  background: #ffffff;
+  padding: 20px 0 80px;
+  background: transparent;
 }
 
 .news-grid {
@@ -808,23 +1569,25 @@ onMounted(() => {
 }
 
 .news-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(166, 124, 82, 0.12);
+  border-radius: 22px;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 8px 30px rgba(166, 124, 82, 0.05);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
 .news-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-border);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(166, 124, 82, 0.12);
 }
 
 .news-cover {
   width: 100%;
-  height: 170px;
-  background: #f7f7f7;
+  height: 180px;
+  background: #F5EFE6;
   overflow: hidden;
 }
 
@@ -849,7 +1612,7 @@ onMounted(() => {
 }
 
 .news-body {
-  padding: 18px 20px 22px;
+  padding: 20px 22px 24px;
 }
 
 .news-meta {
@@ -858,7 +1621,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 8px;
   font-size: 12px;
-  color: var(--text-light);
+  color: rgba(31, 30, 27, 0.5);
   margin-bottom: 8px;
 }
 
@@ -868,10 +1631,11 @@ onMounted(() => {
 }
 
 .news-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-color);
-  line-height: 1.4;
+  font-family: var(--font-serif);
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #1F1E1B;
+  line-height: 1.45;
   margin-bottom: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -881,7 +1645,7 @@ onMounted(() => {
 
 .news-summary {
   font-size: 13px;
-  color: var(--text-muted);
+  color: rgba(31, 30, 27, 0.65);
   line-height: 1.55;
   display: -webkit-box;
   -webkit-line-clamp: 2;

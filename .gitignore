@@ -49,3 +49,5 @@ work/
 .superdesign/
 cms-content/
 *半成品*
+*.sqlite
+*.sqlite-journal
