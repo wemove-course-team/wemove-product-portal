@@ -3,6 +3,8 @@
 # 基于 Debian slim：sqlite3 有 glibc 预编译二进制，免去 musl 下的本地编译
 FROM node:20-trixie-slim AS build
 WORKDIR /app
+# 走 npmmirror 下载 sqlite3 预编译二进制，避免 GitHub 直连超时
+ENV sqlite3_binary_host_mirror=https://registry.npmmirror.com/-/binary/sqlite3
 COPY package*.json ./
 RUN npm ci
 COPY . .
