@@ -77,6 +77,7 @@ export class CatalogAdminService {
     await this.assertSkuAvailable(dto.sku)
     await this.assertSlugAvailable(slug)
     await this.assertCategoryExists(dto.categoryId)
+    this.assertPricing(dto.price, dto.dealerPrice)
 
     const product = this.productRepo.create({
       sku: dto.sku,
@@ -113,6 +114,7 @@ export class CatalogAdminService {
     if (dto.categoryId !== undefined) {
       await this.assertCategoryExists(dto.categoryId)
     }
+    this.assertPricing(dto.price ?? product.price, dto.dealerPrice ?? product.dealerPrice)
 
     const patch: Partial<Product> = {}
     if (dto.sku !== undefined) patch.sku = dto.sku
@@ -161,6 +163,13 @@ export class CatalogAdminService {
     product.isFeatured = 0
     await this.productRepo.save(product)
     return { id: String(product.id), archived: true }
+  }
+
+  /** 价格关系属于服务端业务约束，不能只依赖管理端表单。 */
+  private assertPricing(price: number, dealerPrice: number) {
+    if (dealerPrice > price) {
+      throw new BadRequestException({ code: 'VALIDATION_400', message: '经销商价不能高于零售指导价' })
+    }
   }
 
   // ------------------------------ 分类管理 ------------------------------

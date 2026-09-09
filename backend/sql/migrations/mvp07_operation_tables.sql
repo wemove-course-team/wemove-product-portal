@@ -5,6 +5,7 @@
 -- ========================================================
 
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `site_config` (
   `config_key` VARCHAR(64) NOT NULL COMMENT '配置键（白名单：siteName/logoUrl/contactPhone/contactEmail/address/footerText/icpNo）',

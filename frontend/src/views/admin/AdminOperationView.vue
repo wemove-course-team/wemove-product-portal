@@ -13,7 +13,7 @@
 
     <el-tabs v-model="activeTab" class="operation-card">
       <el-tab-pane label="站点配置" name="config">
-        <el-form ref="configFormRef" :model="configForm" label-position="top" v-loading="loading">
+        <el-form ref="configFormRef" :model="configForm" :rules="configRules" label-position="top" v-loading="loading">
           <div class="config-grid">
             <section class="config-section">
               <h2>品牌信息</h2>
@@ -34,10 +34,10 @@
             <section class="config-section">
               <h2>联系方式</h2>
               <div class="field-grid">
-                <el-form-item label="联系电话"><el-input v-model="configForm.contactPhone" /></el-form-item>
-                <el-form-item label="联系邮箱"><el-input v-model="configForm.contactEmail" /></el-form-item>
+                <el-form-item label="联系电话" prop="contactPhone"><el-input v-model="configForm.contactPhone" maxlength="32" /></el-form-item>
+                <el-form-item label="联系邮箱" prop="contactEmail"><el-input v-model="configForm.contactEmail" maxlength="128" /></el-form-item>
               </div>
-              <el-form-item label="联系地址"><el-input v-model="configForm.address" /></el-form-item>
+              <el-form-item label="联系地址" prop="address"><el-input v-model="configForm.address" maxlength="255" /></el-form-item>
             </section>
 
             <section class="config-section config-section-wide">
@@ -97,7 +97,7 @@
         <el-form-item label="标题" prop="title"><el-input v-model="bannerForm.title" maxlength="128" show-word-limit /></el-form-item>
         <el-form-item label="图片地址" prop="imageUrl"><el-input v-model="bannerForm.imageUrl" placeholder="/images/... 或 https://..." /></el-form-item>
         <div v-if="bannerForm.imageUrl" class="dialog-preview"><img :src="bannerForm.imageUrl" alt="Banner 图片预览" /></div>
-        <el-form-item label="跳转链接"><el-input v-model="bannerForm.linkUrl" placeholder="可留空；/products 或 https://..." /></el-form-item>
+        <el-form-item label="跳转链接" prop="linkUrl"><el-input v-model="bannerForm.linkUrl" maxlength="255" placeholder="可留空；/products 或 https://..." /></el-form-item>
         <div class="field-grid">
           <el-form-item label="排序值"><el-input-number v-model="bannerForm.sortOrder" :min="0" :max="9999" /></el-form-item>
           <el-form-item label="启用状态"><el-switch v-model="bannerForm.isActive" active-text="启用" inactive-text="停用" /></el-form-item>
@@ -134,9 +134,24 @@ let originalBannerActive = true
 
 const bannerForm = reactive({ id: null, title: '', imageUrl: '', linkUrl: '', sortOrder: 0, isActive: true })
 const bannerRules = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  imageUrl: [{ required: true, message: '请输入图片地址', trigger: 'blur' }]
+  title: [{ required: true, message: '请输入标题', trigger: 'blur' }, { min: 2, max: 128, message: '标题长度为 2–128 个字符', trigger: 'blur' }],
+  imageUrl: [{ required: true, message: '请输入图片地址', trigger: 'blur' }, { validator: validateAssetUrl, trigger: 'blur' }],
+  linkUrl: [{ validator: validateOptionalUrl, trigger: 'blur' }]
 }
+const configRules = {
+  siteName: [{ required: true, message: '请输入站点名称', trigger: 'blur' }, { min: 2, max: 255, message: '站点名称长度为 2–255 个字符', trigger: 'blur' }],
+  logoUrl: [{ required: true, message: '请输入 Logo 地址', trigger: 'blur' }, { validator: validateAssetUrl, trigger: 'blur' }],
+  contactPhone: [{ pattern: /^[0-9+\-()\s]{6,32}$/, message: '联系电话格式不正确', trigger: 'blur' }],
+  contactEmail: [{ type: 'email', message: '联系邮箱格式不正确', trigger: 'blur' }],
+  address: [{ max: 255, message: '联系地址不能超过 255 个字符', trigger: 'blur' }]
+}
+
+function isAllowedUrl(value) {
+  const text = String(value || '').trim()
+  return text.startsWith('/') || /^https:\/\/[^\s]+$/i.test(text)
+}
+function validateAssetUrl(_rule, value, done) { isAllowedUrl(value) ? done() : done(new Error('请使用站内绝对路径或 HTTPS 地址')) }
+function validateOptionalUrl(_rule, value, done) { !String(value || '').trim() || isAllowedUrl(value) ? done() : done(new Error('请使用站内绝对路径或 HTTPS 地址')) }
 
 async function loadAll() {
   loading.value = true
@@ -163,6 +178,7 @@ function resetConfig() {
 }
 
 async function saveConfig() {
+  if (!(await configFormRef.value?.validate().catch(() => false))) return
   saving.value = true
   try {
     const response = await operationApi.updateConfig({ ...configForm })

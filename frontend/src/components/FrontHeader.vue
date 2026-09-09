@@ -76,7 +76,7 @@
                   {{ userStore.userInfo.companyName || '我的账户' }}
                 </div>
                 <el-dropdown-item command="account">👤 我的账户</el-dropdown-item>
-                <el-dropdown-item v-if="userStore.isDealer || userStore.isAdmin" command="dealerPortal">
+                <el-dropdown-item v-if="userStore.isDealer" command="dealerPortal">
                   💼 经销商专属工作台
                 </el-dropdown-item>
                 <el-dropdown-item v-if="userStore.isAdmin" command="admin">
@@ -186,7 +186,7 @@ function handleUserCommand(cmd) {
   if (cmd === 'account') {
     router.push('/account')
   } else if (cmd === 'dealerPortal') {
-    router.push('/dealer/portal')
+    router.push('/dealer')
   } else if (cmd === 'admin') {
     router.push('/admin')
   } else if (cmd === 'logout') {

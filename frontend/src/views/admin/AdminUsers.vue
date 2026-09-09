@@ -21,8 +21,8 @@
       <el-table-column prop="email" label="邮箱" min-width="210" show-overflow-tooltip />
       <el-table-column prop="role" label="角色" width="110"><template #default="{ row }"><el-tag effect="plain" :type="roleType(row.role)">{{ roleText(row.role) }}</el-tag></template></el-table-column>
       <el-table-column prop="createdAt" label="注册时间" width="170"><template #default="{ row }">{{ formatDate(row.createdAt) }}</template></el-table-column>
-      <el-table-column label="账号状态" width="120" fixed="right">
-        <template #default="{ row }"><el-switch v-model="row.status" :active-value="1" :inactive-value="0" :loading="updatingId === row.id" @change="updateStatus(row)" /></template>
+      <el-table-column label="账号状态" width="140" fixed="right">
+        <template #default="{ row }"><div class="status-control"><el-switch v-model="row.status" :active-value="1" :inactive-value="0" :loading="updatingId === row.id" :disabled="isCurrentUser(row)" @change="updateStatus(row)" /><span v-if="isCurrentUser(row)">当前账号</span></div></template>
       </el-table-column>
     </el-table>
 
@@ -40,8 +40,9 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { authApi } from '../../services/auth'
+import { useUserStore } from '../../stores/user'
 
 const users = ref([])
 const keyword = ref('')
@@ -52,6 +53,7 @@ const total = ref(0)
 const loading = ref(false)
 const updatingId = ref(null)
 const error = ref(null)
+const userStore = useUserStore()
 
 async function loadUsers() {
   loading.value = true
@@ -81,16 +83,25 @@ async function updateStatus(row) {
   const target = Number(row.status)
   updatingId.value = row.id
   try {
+    if (target === 0) {
+      await ElMessageBox.confirm(
+        `停用“${row.username}”后，该账号现有会话会立即失效，但历史业务记录会保留。`,
+        '停用用户账号',
+        { type: 'warning', confirmButtonText: '确认停用', cancelButtonText: '取消' }
+      )
+    }
     const response = await authApi.updateUserStatus(row.id, target)
     row.status = response.data.status
     ElMessage.success(target === 1 ? '账号已启用' : '账号已停用')
   } catch (reason) {
     row.status = target === 1 ? 0 : 1
-    ElMessage.error(reason.message || '账号状态更新失败')
+    if (reason !== 'cancel' && reason !== 'close') ElMessage.error(reason.message || '账号状态更新失败')
   } finally {
     updatingId.value = null
   }
 }
+
+function isCurrentUser(row) { return String(row.id) === String(userStore.userInfo.id) }
 
 function roleText(role) { return { ADMIN: '管理员', DEALER: '经销商', USER: '普通用户' }[role] || role }
 function roleType(role) { return { ADMIN: 'danger', DEALER: 'warning', USER: 'info' }[role] || 'info' }
@@ -110,5 +121,7 @@ onMounted(loadUsers)
 .page-heading p:last-child { margin: 6px 0 0; color: var(--text-muted); font-size: 13px; }
 .toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 160px auto; gap: 10px; margin-bottom: 16px; }
 .el-pagination { justify-content: flex-end; margin-top: 18px; }
+.status-control { display: flex; align-items: center; gap: 7px; }
+.status-control span { color: var(--text-light); font-size: 10px; }
 @media (max-width: 768px) { .page-heading { align-items: flex-start; flex-direction: column; } .toolbar { grid-template-columns: 1fr; } .el-pagination { justify-content: flex-start; overflow-x: auto; } }
 </style>

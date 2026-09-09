@@ -27,6 +27,9 @@ export class User {
   @Column({ name: 'company_id', type: 'bigint', nullable: true })
   companyId!: number | null
 
+  @Column({ name: 'dealer_member_role', type: 'varchar', length: 32, nullable: true })
+  dealerMemberRole!: 'OWNER' | 'MEMBER' | null
+
   @Column({ type: 'tinyint', default: 1 })
   status!: number
 

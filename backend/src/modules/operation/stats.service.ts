@@ -7,6 +7,8 @@ export interface OperationOverview {
   userCount: number
   pendingApplications: number
   pendingMessages: number
+  pendingQuotes: number
+  pendingDealerOrders: number
 }
 
 /**
@@ -22,15 +24,17 @@ export class StatsService {
   constructor(private readonly dataSource: DataSource) {}
 
   async getOverview(): Promise<OperationOverview> {
-    const [productCount, articleCount, userCount, pendingApplications, pendingMessages] = await Promise.all([
+    const [productCount, articleCount, userCount, pendingApplications, pendingMessages, pendingQuotes, pendingDealerOrders] = await Promise.all([
       this.count('product'),
       this.count('article'),
       this.count('sys_user'),
       this.count('dealer_application', "`status` = 'PENDING'"),
-      this.count('contact_message', "`status` = 'PENDING'")
+      this.count('contact_message', "`status` = 'PENDING'"),
+      this.count('dealer_quote', "`status` = 'SUBMITTED'"),
+      this.count('orders', "`company_id` IS NOT NULL AND `status` = 'PENDING_REVIEW'")
     ])
 
-    return { productCount, articleCount, userCount, pendingApplications, pendingMessages }
+    return { productCount, articleCount, userCount, pendingApplications, pendingMessages, pendingQuotes, pendingDealerOrders }
   }
 
   /** 只读 COUNT 查询，表名仅允许内部白名单。 */

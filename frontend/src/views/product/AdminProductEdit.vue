@@ -16,20 +16,20 @@
       <span></span>
     </AsyncState>
 
-    <el-form v-else :model="form" label-width="110px" class="edit-form">
+    <el-form v-else ref="formRef" :model="form" :rules="formRules" label-width="110px" class="edit-form">
       <div class="form-grid">
         <section class="form-card">
           <h3 class="card-title">基础信息</h3>
-          <el-form-item label="产品名称" required>
+          <el-form-item label="产品名称" prop="name">
             <el-input v-model="form.name" maxlength="128" show-word-limit placeholder="例如：儿童实木保龄球套装" />
           </el-form-item>
-          <el-form-item label="SKU" required>
+          <el-form-item label="SKU" prop="sku">
             <el-input v-model="form.sku" maxlength="64" placeholder="例如：WM-BWL-01（全局唯一）" />
           </el-form-item>
-          <el-form-item label="slug（URL 标识）">
+          <el-form-item label="slug（URL 标识）" prop="slug">
             <el-input v-model="form.slug" maxlength="128" placeholder="留空则按 SKU 自动生成，仅字母/数字/中划线" />
           </el-form-item>
-          <el-form-item label="所属分类" required>
+          <el-form-item label="所属分类" prop="categoryId">
             <el-select v-model="form.categoryId" placeholder="选择分类" style="width: 100%">
               <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="Number(c.id)" />
             </el-select>
@@ -44,15 +44,15 @@
 
         <section class="form-card">
           <h3 class="card-title">价格与起订</h3>
-          <el-form-item label="零售指导价（¥）" required>
-            <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 200px" />
+          <el-form-item label="零售指导价（¥）" prop="price">
+            <el-input-number v-model="form.price" :min="0.01" :max="9999999" :precision="2" style="width: 200px" />
           </el-form-item>
-          <el-form-item label="经销商价（¥）" required>
-            <el-input-number v-model="form.dealerPrice" :min="0" :precision="2" style="width: 200px" />
+          <el-form-item label="经销商价（¥）" prop="dealerPrice">
+            <el-input-number v-model="form.dealerPrice" :min="0.01" :max="9999999" :precision="2" style="width: 200px" />
             <div class="field-hint">仅 DEALER/ADMIN 会话可在详情接口获取（服务端裁剪）</div>
           </el-form-item>
-          <el-form-item label="起订量 MOQ">
-            <el-input-number v-model="form.moq" :min="1" style="width: 200px" />
+          <el-form-item label="起订量 MOQ" prop="moq">
+            <el-input-number v-model="form.moq" :min="1" :max="100000" style="width: 200px" />
           </el-form-item>
           <el-form-item label="上架状态">
             <el-radio-group v-model="form.isPublished">
@@ -163,6 +163,7 @@ const loadError = ref(null)
 const loaded = ref(false)
 const saving = ref(false)
 const categories = ref([])
+const formRef = ref(null)
 
 const form = reactive({
   name: '',
@@ -198,6 +199,23 @@ const specs = reactive({
 })
 
 const formReady = computed(() => !isEdit.value || (loaded.value && !loadError.value))
+
+const formRules = {
+  name: [{ required: true, message: '请填写产品名称', trigger: 'blur' }],
+  sku: [
+    { required: true, message: '请填写 SKU', trigger: 'blur' },
+    { pattern: /^[A-Za-z0-9-]{2,64}$/, message: 'SKU 仅允许 2–64 位字母、数字和中划线', trigger: 'blur' }
+  ],
+  slug: [{ pattern: /^$|^[A-Za-z0-9-]+$/, message: 'slug 仅允许字母、数字和中划线', trigger: 'blur' }],
+  categoryId: [{ required: true, message: '请选择所属分类', trigger: 'change' }],
+  price: [{ required: true, type: 'number', min: 0.01, max: 9999999, message: '零售价必须在 0.01–9999999 之间', trigger: 'change' }],
+  dealerPrice: [{ required: true, validator: (_rule, value, done) => {
+    if (!Number.isFinite(Number(value)) || Number(value) <= 0) return done(new Error('经销商价必须大于 0'))
+    if (Number(value) > Number(form.price)) return done(new Error('经销商价不能高于零售指导价'))
+    done()
+  }, trigger: 'change' }],
+  moq: [{ required: true, type: 'number', min: 1, max: 100000, message: 'MOQ 必须为 1–100000 的整数', trigger: 'change' }]
+}
 
 async function loadCategories() {
   try {
@@ -301,6 +319,7 @@ function validateLocal() {
 }
 
 async function save() {
+  if (!(await formRef.value?.validate().catch(() => false))) return
   const problem = validateLocal()
   if (problem) {
     ElMessage.warning(problem)

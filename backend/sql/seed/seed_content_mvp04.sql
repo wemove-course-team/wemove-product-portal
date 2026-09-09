@@ -3,6 +3,7 @@
 -- ========================================================
 
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 1. 文章分类
 INSERT INTO `article_category` (`id`, `name`, `slug`, `sort_order`)

@@ -49,6 +49,7 @@ export class ChangePasswordDto {
   @IsString()
   @MinLength(8, { message: '新密码至少 8 位' })
   @MaxLength(128, { message: '新密码不能超过 128 位' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, { message: '新密码必须包含大写字母、小写字母和数字' })
   newPassword!: string
 }
 

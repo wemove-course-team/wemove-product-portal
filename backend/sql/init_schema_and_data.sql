@@ -5,6 +5,7 @@
 
 CREATE DATABASE IF NOT EXISTS `wemove_portal` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 0;
 

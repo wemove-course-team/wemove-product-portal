@@ -4,6 +4,7 @@
 -- ========================================================
 
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `article_category` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,

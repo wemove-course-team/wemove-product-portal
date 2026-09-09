@@ -4,6 +4,7 @@
 -- ========================================================
 
 USE `wemove_portal`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 站点配置默认值（白名单键：siteName/logoUrl/contactPhone/contactEmail/address/footerText/icpNo）
 INSERT INTO `site_config` (`config_key`, `config_value`) VALUES

@@ -24,6 +24,15 @@ export class DealerCompany {
   @Column({ name: 'discount_rate', type: 'decimal', precision: 4, scale: 2, default: 0.75 })
   discountRate!: number
 
+  @Column({ name: 'payment_terms', length: 128, default: '预付款' })
+  paymentTerms!: string
+
+  @Column({ length: 8, default: 'CNY' })
+  currency!: string
+
+  @Column({ name: 'account_manager', type: 'varchar', length: 64, nullable: true })
+  accountManager!: string | null
+
   @Column({ name: 'contact_name', length: 64 })
   contactName!: string
 

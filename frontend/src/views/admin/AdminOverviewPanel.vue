@@ -8,7 +8,7 @@
     <AsyncState :loading="loading" loading-text="正在统计业务数据…" :error="error" @retry="loadOverview">
       <div class="metrics-grid">
         <router-link v-for="metric in metrics" :key="metric.key" :to="metric.to" class="metric-card" :class="metric.tone">
-          <div class="metric-top"><span class="metric-label">{{ metric.label }}</span><span class="metric-icon">{{ metric.icon }}</span></div>
+          <div class="metric-top"><span class="metric-label">{{ metric.label }}</span><el-icon class="metric-icon"><component :is="metric.icon" /></el-icon></div>
           <strong>{{ metric.value }}</strong>
           <span class="metric-meta">{{ metric.meta }} →</span>
         </router-link>
@@ -31,7 +31,7 @@ import { useUserStore } from '../../stores/user'
 const userStore = useUserStore()
 const loading = ref(false)
 const error = ref(null)
-const stats = ref({ productCount: 0, articleCount: 0, userCount: 0, pendingApplications: 0, pendingMessages: 0 })
+const stats = ref({ productCount: 0, articleCount: 0, userCount: 0, pendingApplications: 0, pendingMessages: 0, pendingQuotes: 0, pendingDealerOrders: 0 })
 
 const roleText = computed(() => {
   if (userStore.isPreviewActive) return `开发预览：${userStore.currentRole}`
@@ -39,11 +39,13 @@ const roleText = computed(() => {
 })
 
 const metrics = computed(() => [
-  { key: 'products', label: '产品总数', value: stats.value.productCount, meta: '进入产品管理', to: '/admin/products', icon: '🧸', tone: '' },
-  { key: 'articles', label: '内容总数', value: stats.value.articleCount, meta: '进入内容管理', to: '/admin/content', icon: '📝', tone: '' },
-  { key: 'users', label: '用户总数', value: stats.value.userCount, meta: '进入用户管理', to: '/admin/users', icon: '👥', tone: '' },
-  { key: 'applications', label: '待审核申请', value: stats.value.pendingApplications, meta: '处理经销商申请', to: '/admin/dealers', icon: '🤝', tone: 'attention' },
-  { key: 'messages', label: '待处理留言', value: stats.value.pendingMessages, meta: '进入支持中心', to: '/admin/support', icon: '💬', tone: 'attention' }
+  { key: 'products', label: '产品总数', value: stats.value.productCount, meta: '进入产品管理', to: '/admin/products', icon: 'Goods', tone: '' },
+  { key: 'articles', label: '内容总数', value: stats.value.articleCount, meta: '进入内容管理', to: '/admin/content', icon: 'Document', tone: '' },
+  { key: 'users', label: '用户总数', value: stats.value.userCount, meta: '进入用户管理', to: '/admin/users', icon: 'UserFilled', tone: '' },
+  { key: 'applications', label: '待审核申请', value: stats.value.pendingApplications, meta: '处理经销商申请', to: '/admin/dealers', icon: 'OfficeBuilding', tone: 'attention' },
+  { key: 'messages', label: '待处理留言', value: stats.value.pendingMessages, meta: '进入支持中心', to: '/admin/support', icon: 'Service', tone: 'attention' },
+  { key: 'quotes', label: '待回复报价', value: stats.value.pendingQuotes, meta: '处理经销商报价', to: '/admin/dealer-business', icon: 'Tickets', tone: 'attention' },
+  { key: 'orders', label: '待确认订单', value: stats.value.pendingDealerOrders, meta: '处理经销商订单', to: '/admin/dealer-business', icon: 'Box', tone: 'attention' }
 ])
 
 async function loadOverview() {
@@ -68,13 +70,13 @@ onMounted(loadOverview)
 .eyebrow { margin: 0 0 5px; color: var(--primary-color); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
 .overview-heading h1 { margin: 0; font-size: 24px; }
 .overview-heading p:last-child { margin: 6px 0 0; color: var(--text-muted); font-size: 13px; }
-.metrics-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.metrics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .metric-card { min-width: 0; padding: 18px; background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); transition: transform .2s, box-shadow .2s, border-color .2s; }
 .metric-card:hover { transform: translateY(-2px); border-color: var(--primary-border); box-shadow: var(--shadow-md); }
 .metric-card.attention { background: linear-gradient(160deg, #fff 60%, #F6F3EE); }
 .metric-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .metric-label { color: var(--text-muted); font-size: 12px; font-weight: 600; }
-.metric-icon { font-size: 19px; }
+.metric-icon { color: var(--primary-color); font-size: 19px; }
 .metric-card strong { display: block; margin: 14px 0 8px; color: var(--text-color); font-size: 30px; line-height: 1; }
 .metric-card.attention strong { color: var(--accent-color); }
 .metric-meta { color: var(--text-light); font-size: 11px; }

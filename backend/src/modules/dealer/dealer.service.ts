@@ -142,7 +142,7 @@ export class DealerService {
       company = await companyRepo.save(company)
       await userRepo.update(
         { id: application.userId },
-        { role: 'DEALER', companyId: company.id }
+        { role: 'DEALER', companyId: company.id, dealerMemberRole: 'OWNER' }
       )
       await applicationRepo.save(application)
       return this.serialize(application)
@@ -170,6 +170,9 @@ export class DealerService {
             region: company.region,
             tierName: company.tierName,
             discountRate: Number(company.discountRate),
+            paymentTerms: company.paymentTerms,
+            currency: company.currency,
+            accountManager: company.accountManager,
             contactName: company.contactName,
             contactPhone: company.contactPhone,
             contactEmail: company.contactEmail,
@@ -178,6 +181,43 @@ export class DealerService {
         : null,
       applications: applications.map((item) => this.serialize(item))
     }
+  }
+
+  /** 管理端查询已入驻企业，状态筛选仅接受明确白名单。 */
+  async listCompanies(status?: string) {
+    const allowed = ['ACTIVE', 'SUSPENDED', 'CLOSED']
+    const where = status && allowed.includes(status) ? 'WHERE c.status = ?' : ''
+    const params = where ? [status] : []
+    const rows = await this.dataSource.query(
+      `SELECT c.id, c.company_name, c.tax_id, c.business_type, c.region, c.tier_name,
+              c.discount_rate, c.payment_terms, c.currency, c.account_manager,
+              c.contact_name, c.contact_phone, c.contact_email, c.status, c.created_at,
+              COUNT(u.id) AS member_count
+       FROM dealer_company c
+       LEFT JOIN sys_user u ON u.company_id = c.id AND u.role = 'DEALER'
+       ${where}
+       GROUP BY c.id
+       ORDER BY c.created_at DESC, c.id DESC`,
+      params
+    )
+    return rows.map((row: any) => ({
+      id: String(row.id), companyName: row.company_name, taxId: row.tax_id,
+      businessType: row.business_type, region: row.region, tierName: row.tier_name,
+      discountRate: Number(row.discount_rate), paymentTerms: row.payment_terms,
+      currency: row.currency, accountManager: row.account_manager,
+      contactName: row.contact_name, contactPhone: row.contact_phone,
+      contactEmail: row.contact_email, status: row.status,
+      memberCount: Number(row.member_count), createdAt: row.created_at
+    }))
+  }
+
+  /** 企业停用会立即阻断其成员的工作台访问，但保留历史订单和审核记录。 */
+  async updateCompanyStatus(id: number, status: 'ACTIVE' | 'SUSPENDED') {
+    const company = await this.companies.findOne({ where: { id } })
+    if (!company) throw new NotFoundException({ code: 'NOT_FOUND_404', message: '经销商企业不存在' })
+    company.status = status
+    await this.companies.save(company)
+    return { id: String(company.id), status: company.status }
   }
 
   private nextId() {
