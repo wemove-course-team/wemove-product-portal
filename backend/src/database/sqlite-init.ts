@@ -162,8 +162,9 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS support_message (
+      CREATE TABLE IF NOT EXISTS contact_message (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code VARCHAR(32) NOT NULL UNIQUE,
         name VARCHAR(64) NOT NULL,
         email VARCHAR(128) NOT NULL,
         phone VARCHAR(32) DEFAULT NULL,
@@ -176,7 +177,7 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS support_faq (
+      CREATE TABLE IF NOT EXISTS faq (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         question VARCHAR(255) NOT NULL,
         answer TEXT NOT NULL,
@@ -186,7 +187,7 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS support_download (
+      CREATE TABLE IF NOT EXISTS download_resource (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title VARCHAR(128) NOT NULL,
         category VARCHAR(64) NOT NULL DEFAULT 'manual',
@@ -372,7 +373,41 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         (3, '木玩教育行业趋势：自然环保与跨学科融合', 'stem-industry-trends-2026', 2, '/images/woodlab_s0_6337d9b4-4fa.png', '2026年全球木玩与早教装备行业呈现出绿色低碳化、数字化融合与自主探究化三大鲜明趋势。', '随着绿色环保与可持续发展理念深入人心，天然原木材质因其亲和温润的质感成为高端教育装备的首选。', 'PUBLISHED', '2026-08-20 14:00:00')
       `)
 
+      // 常见问题
+      await runQuery(`INSERT INTO faq (id, question, answer, category, sort_order, status) VALUES
+        (1, '如何查看产品资料？', '在下载中心可以查看公开的电子说明书和产品资料。', '购买', 1, 'PUBLISHED'),
+        (2, '如何申请成为经销商？', '登录后打开“成为经销商”，提交企业资料，审核通过后即可查看经销商门户。', '合作', 2, 'PUBLISHED'),
+        (3, '提交留言后多久会处理？', '工作日通常会在一个工作日内处理，请保留留言编号以便查询。', '售后', 3, 'PUBLISHED')
+      `)
+
+      // 电子说明书与下载资源
+      await runQuery(`INSERT INTO download_resource (id, title, category, description, file_url, cover_image, visibility, sort_order, status) VALUES
+        (1, 'WeMove 电子说明书示例', 'manual', '公开电子说明书资源示例。', '/images/electronic_grid0_0_1c281559-002.png', '/images/electronic_grid0_0_1c281559-002.png', 'PUBLIC', 1, 'PUBLISHED'),
+        (2, '会员资料包', 'catalog', '登录后可访问。', '/images/electronic_grid1_0_c4ebc66c-1c4.png', '/images/electronic_grid1_0_c4ebc66c-1c4.png', 'USER', 2, 'PUBLISHED'),
+        (3, '经销商资料包', 'dealer', '登录并通过经销商审核后可访问。', '/images/electronic_grid2_0_635fbdee-fe3.png', '/images/electronic_grid2_0_635fbdee-fe3.png', 'DEALER', 3, 'PUBLISHED')
+      `)
+
       console.log('[wemove-sqlite] Seeding completed successfully!')
+    }
+
+    // 确保 download_resource 独立写入（兼容已存在数据库）
+    const downloadCount = await getRows('SELECT COUNT(*) as count FROM download_resource')
+    if (!downloadCount[0] || downloadCount[0].count === 0) {
+      await runQuery(`INSERT INTO download_resource (id, title, category, description, file_url, cover_image, visibility, sort_order, status) VALUES
+        (1, 'WeMove 电子说明书示例', 'manual', '公开电子说明书资源示例。', '/images/electronic_grid0_0_1c281559-002.png', '/images/electronic_grid0_0_1c281559-002.png', 'PUBLIC', 1, 'PUBLISHED'),
+        (2, '会员资料包', 'catalog', '登录后可访问。', '/images/electronic_grid1_0_c4ebc66c-1c4.png', '/images/electronic_grid1_0_c4ebc66c-1c4.png', 'USER', 2, 'PUBLISHED'),
+        (3, '经销商资料包', 'dealer', '登录并通过经销商审核后可访问。', '/images/electronic_grid2_0_635fbdee-fe3.png', '/images/electronic_grid2_0_635fbdee-fe3.png', 'DEALER', 3, 'PUBLISHED')
+      `)
+    }
+
+    // 确保 faq 独立写入（兼容已存在数据库）
+    const faqCount = await getRows('SELECT COUNT(*) as count FROM faq')
+    if (!faqCount[0] || faqCount[0].count === 0) {
+      await runQuery(`INSERT INTO faq (id, question, answer, category, sort_order, status) VALUES
+        (1, '如何查看产品资料？', '在下载中心可以查看公开的电子说明书和产品资料。', '购买', 1, 'PUBLISHED'),
+        (2, '如何申请成为经销商？', '登录后打开“成为经销商”，提交企业资料，审核通过后即可查看经销商门户。', '合作', 2, 'PUBLISHED'),
+        (3, '提交留言后多久会处理？', '工作日通常会在一个工作日内处理，请保留留言编号以便查询。', '售后', 3, 'PUBLISHED')
+      `)
     }
   } finally {
     db.close()
