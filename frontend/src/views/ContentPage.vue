@@ -237,6 +237,17 @@ import { contentApi } from '../services/content'
 import { formatSafeText } from '../utils/text'
 import { useProductStore } from '../stores/product'
 import { useUserStore } from '../stores/user'
+import defaultPageSections from '../data/pageSections.json'
+
+const PAGE_TITLES = {
+  furniture: '原木家具',
+  woodlab: '中试打样',
+  stem: 'STEM教育',
+  library: '科研研发',
+  charity: '公益项目',
+  dream: '匠心筑梦',
+  electronic: '电子制作'
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -262,7 +273,14 @@ async function fetchPage() {
     const res = await contentApi.getPage(pageKey.value)
     pageData.value = res.data
   } catch (err) {
-    if (err.status === 404 || err.code === 'NOT_FOUND_404') {
+    if (defaultPageSections && defaultPageSections[pageKey.value]) {
+      pageData.value = {
+        slug: pageKey.value,
+        title: PAGE_TITLES[pageKey.value] || '',
+        sections: defaultPageSections[pageKey.value]
+      }
+      notFound.value = false
+    } else if (err.status === 404 || err.code === 'NOT_FOUND_404') {
       notFound.value = true
     } else {
       error.value = err

@@ -99,8 +99,7 @@ const routes = [
   {
     path: '/electronic',
     name: 'Electronic',
-    component: () => import('../views/support/DownloadView.vue'),
-    props: { category: 'manual', pageTitle: '电子说明书' },
+    component: () => import('../views/ContentPage.vue'),
     meta: { zone: 'public' }
   },
   // 新闻动态列表与详情（#88 MVP-04）

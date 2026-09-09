@@ -409,6 +409,47 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         (3, '提交留言后多久会处理？', '工作日通常会在一个工作日内处理，请保留留言编号以便查询。', '售后', 3, 'PUBLISHED')
       `)
     }
+
+    // 确保 page 栏目单页数据写入（家具、木玩打样、STEM、科研、公益、筑梦、电子说明书）
+    const pageCount = await getRows('SELECT COUNT(*) as count FROM page')
+    if (!pageCount[0] || pageCount[0].count === 0) {
+      console.log('[wemove-sqlite] Seeding page content...')
+      let pageData: Record<string, any> = {}
+      const possibleJsonPaths = [
+        path.resolve(__dirname, '../../../frontend/src/data/pageSections.json'),
+        path.resolve(__dirname, '../../frontend/src/data/pageSections.json'),
+        path.resolve(process.cwd(), '../frontend/src/data/pageSections.json'),
+        path.resolve(process.cwd(), 'frontend/src/data/pageSections.json')
+      ]
+      for (const p of possibleJsonPaths) {
+        if (fs.existsSync(p)) {
+          try {
+            pageData = JSON.parse(fs.readFileSync(p, 'utf8'))
+            break
+          } catch {}
+        }
+      }
+
+      const PAGE_META: Record<string, { id: number; title: string }> = {
+        furniture: { id: 1, title: '原木家具' },
+        woodlab: { id: 2, title: '中试打样' },
+        stem: { id: 3, title: 'STEM教育' },
+        library: { id: 4, title: '科研研发' },
+        charity: { id: 5, title: '公益项目' },
+        dream: { id: 6, title: '匠心筑梦' },
+        electronic: { id: 7, title: '电子制作' }
+      }
+
+      for (const [slug, meta] of Object.entries(PAGE_META)) {
+        const sections = pageData[slug] || []
+        const sectionsJson = JSON.stringify(sections)
+        await runQuery(
+          `INSERT INTO page (id, slug, title, sections_json, status) VALUES (?, ?, ?, ?, 'PUBLISHED')`,
+          [meta.id, slug, meta.title, sectionsJson]
+        )
+      }
+      console.log('[wemove-sqlite] Page content seeded successfully!')
+    }
   } finally {
     db.close()
   }
