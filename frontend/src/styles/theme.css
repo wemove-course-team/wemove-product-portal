@@ -1,35 +1,37 @@
 :root {
-  /* 木色品牌色板（暖调单一品牌电压驱动 CTA，设计语言参考 awesome-design-md/airbnb） */
-  --primary-color: #A89880;
-  --primary-hover: #8E7E67;
-  --primary-light: #F6F3EE;
-  --primary-border: #D8CFC4;
-  --secondary-color: #C4B8A8;
-  --accent-color: #B25E29;
-  --accent-hover: #994E20;
-  --text-color: #3D3226;
-  --text-muted: #776D61;
-  --text-light: #A3998D;
-  --bg-color: #FFFFFF;
-  --bg-light: #FAF8F5;
-  --border-color: #ECE7DF;
-  --font-family: 'PingFang SC', 'Microsoft YaHei', 'Nunito', -apple-system, sans-serif;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 999px;
-  --shadow-sm: 0 1px 2px rgba(61, 50, 38, 0.05), 0 2px 8px rgba(61, 50, 38, 0.06);
-  --shadow-md: 0 2px 4px rgba(61, 50, 38, 0.05), 0 8px 24px rgba(61, 50, 38, 0.09);
-  --shadow-lg: 0 4px 8px rgba(61, 50, 38, 0.06), 0 16px 40px rgba(61, 50, 38, 0.13);
+  /* 有机自然工坊美学（Organic Minimalist Craft）色彩与字体体系 */
+  --primary-color: #A67C52;     /* 原木暖赭 */
+  --primary-hover: #8C6641;
+  --primary-light: #F6F1EA;
+  --primary-border: rgba(166, 124, 82, 0.2);
+  --secondary-color: #B8A896;
+  --accent-color: #C86446;      /* 陶土红 */
+  --accent-hover: #B05337;
+  --text-color: #1F1E1B;        /* 冷杉碳黑 */
+  --text-muted: #6B6257;
+  --text-light: #9E9486;
+  --bg-color: #FAF7F2;          /* 暖调宣纸白 */
+  --bg-light: #F5EFE6;
+  --border-color: rgba(166, 124, 82, 0.12);
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-sans: 'Plus Jakarta Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, sans-serif;
+  --font-family: var(--font-sans);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 2px 8px rgba(61, 50, 38, 0.04), 0 1px 2px rgba(61, 50, 38, 0.03);
+  --shadow-md: 0 8px 24px rgba(166, 124, 82, 0.08), 0 2px 6px rgba(166, 124, 82, 0.04);
+  --shadow-lg: 0 16px 44px rgba(166, 124, 82, 0.13), 0 4px 12px rgba(166, 124, 82, 0.06);
 
   /* Element Plus primary color override */
-  --el-color-primary: #A89880;
-  --el-color-primary-light-3: #C2B7A6;
-  --el-color-primary-light-5: #D4CBBD;
-  --el-color-primary-light-7: #E5DFD6;
-  --el-color-primary-light-9: #F6F3EE;
-  --el-color-primary-dark-2: #8E7E67;
+  --el-color-primary: #A67C52;
+  --el-color-primary-light-3: #BE9D7B;
+  --el-color-primary-light-5: #D4BEA7;
+  --el-color-primary-light-7: #E7DBD0;
+  --el-color-primary-light-9: #F6F1EA;
+  --el-color-primary-dark-2: #8C6641;
 }
 
 * {
@@ -40,24 +42,28 @@
 
 html {
   scroll-behavior: smooth;
+  background-color: var(--bg-color);
 }
 
 body {
   font-family: var(--font-family);
   color: var(--text-color);
   background-color: var(--bg-color);
-  line-height: 1.6;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: var(--primary-light);
-  color: var(--primary-hover);
+  background: rgba(200, 100, 70, 0.15);
+  color: var(--accent-color);
 }
 
-/* 标题排印：中等字重 + 紧字距（信任留白与图像，而非字重堆叠） */
-h1, h2, h3, h4 {
-  letter-spacing: -0.02em;
+/* 标题排印：东方工坊宋体韵味 + 呼吸感间距 */
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  letter-spacing: 0.01em;
+  color: var(--text-color);
 }
 
 a {
