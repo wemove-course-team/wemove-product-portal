@@ -168,7 +168,7 @@
     </div>
 
     <!-- Special Furniture Appointment Callout (if on /furniture) -->
-    <div v-if="routePath === '/furniture'" class="furniture-cta-section">
+    <div v-if="route.path === '/furniture'" class="furniture-cta-section">
       <div class="section-container">
         <div class="furniture-cta-card">
           <div class="cta-info">

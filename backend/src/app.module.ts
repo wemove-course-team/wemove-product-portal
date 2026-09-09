@@ -28,7 +28,8 @@ import { HealthController } from './health.controller'
     TypeOrmModule.forRootAsync({
       // 延迟到 Nest 初始化时读取环境变量，支持 SQLite（无本地 MySQL 时自动降级）与 MySQL
       useFactory: () => {
-        const useSqlite = process.env.DB_TYPE === 'sqlite' || !process.env.DB_HOST || process.env.DB_TYPE !== 'mysql'
+        // 显式指定 sqlite、或未提供任何 MySQL 连接信息时才降级到 SQLite
+        const useSqlite = process.env.DB_TYPE === 'sqlite' || (!process.env.DB_HOST && process.env.DB_TYPE !== 'mysql')
         const entities = [
           Product,
           ProductCategory,

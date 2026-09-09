@@ -122,7 +122,7 @@ export const useUserStore = defineStore('user', () => {
       return {
         ...(PREVIEW_PROFILES[currentRole.value] || PREVIEW_PROFILES.USER),
         role: currentRole.value,
-        dealerMemberRole: sessionUser.value.dealerMemberRole,
+        dealerMemberRole: sessionUser.value?.dealerMemberRole ?? null,
         isPreview: true
       }
     }
