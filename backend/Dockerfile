@@ -1,14 +1,14 @@
 # WEMOVE 后端镜像（多阶段：构建 → 精简运行时）
 # 构建：docker build -t ghcr.io/wemove-course-team/wemove-backend:latest ./backend
 # 基于 Debian slim：sqlite3 有 glibc 预编译二进制，免去 musl 下的本地编译
-FROM node:20-bookworm-slim AS build
+FROM node:20-trixie-slim AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM node:20-bookworm-slim
+FROM node:20-trixie-slim
 WORKDIR /app
 ENV NODE_ENV=production
 # 非 root 运行
