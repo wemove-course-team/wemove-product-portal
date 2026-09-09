@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, ValidateIf } from 'class-validator'
 
 /** 提交经销商申请的参数。 */
 export class CreateDealerApplicationDto {
@@ -56,14 +56,15 @@ export class ReviewDealerApplicationDto {
   @MaxLength(255)
   auditNote!: string
 
-  @IsOptional()
+  @ValidateIf((input: ReviewDealerApplicationDto) => input.action === 'APPROVED')
   @IsString()
+  @IsNotEmpty()
   @MaxLength(64)
   tierName?: string
 
-  @IsOptional()
+  @ValidateIf((input: ReviewDealerApplicationDto) => input.action === 'APPROVED')
   @IsNumber()
-  @Min(0.01)
+  @Min(0.1)
   @Max(1)
   discountRate?: number
 }

@@ -17,7 +17,9 @@ describe('StatsService（单元）', () => {
       article: 3,
       sys_user: 8,
       dealer_application: 2,
-      contact_message: 4
+      contact_message: 4,
+      dealer_quote: 6,
+      orders: 7
     })
     const service = new StatsService(ds as any)
 
@@ -28,7 +30,9 @@ describe('StatsService（单元）', () => {
       articleCount: 3,
       userCount: 8,
       pendingApplications: 2,
-      pendingMessages: 4
+      pendingMessages: 4,
+      pendingQuotes: 6,
+      pendingDealerOrders: 7
     })
     // 只读查询：不得包含写语句
     for (const call of (ds.query as jest.Mock).mock.calls) {
@@ -37,12 +41,14 @@ describe('StatsService（单元）', () => {
   })
 
   it('getOverview：申请和留言只统计 PENDING 状态', async () => {
-    const ds = createDataSourceMock({ product: 1, article: 1, sys_user: 1, dealer_application: 0, contact_message: 0 })
+    const ds = createDataSourceMock({ product: 1, article: 1, sys_user: 1, dealer_application: 0, contact_message: 0, dealer_quote: 0, orders: 0 })
     const service = new StatsService(ds as any)
 
     await service.getOverview()
 
     expect(ds.query).toHaveBeenCalledWith(expect.stringContaining("FROM `dealer_application` WHERE `status` = 'PENDING'"))
     expect(ds.query).toHaveBeenCalledWith(expect.stringContaining("FROM `contact_message` WHERE `status` = 'PENDING'"))
+    expect(ds.query).toHaveBeenCalledWith(expect.stringContaining("FROM `dealer_quote` WHERE `status` = 'SUBMITTED'"))
+    expect(ds.query).toHaveBeenCalledWith(expect.stringContaining("FROM `orders` WHERE `company_id` IS NOT NULL AND `status` = 'PENDING_REVIEW'"))
   })
 })

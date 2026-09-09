@@ -16,6 +16,28 @@ UPDATE `dealer_company` SET `tier_name` = CONVERT(BINARY(CONVERT(`tier_name` USI
 WHERE HEX(`tier_name`) REGEXP '^([0-9A-F]{2})*C3';
 UPDATE `dealer_company` SET `contact_name` = CONVERT(BINARY(CONVERT(`contact_name` USING latin1)) USING utf8mb4)
 WHERE HEX(`contact_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_company` SET `payment_terms` = CONVERT(BINARY(CONVERT(`payment_terms` USING latin1)) USING utf8mb4)
+WHERE HEX(`payment_terms`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_company` SET `account_manager` = CONVERT(BINARY(CONVERT(`account_manager` USING latin1)) USING utf8mb4)
+WHERE HEX(`account_manager`) REGEXP '^([0-9A-F]{2})*C3';
+
+-- 入驻申请在旧版后台列表中是最明显的遗漏，完整修复所有人工可读字段。
+UPDATE `dealer_application` SET `company_name` = CONVERT(BINARY(CONVERT(`company_name` USING latin1)) USING utf8mb4)
+WHERE HEX(`company_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `business_type` = CONVERT(BINARY(CONVERT(`business_type` USING latin1)) USING utf8mb4)
+WHERE HEX(`business_type`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `region` = CONVERT(BINARY(CONVERT(`region` USING latin1)) USING utf8mb4)
+WHERE HEX(`region`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `contact_name` = CONVERT(BINARY(CONVERT(`contact_name` USING latin1)) USING utf8mb4)
+WHERE HEX(`contact_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `annual_target` = CONVERT(BINARY(CONVERT(`annual_target` USING latin1)) USING utf8mb4)
+WHERE HEX(`annual_target`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `sales_channels` = CONVERT(BINARY(CONVERT(`sales_channels` USING latin1)) USING utf8mb4)
+WHERE HEX(`sales_channels`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `tier_name` = CONVERT(BINARY(CONVERT(`tier_name` USING latin1)) USING utf8mb4)
+WHERE HEX(`tier_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_application` SET `audit_note` = CONVERT(BINARY(CONVERT(`audit_note` USING latin1)) USING utf8mb4)
+WHERE HEX(`audit_note`) REGEXP '^([0-9A-F]{2})*C3';
 
 UPDATE `product_category` SET `name` = CONVERT(BINARY(CONVERT(`name` USING latin1)) USING utf8mb4)
 WHERE HEX(`name`) REGEXP '^([0-9A-F]{2})*C3';
@@ -62,6 +84,47 @@ UPDATE `download_resource` SET `title` = CONVERT(BINARY(CONVERT(`title` USING la
 WHERE HEX(`title`) REGEXP '^([0-9A-F]{2})*C3';
 UPDATE `download_resource` SET `description` = CONVERT(BINARY(CONVERT(`description` USING latin1)) USING utf8mb4)
 WHERE HEX(`description`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `download_resource` SET `category` = CONVERT(BINARY(CONVERT(`category` USING latin1)) USING utf8mb4)
+WHERE HEX(`category`) REGEXP '^([0-9A-F]{2})*C3';
+
+UPDATE `contact_message` SET `name` = CONVERT(BINARY(CONVERT(`name` USING latin1)) USING utf8mb4)
+WHERE HEX(`name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `contact_message` SET `subject` = CONVERT(BINARY(CONVERT(`subject` USING latin1)) USING utf8mb4)
+WHERE HEX(`subject`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `contact_message` SET `content` = CONVERT(BINARY(CONVERT(`content` USING latin1)) USING utf8mb4)
+WHERE HEX(`content`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `contact_message` SET `handle_note` = CONVERT(BINARY(CONVERT(`handle_note` USING latin1)) USING utf8mb4)
+WHERE HEX(`handle_note`) REGEXP '^([0-9A-F]{2})*C3';
+
+UPDATE `orders` SET `customer_name` = CONVERT(BINARY(CONVERT(`customer_name` USING latin1)) USING utf8mb4)
+WHERE HEX(`customer_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `orders` SET `customer_company` = CONVERT(BINARY(CONVERT(`customer_company` USING latin1)) USING utf8mb4)
+WHERE HEX(`customer_company`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `orders` SET `customer_address` = CONVERT(BINARY(CONVERT(`customer_address` USING latin1)) USING utf8mb4)
+WHERE HEX(`customer_address`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `orders` SET `notes` = CONVERT(BINARY(CONVERT(`notes` USING latin1)) USING utf8mb4)
+WHERE HEX(`notes`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `order_item` SET `product_name` = CONVERT(BINARY(CONVERT(`product_name` USING latin1)) USING utf8mb4)
+WHERE HEX(`product_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_quote` SET `notes` = CONVERT(BINARY(CONVERT(`notes` USING latin1)) USING utf8mb4)
+WHERE HEX(`notes`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_quote` SET `platform_note` = CONVERT(BINARY(CONVERT(`platform_note` USING latin1)) USING utf8mb4)
+WHERE HEX(`platform_note`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_quote_item` SET `product_name_snapshot` = CONVERT(BINARY(CONVERT(`product_name_snapshot` USING latin1)) USING utf8mb4)
+WHERE HEX(`product_name_snapshot`) REGEXP '^([0-9A-F]{2})*C3';
+
+UPDATE `dealer_address` SET `label` = CONVERT(BINARY(CONVERT(`label` USING latin1)) USING utf8mb4)
+WHERE HEX(`label`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_address` SET `recipient_name` = CONVERT(BINARY(CONVERT(`recipient_name` USING latin1)) USING utf8mb4)
+WHERE HEX(`recipient_name`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_address` SET `province` = CONVERT(BINARY(CONVERT(`province` USING latin1)) USING utf8mb4)
+WHERE HEX(`province`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_address` SET `city` = CONVERT(BINARY(CONVERT(`city` USING latin1)) USING utf8mb4)
+WHERE HEX(`city`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_address` SET `district` = CONVERT(BINARY(CONVERT(`district` USING latin1)) USING utf8mb4)
+WHERE HEX(`district`) REGEXP '^([0-9A-F]{2})*C3';
+UPDATE `dealer_address` SET `detail_address` = CONVERT(BINARY(CONVERT(`detail_address` USING latin1)) USING utf8mb4)
+WHERE HEX(`detail_address`) REGEXP '^([0-9A-F]{2})*C3';
 
 UPDATE `site_config` SET `config_value` = CONVERT(BINARY(CONVERT(`config_value` USING latin1)) USING utf8mb4)
 WHERE HEX(`config_value`) REGEXP '^([0-9A-F]{2})*C3';

@@ -161,13 +161,25 @@ const routes = [
     component: () => import('../views/account/AccountHomeView.vue'),
     meta: { zone: 'account', roles: ['USER', 'DEALER', 'ADMIN'] }
   },
-  // 经销商门户
+  // 经销商中心：独立于公开官网和管理后台，所有子路由按企业边界鉴权。
   {
-    path: '/dealer/portal',
-    name: 'DealerPortal',
-    component: () => import('../views/dealer/DealerPortal.vue'),
-    meta: { zone: 'account', roles: ['DEALER', 'ADMIN'] }
+    path: '/dealer',
+    component: () => import('../views/dealer/DealerLayout.vue'),
+    meta: { zone: 'dealer', roles: ['DEALER'] },
+    children: [
+      { path: '', name: 'DealerDashboard', component: () => import('../views/dealer/DealerPortal.vue'), meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'catalog', name: 'DealerCatalog', component: () => import('../views/dealer/DealerCatalogView.vue'), meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'quick-order', name: 'DealerQuickOrder', component: () => import('../views/dealer/DealerCatalogView.vue'), props: { quickOrder: true }, meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'quotes', name: 'DealerQuotes', component: () => import('../views/dealer/DealerRecordsView.vue'), props: { mode: 'quotes' }, meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'orders', name: 'DealerOrders', component: () => import('../views/dealer/DealerRecordsView.vue'), props: { mode: 'orders' }, meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'invoices', name: 'DealerInvoices', component: () => import('../views/dealer/DealerRecordsView.vue'), props: { mode: 'invoices' }, meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'downloads', name: 'DealerDownloads', component: () => import('../views/support/DownloadView.vue'), props: { pageTitle: '经销商资料下载' }, meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'company', name: 'DealerCompany', component: () => import('../views/dealer/DealerCompanyView.vue'), meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'support', name: 'DealerSupport', component: () => import('../views/dealer/DealerSupportView.vue'), meta: { zone: 'dealer', roles: ['DEALER'] } },
+      { path: 'security', name: 'DealerSecurity', component: () => import('../views/dealer/DealerSecurityView.vue'), meta: { zone: 'dealer', roles: ['DEALER'] } }
+    ]
   },
+  { path: '/dealer/portal', redirect: { name: 'DealerDashboard' }, meta: { zone: 'dealer', roles: ['DEALER'] } },
 
   // ---------------------------------- 后台区 ----------------------------------
   // /admin 外壳（AdminLayout.vue）归 #86 维护；子页面由各领域任务接入
@@ -223,6 +235,12 @@ const routes = [
         path: 'dealers',
         name: 'AdminDealers',
         component: () => import('../views/admin/AdminDealers.vue'),
+        meta: { zone: 'admin', roles: ['ADMIN'] }
+      },
+      {
+        path: 'dealer-business',
+        name: 'AdminDealerBusiness',
+        component: () => import('../views/admin/AdminDealerBusiness.vue'),
         meta: { zone: 'admin', roles: ['ADMIN'] }
       },
       {

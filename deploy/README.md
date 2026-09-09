@@ -33,7 +33,8 @@
    ```
 
 新数据卷首次启动时，MySQL 会自动按“基线 → MVP-01 → MVP-03 → MVP-04 → MVP-05 →
-MVP-06 → MVP-07 → catalog seed → content seed → operation seed”顺序初始化
+MVP-06 → MVP-07 → MVP-08 经销商工作台 → catalog seed → content seed → operation seed →
+dealer workspace seed → UTF-8 修复”顺序初始化
 （与 `backend/test/setup-db.ts` 的测试库初始化顺序一致）。已有数据卷不会重新执行
 初始化脚本，后续数据库变更必须使用新的增量迁移，升级方式见下文「升级与回滚」。
 
@@ -44,11 +45,12 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql
   'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/migrations/mvp05_support.sql'
 ```
 
-Compose 已将 MVP04/05/06/07 脚本挂载到 `/opt/wemove/migrations/`。生产环境应先在
+Compose 已将 MVP04/05/06/07/08 脚本挂载到 `/opt/wemove/migrations/`。生产环境应先在
 备份恢复的副本上演练，再依次执行尚未应用的版本；MVP01/03/06 含 ALTER，不能重复执行。
 MVP05 使用 `CREATE TABLE IF NOT EXISTS` 且默认 FAQ/下载数据为幂等写入，可安全重放。
 
-如果旧数据卷中的中文显示为 `æƒŸæœ¨` 一类乱码，执行一次 UTF-8 修复脚本：
+如果旧数据卷中的中文显示为 `æƒŸæœ¨` 一类乱码，先确保 MVP-08 已迁移，再执行一次
+UTF-8 修复脚本（最新版同时覆盖申请、订单、报价和企业地址文本）：
 
 ```bash
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
@@ -57,7 +59,7 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql
 
 该脚本只转换包含典型 latin1/cp1252 乱码字符的历史字段，正常中文和后续用户数据保持不变。
 
-课程验收环境如需演示账号，可在首次启动完成后手动导入：
+课程验收环境如需演示账号，可在首次启动及 MVP-08 迁移完成后手动导入：
 
 ```bash
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
@@ -77,12 +79,16 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql
 
 **重要：已有数据卷不会自动执行新迁移。** MySQL 官方镜像只在数据卷首次初始化时运行
 `docker-entrypoint-initdb.d` 脚本；对已存在的旧数据卷升级时，必须手动应用新增的增量
-迁移（Compose 已把 MVP-04/05/06/07 迁移挂载到容器 `/opt/wemove/migrations/`）：
+迁移（Compose 已把 MVP-04/05/06/07/08 迁移挂载到容器 `/opt/wemove/migrations/`）：
 
 ```bash
 # 示例：为旧数据卷补充 MVP-07 运营域迁移（按缺什么补什么，顺序执行）
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
   'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/migrations/mvp07_operation_tables.sql'
+
+# MVP-08：经销商工作台表、订单企业边界与成员角色（含 ALTER，只执行一次）
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/migrations/mvp08_dealer_workspace.sql'
 ```
 
 迁移完成后，旧数据卷还需导入 MVP-07 运营 seed（幂等，可重复执行：站点配置用
@@ -91,14 +97,18 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql
 ```bash
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
   'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/seed/seed_operation_mvp07.sql'
+
+# 课程验收数据：经销商地址、报价、订单和发票（幂等）
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec -T mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal < /opt/wemove/seed/seed_dealer_workspace_mvp08.sql'
 ```
 
 > 注意：升级路径不会自动执行任何初始化脚本。若跳过 seed，旧卷站点配置/Banner 表为空，
 > 公开接口将返回空配置与空列表，需管理员手动创建；验收脚本按已导入 seed 的状态编写。
 
-可重复执行性：MVP-04/05/07 迁移使用 `CREATE TABLE IF NOT EXISTS`；MVP05 与 MVP07
+可重复执行性：MVP-04/05/07 的建表与 MVP-08 新表使用 `CREATE TABLE IF NOT EXISTS`；MVP05、MVP07
 默认数据也使用幂等写入。
-MVP-01/03/06 迁移含 `ALTER TABLE`，重复执行会报 Duplicate 错误——
+MVP-01/03/06/08 迁移含 `ALTER TABLE`，重复执行会报 Duplicate 错误——
 判断旧卷是否已应用过：只执行缺的，不确定时先在测试库演练。
 
 ## 本地容器验证（override）

@@ -21,9 +21,11 @@ services:
       - ../backend/sql/migrations/mvp05_support.sql:/docker-entrypoint-initdb.d/050-support-migration.sql:ro
       - ../backend/sql/migrations/mvp06_dealer_application_user.sql:/docker-entrypoint-initdb.d/060-dealer-migration.sql:ro
       - ../backend/sql/migrations/mvp07_operation_tables.sql:/docker-entrypoint-initdb.d/070-operation-migration.sql:ro
+      - ../backend/sql/migrations/mvp08_dealer_workspace.sql:/docker-entrypoint-initdb.d/075-dealer-workspace-migration.sql:ro
       - ../backend/sql/seed/seed_catalog_mvp03.sql:/docker-entrypoint-initdb.d/080-catalog-seed.sql:ro
       - ../backend/sql/seed/seed_content_mvp04.sql:/docker-entrypoint-initdb.d/090-content-seed.sql:ro
       - ../backend/sql/seed/seed_operation_mvp07.sql:/docker-entrypoint-initdb.d/100-operation-seed.sql:ro
+      - ../backend/sql/seed/seed_dealer_workspace_mvp08.sql:/docker-entrypoint-initdb.d/105-dealer-workspace-seed.sql:ro
       - ../backend/sql/migrations/mvp07_utf8_repair.sql:/docker-entrypoint-initdb.d/110-utf8-repair.sql:ro
       # 已知口令的演示账号只挂载、不自动导入；需要时按 deploy/README 手动执行。
       - ../backend/sql/seed/seed_identity_demo_accounts.sql:/opt/wemove/seed/identity-demo.sql:ro
@@ -34,7 +36,9 @@ services:
       - ../backend/sql/migrations/mvp05_support.sql:/opt/wemove/migrations/mvp05_support.sql:ro
       - ../backend/sql/migrations/mvp06_dealer_application_user.sql:/opt/wemove/migrations/mvp06_dealer_application_user.sql:ro
       - ../backend/sql/migrations/mvp07_operation_tables.sql:/opt/wemove/migrations/mvp07_operation_tables.sql:ro
+      - ../backend/sql/migrations/mvp08_dealer_workspace.sql:/opt/wemove/migrations/mvp08_dealer_workspace.sql:ro
       - ../backend/sql/migrations/mvp07_utf8_repair.sql:/opt/wemove/migrations/mvp07_utf8_repair.sql:ro
+      - ../backend/sql/seed/seed_dealer_workspace_mvp08.sql:/opt/wemove/seed/seed_dealer_workspace_mvp08.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s

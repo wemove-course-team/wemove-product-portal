@@ -184,6 +184,7 @@ export class IdentityService {
       phone: user.phone,
       role: user.role,
       companyId: user.companyId == null ? null : String(user.companyId),
+      dealerMemberRole: user.dealerMemberRole,
       ...(includeStatus ? { status: Number(user.status), createdAt: user.createdAt } : {})
     }
   }

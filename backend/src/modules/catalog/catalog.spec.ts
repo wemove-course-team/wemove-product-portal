@@ -296,6 +296,18 @@ describe('CatalogAdminService 管理端（验收：SKU、slug 唯一）', () => 
     expect(created.sku).toBe('WM-NEW-03')
   })
 
+  it('新增或编辑产品时，经销商价不能高于零售指导价', async () => {
+    categoryRepo.findOne.mockResolvedValue(makeCategory())
+    productRepo.findOne.mockImplementation(async (options: { where: Record<string, unknown> }) => {
+      if (options.where.id === '101') return makeProduct({ price: 198, dealerPrice: 118 })
+      return null
+    })
+    await expect(adminService.createProduct({
+      sku: 'WM-PRICE-01', name: '错误价格产品', categoryId: 1, price: 100, dealerPrice: 120
+    })).rejects.toThrow(BadRequestException)
+    await expect(adminService.updateProduct('101', { dealerPrice: 299 })).rejects.toThrow(BadRequestException)
+  })
+
   it('编辑产品：SKU 冲突校验会排除自身', async () => {
     productRepo.findOne.mockImplementation(async (options: { where: Record<string, unknown> }) => {
       const where = options.where ?? {}

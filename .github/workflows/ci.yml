@@ -123,6 +123,16 @@ jobs:
           docker compose --env-file deploy/.env.example \
             -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
             exec -T mysql sh -c \
+            'mysql --default-character-set=utf8mb4 -N -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal -e "SELECT company_name FROM dealer_application WHERE id=\"APP-2026-0891\""' \
+            | grep -Fx '上海晨星益智玩具有限公司'
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
+            exec -T mysql sh -c \
+            'mysql -N -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal -e "SELECT COUNT(*) FROM dealer_quote WHERE company_id=1"' \
+            | grep -Fx '1'
+          docker compose --env-file deploy/.env.example \
+            -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml \
+            exec -T mysql sh -c \
             'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" wemove_portal -e "UPDATE site_config SET config_value=\"CI-PERSISTENCE\" WHERE config_key=\"siteName\""'
           docker compose --env-file deploy/.env.example \
             -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml restart mysql

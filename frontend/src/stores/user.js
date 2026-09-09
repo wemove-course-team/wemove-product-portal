@@ -43,7 +43,8 @@ export const useUserStore = defineStore('user', () => {
               username: me.username ?? '',
               email: me.email ?? '',
               role: me.role ?? 'USER',
-              companyId: me.companyId == null ? null : String(me.companyId)
+              companyId: me.companyId == null ? null : String(me.companyId),
+              dealerMemberRole: me.dealerMemberRole ?? null
             }
           : null
       })
@@ -121,6 +122,7 @@ export const useUserStore = defineStore('user', () => {
       return {
         ...(PREVIEW_PROFILES[currentRole.value] || PREVIEW_PROFILES.USER),
         role: currentRole.value,
+        dealerMemberRole: sessionUser.value.dealerMemberRole,
         isPreview: true
       }
     }

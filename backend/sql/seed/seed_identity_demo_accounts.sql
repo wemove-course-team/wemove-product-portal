@@ -13,10 +13,10 @@
 USE `wemove_portal`;
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO `sys_user` (`username`, `password_hash`, `real_name`, `email`, `phone`, `role`, `company_id`, `status`) VALUES
-('admin', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '系统管理员', 'admin@wemovetoy.com', '13800000001', 'ADMIN', NULL, 1),
-('demo_user', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '演示用户', 'demo_user@wemovetoy.com', '13800000002', 'USER', NULL, 1),
-('dealer_demo', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '李经理', 'dealer@starwood.com', '13812345678', 'DEALER', 1, 1)
+INSERT INTO `sys_user` (`username`, `password_hash`, `real_name`, `email`, `phone`, `role`, `company_id`, `dealer_member_role`, `status`) VALUES
+('admin', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '系统管理员', 'admin@wemovetoy.com', '13800000001', 'ADMIN', NULL, NULL, 1),
+('demo_user', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '演示用户', 'demo_user@wemovetoy.com', '13800000002', 'USER', NULL, NULL, 1),
+('dealer_demo', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '李经理', 'dealer@starwood.com', '13812345678', 'DEALER', 1, 'OWNER', 1)
 ON DUPLICATE KEY UPDATE
   `password_hash`=VALUES(`password_hash`),
   `real_name`=VALUES(`real_name`),
@@ -24,4 +24,5 @@ ON DUPLICATE KEY UPDATE
   `phone`=VALUES(`phone`),
   `role`=VALUES(`role`),
   `company_id`=VALUES(`company_id`),
+  `dealer_member_role`=VALUES(`dealer_member_role`),
   `status`=VALUES(`status`);

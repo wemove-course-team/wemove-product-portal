@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   MinLength
@@ -85,13 +86,13 @@ export class CreateProductDto {
   @Type(() => Number) @IsInt() @Min(1)
   categoryId: number
 
-  @Type(() => Number) @IsNumber() @Min(0)
+  @Type(() => Number) @IsNumber() @Min(0.01) @Max(9999999)
   price: number
 
-  @Type(() => Number) @IsNumber() @Min(0)
+  @Type(() => Number) @IsNumber() @Min(0.01) @Max(9999999)
   dealerPrice: number
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000)
   moq?: number
 
   @IsOptional() @IsString() @MaxLength(64)
@@ -139,13 +140,13 @@ export class UpdateProductDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   categoryId?: number
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0)
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0.01) @Max(9999999)
   price?: number
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0)
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0.01) @Max(9999999)
   dealerPrice?: number
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000)
   moq?: number
 
   @IsOptional() @IsString() @MaxLength(64)
