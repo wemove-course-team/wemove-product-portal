@@ -17,7 +17,7 @@ import { Article } from './modules/content/entities/article.entity'
 import { ArticleCategory } from './modules/content/entities/article-category.entity'
 import { Page } from './modules/content/entities/page.entity'
 import { SupportMessage, SupportFaq, SupportDownload } from './modules/support/support.entity'
-import * as path from 'path'
+import { resolveDatabaseConfig } from './database/db-config'
 import { SiteConfig } from './modules/operation/site-config.entity'
 import { Banner } from './modules/operation/banner.entity'
 import { HealthController } from './health.controller'
@@ -28,8 +28,9 @@ import { HealthController } from './health.controller'
     TypeOrmModule.forRootAsync({
       // 延迟到 Nest 初始化时读取环境变量，支持 SQLite（无本地 MySQL 时自动降级）与 MySQL
       useFactory: () => {
-        // 显式指定 sqlite、或未提供任何 MySQL 连接信息时才降级到 SQLite
-        const useSqlite = process.env.DB_TYPE === 'sqlite' || (!process.env.DB_HOST && process.env.DB_TYPE !== 'mysql')
+        // 显式指定 sqlite、或未提供任何 MySQL 连接信息时才降级到 SQLite；
+        // 生产环境缺少 MySQL 配置会直接抛错（见 db-config.ts），不会带演示账号启动。
+        const { useSqlite, database } = resolveDatabaseConfig()
         const entities = [
           Product,
           ProductCategory,
@@ -49,7 +50,7 @@ import { HealthController } from './health.controller'
         if (useSqlite) {
           return {
             type: 'sqlite' as const,
-            database: process.env.DB_DATABASE || path.resolve(process.cwd(), 'wemove.sqlite'),
+            database,
             entities,
             synchronize: false
           }

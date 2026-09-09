@@ -2,7 +2,16 @@ import sqlite3 from 'sqlite3'
 import path from 'path'
 import fs from 'fs'
 
-export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
+export type SqliteInitOptions = {
+  /**
+   * 是否写入演示种子数据（含公开密码的 admin / dealer_demo 账号）。
+   * 生产环境必须传 false，见 db-config.ts 的 fail fast 约束。
+   */
+  seedDemoData?: boolean
+}
+
+export async function ensureSqliteDatabase(dbFilePath: string, options: SqliteInitOptions = {}): Promise<void> {
+  const seedDemoData = options.seedDemoData !== false
   const dir = path.dirname(dbFilePath)
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true })
@@ -75,6 +84,7 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
 
       CREATE TABLE IF NOT EXISTS dealer_application (
         id VARCHAR(32) PRIMARY KEY NOT NULL,
+        user_id BIGINT NULL,
         company_name VARCHAR(128) NOT NULL,
         tax_id VARCHAR(64) NOT NULL,
         business_type VARCHAR(64) NOT NULL,
@@ -126,7 +136,7 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
       CREATE TABLE IF NOT EXISTS password_reset_token (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id BIGINT NOT NULL,
-        token VARCHAR(64) NOT NULL,
+        token_hash VARCHAR(128) NOT NULL,
         expires_at DATETIME NOT NULL,
         used_at DATETIME DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -275,17 +285,20 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
 
       CREATE TABLE IF NOT EXISTS orders (
         id VARCHAR(32) PRIMARY KEY NOT NULL,
+        order_type VARCHAR(32) NOT NULL,
         user_id BIGINT DEFAULT NULL,
         company_id BIGINT DEFAULT NULL,
-        status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
-        total_amount DECIMAL(12,2) NOT NULL,
+        customer_name VARCHAR(64) NOT NULL,
+        customer_company VARCHAR(128) DEFAULT NULL,
+        customer_phone VARCHAR(32) NOT NULL,
+        customer_address VARCHAR(255) NOT NULL,
+        total_amount DECIMAL(10,2) NOT NULL,
         payment_method VARCHAR(32) DEFAULT NULL,
+        tracking_no VARCHAR(64) DEFAULT NULL,
         po_number VARCHAR(64) DEFAULT NULL,
         requested_delivery_date DATE DEFAULT NULL,
         notes VARCHAR(1000) DEFAULT NULL,
-        shipping_name VARCHAR(64) DEFAULT NULL,
-        shipping_phone VARCHAR(32) DEFAULT NULL,
-        shipping_address VARCHAR(255) DEFAULT NULL,
+        status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
@@ -294,13 +307,59 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id VARCHAR(32) NOT NULL,
         product_id BIGINT NOT NULL,
+        sku VARCHAR(64) NOT NULL,
         product_name VARCHAR(128) NOT NULL,
-        product_sku VARCHAR(64) NOT NULL,
-        price DECIMAL(10,2) NOT NULL,
+        unit_price DECIMAL(10,2) NOT NULL,
         quantity INT NOT NULL,
-        subtotal DECIMAL(12,2) NOT NULL
+        subtotal DECIMAL(10,2) NOT NULL
       );
     `)
+
+    // 1.1 兼容既有 SQLite 文件：补齐实体与 MySQL 基线新增的列（CREATE TABLE IF NOT EXISTS 不会改表）
+    const columnExists = async (table: string, column: string): Promise<boolean> => {
+      const columns = await getRows(`PRAGMA table_info(${table})`)
+      return columns.some((row: any) => String(row.name) === column)
+    }
+
+    const addColumnIfMissing = async (table: string, column: string, ddl: string): Promise<void> => {
+      if (await columnExists(table, column)) return
+      await execSql(`ALTER TABLE ${table} ADD COLUMN ${ddl}`)
+      console.log(`[wemove-sqlite] migrated: ${table}.${column} added`)
+    }
+
+    // 经销商申请绑定登录用户（sql/migrations/mvp06_dealer_application_user.sql）
+    await addColumnIfMissing('dealer_application', 'user_id', 'user_id BIGINT NULL')
+    await execSql('CREATE INDEX IF NOT EXISTS idx_dealer_application_user_id ON dealer_application (user_id)')
+
+    // 找回密码令牌只存哈希（sql/migrations/mvp01_identity_password_reset.sql）
+    await addColumnIfMissing('password_reset_token', 'token_hash', "token_hash VARCHAR(128) NOT NULL DEFAULT ''")
+    // 老库存在明文 token 列时迁移为哈希；新库没有该列，跳过以免报错
+    if (await columnExists('password_reset_token', 'token')) {
+      await runQuery(
+        "UPDATE password_reset_token SET token_hash = token WHERE (token_hash IS NULL OR token_hash = '') AND token IS NOT NULL"
+      )
+    }
+    // 无法迁移的历史明文令牌不可再用，直接清理，避免唯一索引冲突
+    await runQuery("DELETE FROM password_reset_token WHERE token_hash IS NULL OR token_hash = ''")
+    await execSql('CREATE UNIQUE INDEX IF NOT EXISTS uk_password_reset_token_hash ON password_reset_token (token_hash)')
+    await execSql('CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_token (user_id)')
+
+    // 订单主表对齐 MySQL 基线（sql/init_schema_and_data.sql）+ MVP-08 增量
+    await addColumnIfMissing('orders', 'order_type', "order_type VARCHAR(32) NOT NULL DEFAULT 'B2C'")
+    await addColumnIfMissing('orders', 'customer_name', "customer_name VARCHAR(64) NOT NULL DEFAULT ''")
+    await addColumnIfMissing('orders', 'customer_company', 'customer_company VARCHAR(128) DEFAULT NULL')
+    await addColumnIfMissing('orders', 'customer_phone', "customer_phone VARCHAR(32) NOT NULL DEFAULT ''")
+    await addColumnIfMissing('orders', 'customer_address', "customer_address VARCHAR(255) NOT NULL DEFAULT ''")
+    await addColumnIfMissing('orders', 'tracking_no', 'tracking_no VARCHAR(64) DEFAULT NULL')
+    await addColumnIfMissing('orders', 'company_id', 'company_id BIGINT DEFAULT NULL')
+    await addColumnIfMissing('orders', 'po_number', 'po_number VARCHAR(64) DEFAULT NULL')
+    await addColumnIfMissing('orders', 'requested_delivery_date', 'requested_delivery_date DATE DEFAULT NULL')
+    await addColumnIfMissing('orders', 'notes', 'notes VARCHAR(1000) DEFAULT NULL')
+    await execSql('CREATE INDEX IF NOT EXISTS idx_orders_company_created ON orders (company_id, created_at)')
+
+    // 订单明细对齐 MySQL 基线（sku / unit_price）
+    await addColumnIfMissing('order_item', 'sku', "sku VARCHAR(64) NOT NULL DEFAULT ''")
+    await addColumnIfMissing('order_item', 'unit_price', 'unit_price DECIMAL(10,2) NOT NULL DEFAULT 0')
 
     // 2. 检查并写入种子数据
     const categoryCount = await getRows('SELECT COUNT(*) as count FROM product_category')
@@ -347,17 +406,20 @@ export async function ensureSqliteDatabase(dbFilePath: string): Promise<void> {
         (2, '极简弧形摇摆平衡板', '/images/prod_19_1.jpg', '/products', 20, 1)
       `)
 
-      // 演示用户
-      await runQuery(`INSERT INTO sys_user (id, username, password_hash, real_name, email, phone, role, company_id, status) VALUES
-        (1, 'admin', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '系统管理员', 'admin@wemovetoy.com', '13800000001', 'ADMIN', NULL, 1),
-        (2, 'demo_user', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '演示用户', 'demo_user@wemovetoy.com', '13800000002', 'USER', NULL, 1),
-        (3, 'dealer_demo', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '李经理', 'dealer@starwood.com', '13812345678', 'DEALER', 1, 1)
-      `)
+      // 演示账号（公开密码）仅允许写入本地开发库，生产环境由 db-config 保证不会走到这里
+      if (seedDemoData) {
+        await runQuery(`INSERT INTO sys_user (id, username, password_hash, real_name, email, phone, role, company_id, status) VALUES
+          (1, 'admin', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '系统管理员', 'admin@wemovetoy.com', '13800000001', 'ADMIN', NULL, 1),
+          (2, 'demo_user', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '演示用户', 'demo_user@wemovetoy.com', '13800000002', 'USER', NULL, 1),
+          (3, 'dealer_demo', '$2a$10$uKF34.jKH7gQvk.oa7tWWu9jHQgH7UarEFSazq/S/UUJb9FC5JEyi', '李经理', 'dealer@starwood.com', '13812345678', 'DEALER', 1, 1)
+        `)
 
-      // 经销商公司
-      await runQuery(`INSERT INTO dealer_company (id, company_name, tax_id, business_type, region, tier_name, discount_rate, contact_name, contact_phone, contact_email, status) VALUES
-        (1, '上海晨星益智玩具有限公司', '91310115MA1KXXXX01', '线下母婴及连锁玩具店', '华东大区 (上海/江苏/浙江)', '一级核心经销商', 0.65, '李经理', '13812345678', 'dealer@starwood.com', 'ACTIVE')
-      `)
+        await runQuery(`INSERT INTO dealer_company (id, company_name, tax_id, business_type, region, tier_name, discount_rate, contact_name, contact_phone, contact_email, status) VALUES
+          (1, '上海晨星益智玩具有限公司', '91310115MA1KXXXX01', '线下母婴及连锁玩具店', '华东大区 (上海/江苏/浙江)', '一级核心经销商', 0.65, '李经理', '13812345678', 'dealer@starwood.com', 'ACTIVE')
+        `)
+      } else {
+        console.log('[wemove-sqlite] demo accounts skipped (seedDemoData=false)')
+      }
 
       // 文章分类
       await runQuery(`INSERT INTO article_category (id, name, slug, sort_order) VALUES

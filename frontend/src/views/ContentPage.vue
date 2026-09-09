@@ -416,6 +416,7 @@ function submitAppointment() {
   font-weight: 700;
   margin-bottom: 12px;
   letter-spacing: 1px;
+  color: #ffffff;
 }
 
 .cover-subtitle {

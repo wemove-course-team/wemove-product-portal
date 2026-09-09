@@ -31,16 +31,16 @@
           <transition name="el-zoom-in-top">
             <div v-show="showDrop" class="hn-drop">
               <router-link to="/stem" class="hn-drop-link" @click="showDrop = false">
-                🌱 STEM教育
+                STEM教育
               </router-link>
               <router-link to="/library" class="hn-drop-link" @click="showDrop = false">
-                📚 科研研发
+                科研研发
               </router-link>
               <router-link to="/charity" class="hn-drop-link" @click="showDrop = false">
-                🤝 公益项目
+                公益项目
               </router-link>
               <router-link to="/dream" class="hn-drop-link" @click="showDrop = false">
-                ✨ 匠心筑梦
+                匠心筑梦
               </router-link>
             </div>
           </transition>

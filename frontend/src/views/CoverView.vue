@@ -341,4 +341,56 @@ onUnmounted(() => {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(3px); }
 }
+
+/* 移动端（≤480px，375px 实机视口）：收紧字号字距与胶囊内边距，控制标题换行 */
+@media (max-width: 480px) {
+  .cover-content {
+    padding: 0 18px;
+  }
+
+  .cover-badge {
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    margin-bottom: 18px;
+  }
+
+  .cover-title {
+    font-size: 30px;
+    letter-spacing: 3px;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .cover-sub {
+    font-size: 12px;
+    letter-spacing: 5px;
+    margin-bottom: 16px;
+  }
+
+  .cover-statement {
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 26px;
+  }
+
+  .btn-enter-home {
+    padding: 11px 24px;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .cover-scroll-hint {
+    bottom: 28px;
+    width: max-content;
+  }
+
+  .hint-pill {
+    padding: 8px 14px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    gap: 6px;
+    white-space: nowrap;
+  }
+}
 </style>

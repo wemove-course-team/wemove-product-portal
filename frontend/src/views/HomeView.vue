@@ -376,7 +376,9 @@ const activeBannerIndex = ref(0)
 let bannerTimer = null
 
 const effectiveBanners = computed(() => {
-  if (siteStore.banners && siteStore.banners.length > 1) {
+  // 后台只要配置了任意有效 Banner（含单个）都优先使用，空数组才回退默认展品；
+  // 自动轮播只在多于一张时启动（见 startBannerTimer）。
+  if (siteStore.banners && siteStore.banners.length > 0) {
     return siteStore.banners
   }
   return defaultBanners

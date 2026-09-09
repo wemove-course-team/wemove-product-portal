@@ -104,9 +104,11 @@ export class IdentityService {
     return this.dataSource.transaction(async (manager) => {
       const tokenRepo = manager.getRepository(PasswordResetToken)
       const userRepo = manager.getRepository(User)
+      // SQLite 不支持悲观行锁，MySQL 下锁定 token 防止并发重复使用
+      const canLock = (this.dataSource?.options as any)?.type !== 'sqlite'
       const token = await tokenRepo.findOne({
         where: { tokenHash },
-        lock: { mode: 'pessimistic_write' }
+        ...(canLock ? { lock: { mode: 'pessimistic_write' as const } } : {})
       })
       if (!token || token.usedAt || token.expiresAt.getTime() < Date.now()) {
         throw new UnauthorizedException({ code: 'AUTH_401', message: '重置 token 无效或已过期' })

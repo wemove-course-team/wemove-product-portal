@@ -20,6 +20,6 @@ export class PasswordResetToken {
   @Column({ name: 'used_at', type: 'datetime', nullable: true })
   usedAt!: Date | null
 
-  @Column({ name: 'created_at', type: 'datetime' })
+  @Column({ name: 'created_at', type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date
 }
